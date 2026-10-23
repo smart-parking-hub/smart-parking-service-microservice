@@ -1,3 +1,4 @@
+
 # Skill: Production Bug Investigation
 
 ## Goal

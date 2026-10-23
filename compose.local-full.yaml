@@ -2,8 +2,8 @@
 services:
   discovery-server:
     build:
-      context: .
-      dockerfile: discovery-server/Dockerfile
+      context: ./discovery-server
+      dockerfile: Dockerfile
     container_name: smart-parking-discovery
     restart: always
     ports:
@@ -13,8 +13,8 @@ services:
 
   config-server:
     build:
-      context: .
-      dockerfile: config-server/Dockerfile
+      context: ./config-server
+      dockerfile: Dockerfile
     container_name: smart-parking-config
     restart: always
     ports:

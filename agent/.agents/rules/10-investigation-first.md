@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # 10 — Investigation Before Fix
 
 Không sửa theo triệu chứng trước khi tìm nguyên nhân có bằng chứng.
