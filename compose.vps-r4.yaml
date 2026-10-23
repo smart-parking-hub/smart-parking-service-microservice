@@ -1,0 +1,93 @@
+version: '3.8'
+
+# VPS R4 Resource-Limited Profile: enforces strict RAM limits, log rotation, and edge isolation
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: smart-parking-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - smart-parking-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+  api-gateway:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  identity-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  parking-lot-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  booking-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 640M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  payment-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  notification-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"

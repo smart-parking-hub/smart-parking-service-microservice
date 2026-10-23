@@ -1,0 +1,11 @@
+rootProject.name = 'smart-parking-microservice'
+
+include 'common-library'
+include 'discovery-server'
+include 'config-server'
+include 'api-gateway'
+include 'identity-service'
+include 'parking-lot-service'
+include 'booking-service'
+include 'payment-service'
+include 'notification-service'

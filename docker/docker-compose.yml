@@ -1,0 +1,7 @@
+version: '3.8'
+
+# Full Stack Docker Compose: run both infrastructure and microservices
+# For production or local development
+include:
+  - docker-compose.infra.yml
+  - docker-compose.apps.yml

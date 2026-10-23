@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "mysql-inspector": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-mysql"
+      ],
+      "env": {
+        "MYSQL_HOST": "127.0.0.1",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "root",
+        "MYSQL_PASSWORD": "root",
+        "MYSQL_READONLY": "true"
+      },
+      "description": "Read-only MySQL schema and table inspector for SmartParkingHub databases"
+    },
+    "docker-inspector": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-docker"
+      ],
+      "env": {
+        "DOCKER_HOST": "npipe:////./pipe/docker_engine"
+      },
+      "description": "Read-only Docker daemon status and container inspection"
+    }
+  }
+}

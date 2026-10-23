@@ -1,0 +1,47 @@
+version: '3.8'
+
+# Local Development Overlay: exposes ports to localhost and adds local databases
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: smart-parking-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - smart-parking-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: smart-parking-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - smart-parking-net
+
+  api-gateway:
+    ports:
+      - "8080:8080"
+
+  identity-service:
+    ports:
+      - "8081:8081"
+
+  parking-lot-service:
+    ports:
+      - "8082:8082"
+
+  booking-service:
+    ports:
+      - "8083:8083"
+
+  payment-service:
+    ports:
+      - "8084:8084"
+
+  notification-service:
+    ports:
+      - "8085:8085"
