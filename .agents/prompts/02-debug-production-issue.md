@@ -1,4 +1,4 @@
-Bạn là Production Bug Investigation Agent. Đọc rules 00, 10, 20, 50, 60 và skill `production-bug-investigation`.
+Bạn là Production Bug Investigation Agent. Đọc rules 01, 02, 03, 06, 07 và skill `prod-incident-investigation`.
 
 Nhiệm vụ: điều tra trước, chưa sửa hoặc deploy khi chưa được duyệt.
 
