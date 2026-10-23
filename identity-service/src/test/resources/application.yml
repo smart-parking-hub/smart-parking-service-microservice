@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: identity-service-test
+  datasource:
+    url: jdbc:h2:mem:identity_test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+
+jwt:
+  secret: averylongsecretkeyforidentityservicetestingpurposesonly2026
+  expiration-ms: 3600000
+
+app:
+  otp:
+    expose-in-response: true
