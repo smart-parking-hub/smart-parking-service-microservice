@@ -7,9 +7,16 @@ services:
     container_name: smart-parking-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
     ports:
       - "3306:3306"
+    volumes:
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - smart-parking-net
 
@@ -19,29 +26,56 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - smart-parking-net
 
   api-gateway:
     ports:
       - "8080:8080"
+    depends_on:
+      - identity-service
+      - parking-lot-service
 
   identity-service:
     ports:
       - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   parking-lot-service:
     ports:
       - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   booking-service:
     ports:
       - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   payment-service:
     ports:
       - "8084:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   notification-service:
     ports:
       - "8085:8085"
+    depends_on:
+      mysql:
+        condition: service_healthy
