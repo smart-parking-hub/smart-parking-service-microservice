@@ -5,10 +5,15 @@ CREATE TABLE IF NOT EXISTS notifications (
     title VARCHAR(200) NOT NULL,
     content TEXT NOT NULL,
     channel VARCHAR(30) NOT NULL DEFAULT 'IN_APP', -- IN_APP, EMAIL, SMS, PUSH
-    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    type VARCHAR(30) NOT NULL DEFAULT 'SYSTEM',
+    target_type VARCHAR(50),
+    target_id BIGINT,
+    read_at TIMESTAMP NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'SENT',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     sent_at TIMESTAMP NULL,
-    INDEX idx_user_notif (user_id)
+    INDEX idx_user_notif (user_id),
+    INDEX idx_user_read (user_id, read_at)
 );
 
 -- Idempotent Consumer Deduplication Table
