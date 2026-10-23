@@ -45,4 +45,10 @@ subprojects {
     tasks.named('test') {
         useJUnitPlatform()
     }
+
+    pluginManager.withPlugin('org.springframework.boot') {
+        tasks.named('jar') {
+            enabled = false
+        }
+    }
 }

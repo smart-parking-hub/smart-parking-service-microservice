@@ -1,4 +1,3 @@
-version: '3.8'
 
 # Base compose file defining standard microservice containers and network
 services:
