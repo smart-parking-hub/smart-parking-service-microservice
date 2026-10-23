@@ -11,15 +11,15 @@ spring:
         - id: identity-service
           uri: ${IDENTITY_SERVICE_URL:http://localhost:8081}
           predicates:
-            - Path=/api/auth/**, /api/users/**, /api/drivers/**, /api/merchants/**
+            - Path=/api/v1/auth/**, /api/auth/**, /api/v1/users/**, /api/users/**, /api/v1/drivers/**, /api/drivers/**, /api/v1/merchants/**, /api/merchants/**, /api/v1/vehicles/**, /api/vehicles/**
           filters:
             - StripPrefix=0
 
-        # Parking Lot Service (Catalog & Slot Availability)
+        # Parking Lot Service
         - id: parking-lot-service
           uri: ${PARKING_LOT_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/parking-lots/**, /api/slots/**, /api/pricing-rules/**
+            - Path=/api/v1/parking-lots/**, /api/parking-lots/**, /api/v1/slots/**, /api/slots/**, /api/v1/pricing-rules/**, /api/pricing-rules/**
           filters:
             - StripPrefix=0
 
@@ -27,7 +27,7 @@ spring:
         - id: booking-service
           uri: ${BOOKING_SERVICE_URL:http://localhost:8083}
           predicates:
-            - Path=/api/bookings/**, /api/check-in/**, /api/check-out/**
+            - Path=/api/v1/bookings/**, /api/bookings/**, /api/v1/queues/**, /api/queues/**, /api/v1/reviews/**, /api/reviews/**, /api/v1/merchant/check-in, /api/merchant/check-in, /api/v1/merchant/check-out, /api/merchant/check-out, /api/v1/merchant/bookings, /api/merchant/bookings
           filters:
             - StripPrefix=0
 
@@ -35,7 +35,7 @@ spring:
         - id: payment-service
           uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
           predicates:
-            - Path=/api/payments/**, /api/wallets/**, /api/disputes/**, /api/payouts/**
+            - Path=/api/v1/payments/**, /api/payments/**, /api/v1/withdrawals/**, /api/withdrawals/**, /api/v1/disputes/**, /api/disputes/**, /api/v1/merchant/revenue, /api/merchant/revenue
           filters:
             - StripPrefix=0
 
@@ -43,14 +43,14 @@ spring:
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
           predicates:
-            - Path=/api/notifications/**
+            - Path=/api/v1/notifications/**, /api/notifications/**
           filters:
             - StripPrefix=0
 
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOriginPatterns: "*"
             allowedMethods:
               - GET
               - POST
@@ -59,6 +59,10 @@ spring:
               - PATCH
               - OPTIONS
             allowedHeaders: "*"
+            allowCredentials: true
+
+jwt:
+  secret: ${JWT_SECRET:smartparkingsecretkeymustbeverylongandsecure2026version}
 
 management:
   endpoints:
@@ -80,4 +84,3 @@ eureka:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
-
