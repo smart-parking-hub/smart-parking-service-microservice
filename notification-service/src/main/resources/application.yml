@@ -5,7 +5,7 @@ spring:
   application:
     name: notification-service
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/smart_parking_notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    url: ${DB_URL:jdbc:mysql://localhost:3307/smart_parking_notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
