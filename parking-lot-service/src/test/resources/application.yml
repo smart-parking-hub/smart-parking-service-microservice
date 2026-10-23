@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: parking-lot-service-test
+  datasource:
+    url: jdbc:h2:mem:parkinglot_test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: smartparkingsecretkeymustbeverylongandsecure2026version
+
+app:
+  storage:
+    parking-lot-images-dir: build/test-uploads
