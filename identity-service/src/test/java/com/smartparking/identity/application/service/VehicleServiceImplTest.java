@@ -150,4 +150,102 @@ class VehicleServiceImplTest {
         assertEquals(1, result.getContent().size());
         assertEquals("51A-11111", result.getContent().get(0).getLicensePlate());
     }
+
+    @Test
+    @DisplayName("Get my vehicles throws NOT_FOUND when driver profile not found")
+    void testGetMyVehiclesDriverNotFound() {
+        when(driverRepository.findByUserId(999L)).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () ->
+                vehicleService.getMyVehicles(999L, PageRequest.of(0, 10)));
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Update vehicle successfully modifies vehicle details")
+    void testUpdateVehicleSuccess() {
+        User user = User.builder().id(driverUserId).build();
+        Driver driver = Driver.builder().id(driverId).user(user).build();
+        Vehicle vehicle = Vehicle.builder()
+                .id(10L)
+                .driver(driver)
+                .licensePlate("51A-12345")
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .weightTon(new BigDecimal("10.0"))
+                .brandModel("Old Brand")
+                .status(VehicleStatusEnum.ACTIVE)
+                .build();
+
+        when(vehicleRepository.findById(10L)).thenReturn(Optional.of(vehicle));
+        when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateVehicleRequest req = new UpdateVehicleRequest();
+        req.setLicensePlate("51A-12345");
+        req.setVehicleType(VehicleTypeEnum.CONTAINER);
+        req.setWeightTon(new BigDecimal("12.0"));
+        req.setBrandModel("   ");
+
+        VehicleDto updated = vehicleService.updateVehicle(driverUserId, 10L, req);
+
+        assertNotNull(updated);
+        assertEquals("51A-12345", updated.getLicensePlate());
+        assertNull(updated.getBrandModel());
+    }
+
+    @Test
+    @DisplayName("Update vehicle throws NOT_FOUND when vehicle does not exist")
+    void testUpdateVehicleNotFound() {
+        when(vehicleRepository.findById(999L)).thenReturn(Optional.empty());
+
+        UpdateVehicleRequest req = new UpdateVehicleRequest();
+        AppException ex = assertThrows(AppException.class, () ->
+                vehicleService.updateVehicle(driverUserId, 999L, req));
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Update vehicle throws CONFLICT when new license plate already exists on another vehicle")
+    void testUpdateVehicleLicenseConflict() {
+        User user = User.builder().id(driverUserId).build();
+        Driver driver = Driver.builder().id(driverId).user(user).build();
+        Vehicle vehicle = Vehicle.builder()
+                .id(10L)
+                .driver(driver)
+                .licensePlate("51A-12345")
+                .build();
+
+        when(vehicleRepository.findById(10L)).thenReturn(Optional.of(vehicle));
+        when(vehicleRepository.existsByLicensePlate("51A-99999")).thenReturn(true);
+
+        UpdateVehicleRequest req = new UpdateVehicleRequest();
+        req.setLicensePlate("51A-99999");
+
+        AppException ex = assertThrows(AppException.class, () ->
+                vehicleService.updateVehicle(driverUserId, 10L, req));
+        assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Delete vehicle throws NOT_FOUND when vehicle does not exist")
+    void testDeleteVehicleNotFound() {
+        when(vehicleRepository.findById(999L)).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () ->
+                vehicleService.deleteVehicle(driverUserId, 999L));
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Delete vehicle throws FORBIDDEN when user is not owner")
+    void testDeleteVehicleForbidden() {
+        User otherUser = User.builder().id(888L).build();
+        Driver otherDriver = Driver.builder().id(2L).user(otherUser).build();
+        Vehicle vehicle = Vehicle.builder().id(10L).driver(otherDriver).build();
+
+        when(vehicleRepository.findById(10L)).thenReturn(Optional.of(vehicle));
+
+        AppException ex = assertThrows(AppException.class, () ->
+                vehicleService.deleteVehicle(driverUserId, 10L));
+        assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
+    }
 }

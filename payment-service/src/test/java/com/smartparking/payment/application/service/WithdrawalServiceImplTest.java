@@ -15,11 +15,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -113,5 +119,56 @@ class WithdrawalServiceImplTest {
         assertEquals(WithdrawalStatusEnum.REJECTED, response.getStatus());
         verify(merchantWalletService, times(1)).refundWithdrawal(eq(merchantUserId), eq(new BigDecimal("50000")), any());
         verify(withdrawalRequestRepository, times(1)).save(req);
+    }
+
+    @Test
+    @DisplayName("Process withdrawal approval updates status to APPROVED without refund")
+    void testProcessWithdrawalApproved() {
+        WithdrawalRequest req = WithdrawalRequest.builder()
+                .id(withdrawalId)
+                .merchantId(merchantUserId)
+                .amount(new BigDecimal("50000"))
+                .status(WithdrawalStatusEnum.PENDING)
+                .build();
+        when(withdrawalRequestRepository.findById(withdrawalId)).thenReturn(Optional.of(req));
+        when(withdrawalRequestRepository.save(any(WithdrawalRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(merchantWalletService.getWalletBalance(merchantUserId)).thenReturn(new BigDecimal("50000"));
+
+        WithdrawalResponse response = withdrawalService.processWithdrawal(1L, withdrawalId, true, "Đã chuyển khoản");
+
+        assertNotNull(response);
+        assertEquals(WithdrawalStatusEnum.APPROVED, response.getStatus());
+        verify(merchantWalletService, never()).refundWithdrawal(any(), any(), any());
+        verify(withdrawalRequestRepository, times(1)).save(req);
+    }
+
+    @Test
+    @DisplayName("Process withdrawal throws NOT_FOUND when request does not exist")
+    void testProcessWithdrawalNotFound() {
+        when(withdrawalRequestRepository.findById(999L)).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () ->
+                withdrawalService.processWithdrawal(1L, 999L, true, "OK"));
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Get my withdrawals returns page of responses")
+    void testGetMyWithdrawals() {
+        WithdrawalRequest req = WithdrawalRequest.builder()
+                .id(withdrawalId)
+                .merchantId(merchantUserId)
+                .amount(new BigDecimal("20000"))
+                .status(WithdrawalStatusEnum.APPROVED)
+                .build();
+        when(merchantWalletService.getWalletBalance(merchantUserId)).thenReturn(new BigDecimal("80000"));
+        when(withdrawalRequestRepository.findByMerchantIdOrderByRequestedAtDesc(eq(merchantUserId), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(req), PageRequest.of(0, 10), 1));
+
+        var page = withdrawalService.getMyWithdrawals(merchantUserId, PageRequest.of(0, 10));
+
+        assertNotNull(page);
+        assertEquals(1, page.getContent().size());
+        assertEquals(new BigDecimal("80000"), page.getContent().get(0).getAvailableBalance());
     }
 }

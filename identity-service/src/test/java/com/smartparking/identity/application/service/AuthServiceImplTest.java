@@ -289,4 +289,71 @@ class AuthServiceImplTest {
 
         verify(merchantRepository, times(1)).save(any(Merchant.class));
     }
+
+    @Test
+    @DisplayName("Register driver fails when fullName is missing")
+    void testRegisterDriverMissingFullName() {
+        RegisterRequest req = new RegisterRequest();
+        req.setPhone("0912345678");
+        req.setEmail("driver1@example.com");
+        req.setPassword("Pass1234");
+        req.setRole(RoleEnum.DRIVER);
+        req.setFullName("  ");
+        req.setOtpCode("654321");
+
+        when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
+        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+
+        OtpChallenge challenge = OtpChallenge.builder()
+                .phone(req.getPhone())
+                .purpose(OtpPurposeEnum.REGISTER)
+                .codeHash("hashedOtp")
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .attemptCount(0)
+                .build();
+        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(req.getPhone(), OtpPurposeEnum.REGISTER))
+                .thenReturn(Optional.of(challenge));
+        when(passwordEncoder.matches("654321", "hashedOtp")).thenReturn(true);
+
+        User savedUser = User.builder().id(1L).role(RoleEnum.DRIVER).build();
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.register(req));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Họ và tên là bắt buộc"));
+    }
+
+    @Test
+    @DisplayName("Register merchant fails when citizenId or bank info is missing")
+    void testRegisterMerchantMissingCitizenId() {
+        RegisterRequest req = new RegisterRequest();
+        req.setPhone("0987654321");
+        req.setEmail("merchant@example.com");
+        req.setPassword("Pass1234");
+        req.setRole(RoleEnum.MERCHANT);
+        req.setFullName("Tran Thi B");
+        req.setCitizenId("");
+        req.setOtpCode("112233");
+
+        when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
+        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+
+        OtpChallenge challenge = OtpChallenge.builder()
+                .phone(req.getPhone())
+                .purpose(OtpPurposeEnum.REGISTER)
+                .codeHash("hashedOtp")
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .attemptCount(0)
+                .build();
+        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(req.getPhone(), OtpPurposeEnum.REGISTER))
+                .thenReturn(Optional.of(challenge));
+        when(passwordEncoder.matches("112233", "hashedOtp")).thenReturn(true);
+
+        User savedUser = User.builder().id(2L).role(RoleEnum.MERCHANT).build();
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.register(req));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("CCCD/CMND là bắt buộc"));
+    }
 }
