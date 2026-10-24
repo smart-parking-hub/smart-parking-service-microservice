@@ -97,6 +97,22 @@ class MerchantWalletServiceImplTest {
     }
 
     @Test
+    @DisplayName("Hold withdrawal successfully reduces merchant balance")
+    void testHoldWithdrawalSuccess() {
+        Wallet wallet = Wallet.builder()
+                .merchantId(merchantId)
+                .balance(new BigDecimal("100000"))
+                .build();
+        when(walletRepository.findByMerchantIdForUpdate(merchantId)).thenReturn(Optional.of(wallet));
+
+        merchantWalletService.holdWithdrawal(merchantId, new BigDecimal("40000"), "Withdrawal hold");
+
+        assertEquals(new BigDecimal("60000"), wallet.getBalance());
+        verify(walletRepository, times(1)).save(wallet);
+        verify(ledgerRepository, times(1)).save(any());
+    }
+
+    @Test
     @DisplayName("Refund withdrawal successfully restores merchant balance")
     void testRefundWithdrawal() {
         Wallet wallet = Wallet.builder()
@@ -110,5 +126,49 @@ class MerchantWalletServiceImplTest {
         assertEquals(new BigDecimal("80000"), wallet.getBalance());
         verify(walletRepository, times(1)).save(wallet);
         verify(ledgerRepository, times(1)).save(any());
+    }
+
+    @Test
+    @DisplayName("Get wallet balance returns balance or zero when not found")
+    void testGetWalletBalance() {
+        when(walletRepository.findByMerchantId(merchantId))
+                .thenReturn(Optional.of(Wallet.builder().merchantId(merchantId).balance(new BigDecimal("75000")).build()));
+        assertEquals(new BigDecimal("75000"), merchantWalletService.getWalletBalance(merchantId));
+
+        when(walletRepository.findByMerchantId(999L)).thenReturn(Optional.empty());
+        assertEquals(BigDecimal.ZERO, merchantWalletService.getWalletBalance(999L));
+    }
+
+    @Test
+    @DisplayName("Get revenue summary calculates and returns correct totals")
+    void testGetRevenueSummary() {
+        when(paymentRepository.sumTotalRevenueByMerchantId(merchantId)).thenReturn(new BigDecimal("200000"));
+        when(ledgerRepository.sumPlatformFeeByMerchantId(merchantId)).thenReturn(new BigDecimal("20000"));
+        when(ledgerRepository.sumNetAmountByMerchantId(merchantId)).thenReturn(new BigDecimal("180000"));
+        when(walletRepository.findByMerchantId(merchantId))
+                .thenReturn(Optional.of(Wallet.builder().balance(new BigDecimal("180000")).build()));
+
+        var summary = merchantWalletService.getRevenueSummary(merchantId);
+
+        assertNotNull(summary);
+        assertEquals(new BigDecimal("200000"), summary.getTotalGrossRevenue());
+        assertEquals(new BigDecimal("20000"), summary.getTotalPlatformFee());
+        assertEquals(new BigDecimal("180000"), summary.getTotalNetRevenue());
+        assertEquals(new BigDecimal("180000"), summary.getCurrentWalletBalance());
+    }
+
+    @Test
+    @DisplayName("Credit settlement creates new wallet if one does not exist yet")
+    void testCreditSettlementCreatesNewWallet() {
+        when(walletRepository.findByMerchantIdForUpdate(merchantId)).thenReturn(Optional.empty());
+        Wallet newWallet = Wallet.builder().merchantId(merchantId).balance(BigDecimal.ZERO).build();
+        when(walletRepository.save(any(Wallet.class))).thenReturn(newWallet);
+
+        SettlementSplit split = merchantWalletService.creditSettlement(
+                merchantId, 2L, null, new BigDecimal("50000"), "First settlement"
+        );
+
+        assertNotNull(split);
+        verify(walletRepository, atLeastOnce()).save(any(Wallet.class));
     }
 }

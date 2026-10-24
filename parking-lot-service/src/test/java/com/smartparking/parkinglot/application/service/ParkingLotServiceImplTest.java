@@ -186,4 +186,56 @@ class ParkingLotServiceImplTest {
         assertEquals("Lot 1", response.getContent().get(0).getName());
         assertEquals(5, response.getContent().get(0).getAvailableCapacity());
     }
+
+    @Test
+    @DisplayName("Search parking lots with geo filter filters by radius")
+    void testSearchWithGeoFilter() {
+        ParkingLot nearLot = ParkingLot.builder()
+                .id(1L)
+                .name("Near Lot")
+                .latitude(new BigDecimal("10.780"))
+                .longitude(new BigDecimal("106.700"))
+                .status(ParkingLotStatusEnum.APPROVED)
+                .build();
+        ParkingLot farLot = ParkingLot.builder()
+                .id(2L)
+                .name("Far Lot")
+                .latitude(new BigDecimal("21.0285")) // Hanoi ~1150km away
+                .longitude(new BigDecimal("105.8542"))
+                .status(ParkingLotStatusEnum.APPROVED)
+                .build();
+
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(parkingLotRepository.findApprovedByVehicleType(eq(VehicleTypeEnum.CONTAINER), eq(true)))
+                .thenReturn(List.of(nearLot, farLot));
+        when(slotRepository.findByParkingLotIdAndVehicleType(1L, VehicleTypeEnum.CONTAINER))
+                .thenReturn(Optional.of(Slot.builder().availableCapacity(3).build()));
+
+        PageResponse<ParkingLotSearchResponse> response = parkingLotService.searchParkingLots(
+                VehicleTypeEnum.CONTAINER, true, 10.780, 106.700, 5.0, pageable
+        );
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals("Near Lot", response.getContent().get(0).getName());
+    }
+
+    @Test
+    @DisplayName("getMerchantParkingLots returns merchant lots")
+    void testGetMerchantParkingLots() {
+        ParkingLot lot = ParkingLot.builder()
+                .id(10L)
+                .merchantId(merchantUserId)
+                .status(ParkingLotStatusEnum.APPROVED)
+                .build();
+        when(parkingLotRepository.searchOwnedParkingLots(eq(merchantUserId), eq(ParkingLotStatusEnum.APPROVED), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(lot)));
+
+        PageResponse<MerchantParkingLotListResponse> res = parkingLotService.getMerchantParkingLots(
+                merchantUserId, ParkingLotStatusEnum.APPROVED, null, 0, 10, "createdAt,desc"
+        );
+
+        assertNotNull(res);
+        assertEquals(1, res.getContent().size());
+    }
 }

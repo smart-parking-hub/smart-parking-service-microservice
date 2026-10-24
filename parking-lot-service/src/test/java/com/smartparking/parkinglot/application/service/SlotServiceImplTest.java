@@ -228,4 +228,58 @@ class SlotServiceImplTest {
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("chỉ được cấu hình bảng giá một lần"));
     }
+
+    @Test
+    @DisplayName("Configure pricing rules successfully saves pricing rules")
+    void testConfigurePricingRulesSuccess() {
+        ParkingLot lot = ParkingLot.builder()
+                .id(parkingLotId)
+                .merchantId(merchantUserId)
+                .status(ParkingLotStatusEnum.APPROVED)
+                .build();
+        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(lot));
+
+        PricingRule rule = PricingRule.builder()
+                .id(1L)
+                .parkingLot(lot)
+                .vehicleType(VehicleTypeEnum.SEDAN_SUV)
+                .basePricePerHour(new BigDecimal("20000"))
+                .build();
+        when(pricingRuleRepository.findByParkingLotIdAndVehicleType(parkingLotId, VehicleTypeEnum.SEDAN_SUV))
+                .thenReturn(Optional.empty());
+        when(pricingRuleRepository.save(any(PricingRule.class))).thenReturn(rule);
+
+        PricingRuleRequest r1 = PricingRuleRequest.builder()
+                .vehicleType(VehicleTypeEnum.SEDAN_SUV)
+                .basePricePerHour(new BigDecimal("20000"))
+                .build();
+
+        List<PricingRuleDto> results = slotService.configurePricingRules(merchantUserId, parkingLotId, List.of(r1));
+        assertNotNull(results);
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    @DisplayName("Hold slot throws SLOT_NOT_AVAILABLE when slot is not configured")
+    void testHoldSlotNotConfigured() {
+        when(slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, VehicleTypeEnum.CONTAINER))
+                .thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () ->
+                slotService.holdSlot(parkingLotId, VehicleTypeEnum.CONTAINER, 123L));
+        assertEquals(ErrorCode.SLOT_NOT_AVAILABLE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("getSlots and getPricingRules return repository contents")
+    void testGetSlotsAndPricingRules() {
+        when(slotRepository.findByParkingLotId(parkingLotId)).thenReturn(List.of(Slot.builder().id(1L).vehicleType(VehicleTypeEnum.CONTAINER).build()));
+        when(pricingRuleRepository.findByParkingLotId(parkingLotId)).thenReturn(List.of(PricingRule.builder().id(2L).vehicleType(VehicleTypeEnum.CONTAINER).basePricePerHour(BigDecimal.TEN).build()));
+
+        List<SlotDto> slots = slotService.getSlots(parkingLotId);
+        List<PricingRuleDto> rules = slotService.getPricingRules(parkingLotId);
+
+        assertEquals(1, slots.size());
+        assertEquals(1, rules.size());
+    }
 }

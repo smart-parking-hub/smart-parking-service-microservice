@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import vn.payos.PayOS;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -137,5 +138,73 @@ class PaymentServiceImplTest {
     void testHandleWebhookEmpty() {
         AppException ex = assertThrows(AppException.class, () -> paymentService.handleWebhook("  "));
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Confirm demo deposit returns existing payment if already paid")
+    void testConfirmDemoDepositAlreadyPaid() {
+        when(paymentRepository.existsByBookingIdAndPaymentTypeAndStatus(
+                bookingId, PaymentTypeEnum.DEPOSIT, PaymentStatusEnum.SUCCESS)).thenReturn(true);
+
+        Payment existing = Payment.builder()
+                .id(1L)
+                .bookingId(bookingId)
+                .paymentType(PaymentTypeEnum.DEPOSIT)
+                .status(PaymentStatusEnum.SUCCESS)
+                .build();
+        when(paymentRepository.findByBookingId(bookingId)).thenReturn(List.of(existing));
+
+        PaymentDto dto = paymentService.confirmDemoDeposit(driverUserId, bookingId);
+
+        assertNotNull(dto);
+        assertEquals(bookingId, dto.getBookingId());
+        verify(paymentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Sync PayOS returns immediately if payment is already SUCCESS")
+    void testSyncPayOSPaymentAlreadySuccess() {
+        Payment paid = Payment.builder()
+                .id(1L)
+                .orderCode(111L)
+                .status(PaymentStatusEnum.SUCCESS)
+                .build();
+        when(paymentRepository.findByOrderCode(111L)).thenReturn(Optional.of(paid));
+
+        PaymentDto dto = paymentService.syncPayOSPayment(driverUserId, 111L, null, null);
+
+        assertNotNull(dto);
+        assertEquals(PaymentStatusEnum.SUCCESS, dto.getStatus());
+        verify(payOS, never()).paymentRequests();
+    }
+
+    @Test
+    @DisplayName("Sync PayOS finds pending payment by bookingId if orderCode is null")
+    void testSyncPayOSPaymentWithBookingId() {
+        Payment pending = Payment.builder()
+                .id(1L)
+                .bookingId(bookingId)
+                .status(PaymentStatusEnum.PENDING)
+                .orderCode(222L)
+                .build();
+        when(paymentRepository.findByBookingId(bookingId)).thenReturn(List.of(pending));
+
+        PaymentDto dto = paymentService.syncPayOSPayment(driverUserId, null, bookingId, null);
+
+        assertNotNull(dto);
+        assertEquals(PaymentStatusEnum.PENDING, dto.getStatus());
+    }
+
+    @Test
+    @DisplayName("getMyPayments returns paginated list of driver payments")
+    void testGetMyPayments() {
+        Payment p = Payment.builder().id(1L).driverId(driverUserId).build();
+        when(paymentRepository.findByDriverId(eq(driverUserId), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
+
+        var res = paymentService.getMyPayments(driverUserId, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertNotNull(res);
+        assertEquals(1, res.getContent().size());
     }
 }

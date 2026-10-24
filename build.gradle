@@ -67,6 +67,14 @@ subprojects {
     sonar {
         properties {
             property "sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory.dir('reports/jacoco/test/jacocoTestReport.xml').get().asFile.absolutePath}"
+            property "sonar.coverage.exclusions", [
+                "**/config/**",
+                "**/*Application.java",
+                "**/dto/**",
+                "**/model/**",
+                "**/enums/**",
+                "**/infrastructure/security/AuthenticatedUser.java"
+            ].join(",")
         }
     }
 
@@ -87,6 +95,14 @@ sonar {
             property "sonar.token", token
             property "sonar.login", token
         }
+        property "sonar.coverage.exclusions", [
+            "**/config/**",
+            "**/*Application.java",
+            "**/dto/**",
+            "**/model/**",
+            "**/enums/**",
+            "**/infrastructure/security/AuthenticatedUser.java"
+        ].join(",")
         property "sonar.sourceEncoding", "UTF-8"
     }
 }
