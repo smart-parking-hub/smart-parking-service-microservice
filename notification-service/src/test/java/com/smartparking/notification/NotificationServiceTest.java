@@ -5,7 +5,6 @@ import com.smartparking.common.dto.PageResponse;
 import com.smartparking.common.enums.NotificationTypeEnum;
 import com.smartparking.notification.application.dto.NotificationDto;
 import com.smartparking.notification.application.service.NotificationService;
-import com.smartparking.notification.domain.repository.NotificationRepository;
 import com.smartparking.notification.domain.repository.ProcessedEventRepository;
 import com.smartparking.notification.infrastructure.messaging.BookingEventListener;
 import com.smartparking.notification.infrastructure.messaging.PaymentEventListener;
@@ -27,9 +26,6 @@ public class NotificationServiceTest {
 
     @Autowired
     private NotificationService notificationService;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
 
     @Autowired
     private ProcessedEventRepository processedEventRepository;

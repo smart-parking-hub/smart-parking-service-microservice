@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.5' apply false
     id 'io.spring.dependency-management' version '1.1.6' apply false
+    id 'org.sonarqube' version '6.0.1.5171'
+    id 'jacoco'
 }
 
 allprojects {
@@ -42,8 +44,30 @@ subprojects {
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
     tasks.named('test') {
         useJUnitPlatform()
+        finalizedBy 'jacocoTestReport'
+    }
+
+    tasks.named('jacocoTestReport') {
+        dependsOn 'test'
+        reports {
+            xml.required = true
+            csv.required = false
+            html.required = true
+        }
+    }
+
+    sonar {
+        properties {
+            property "sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory.dir('reports/jacoco/test/jacocoTestReport.xml').get().asFile.absolutePath}"
+        }
     }
 
     pluginManager.withPlugin('org.springframework.boot') {
@@ -52,3 +76,18 @@ subprojects {
         }
     }
 }
+
+sonar {
+    properties {
+        property "sonar.projectKey", "SmartParkingHub"
+        property "sonar.projectName", "SmartParkingHub Microservices"
+        property "sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "http://localhost:9000"
+        def token = System.getenv("SONAR_TOKEN") ?: (project.hasProperty("sonar.token") ? project.property("sonar.token") : "squ_84023b026d3de2492660f253645160fa27ca8f90")
+        if (token) {
+            property "sonar.token", token
+            property "sonar.login", token
+        }
+        property "sonar.sourceEncoding", "UTF-8"
+    }
+}
+

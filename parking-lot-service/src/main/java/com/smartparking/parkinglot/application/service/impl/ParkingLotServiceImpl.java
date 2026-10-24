@@ -217,7 +217,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 .build();
     }
 
-    static Double distanceKm(double lat, double lng, BigDecimal lotLat, BigDecimal lotLng) {
+    public static Double distanceKm(double lat, double lng, BigDecimal lotLat, BigDecimal lotLng) {
         if (lotLat == null || lotLng == null) {
             return null;
         }
