@@ -3,7 +3,6 @@ package com.smartparking.booking.infrastructure.messaging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.common.enums.BookingStatusEnum;
 import com.smartparking.common.event.PaymentEvent;
-import com.smartparking.booking.domain.model.Booking;
 import com.smartparking.booking.domain.repository.BookingRepository;
 import com.smartparking.booking.infrastructure.client.ParkingLotClient;
 import com.smartparking.booking.infrastructure.client.dto.SlotHoldRequest;

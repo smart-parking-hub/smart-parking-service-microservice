@@ -8,13 +8,10 @@ import com.smartparking.parkinglot.application.service.ParkingLotService;
 import com.smartparking.parkinglot.application.service.SlotService;
 import com.smartparking.parkinglot.domain.model.ParkingLot;
 import com.smartparking.parkinglot.domain.repository.ParkingLotRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
