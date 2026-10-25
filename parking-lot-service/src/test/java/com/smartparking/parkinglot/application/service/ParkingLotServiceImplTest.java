@@ -238,4 +238,71 @@ class ParkingLotServiceImplTest {
         assertNotNull(res);
         assertEquals(1, res.getContent().size());
     }
+
+    @Test
+    @DisplayName("getAllParkingLotsForAdmin returns page of all lots")
+    void testGetAllParkingLotsForAdmin() {
+        ParkingLot lot = ParkingLot.builder().id(10L).name("Lot Admin").merchantId(1L).build();
+        when(parkingLotRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(lot)));
+
+        var res = parkingLotService.getAllParkingLotsForAdmin(PageRequest.of(0, 10));
+
+        assertNotNull(res);
+        assertEquals(1, res.getContent().size());
+        assertEquals("Lot Admin", res.getContent().get(0).getName());
+    }
+
+    @Test
+    @DisplayName("getParkingLotDetailForAdmin returns full detail with slots and pricing")
+    void testGetParkingLotDetailForAdmin() {
+        ParkingLot lot = ParkingLot.builder().id(10L).merchantId(1L).name("Detail Lot").build();
+        when(parkingLotRepository.findById(10L)).thenReturn(Optional.of(lot));
+        when(slotRepository.findByParkingLotId(10L)).thenReturn(List.of());
+        when(pricingRuleRepository.findByParkingLotId(10L)).thenReturn(List.of());
+        when(parkingLotImageRepository.findByParkingLotIdOrderByCoverDescCreatedAtAsc(10L)).thenReturn(List.of());
+
+        var res = parkingLotService.getParkingLotDetailForAdmin(10L);
+
+        assertNotNull(res);
+        assertEquals("Detail Lot", res.getName());
+    }
+
+    @Test
+    @DisplayName("approveParkingLot updates status to APPROVED")
+    void testApproveParkingLot() {
+        ParkingLot lot = ParkingLot.builder().id(10L).status(ParkingLotStatusEnum.PENDING_APPROVAL).build();
+        when(parkingLotRepository.findById(10L)).thenReturn(Optional.of(lot));
+
+        parkingLotService.approveParkingLot(1L, 10L, "Duyệt");
+
+        assertEquals(ParkingLotStatusEnum.APPROVED, lot.getStatus());
+        assertEquals("Duyệt", lot.getReviewReason());
+        verify(parkingLotRepository, times(1)).save(lot);
+    }
+
+    @Test
+    @DisplayName("rejectParkingLot updates status to REJECTED")
+    void testRejectParkingLot() {
+        ParkingLot lot = ParkingLot.builder().id(10L).status(ParkingLotStatusEnum.PENDING_APPROVAL).build();
+        when(parkingLotRepository.findById(10L)).thenReturn(Optional.of(lot));
+
+        parkingLotService.rejectParkingLot(1L, 10L, "Từ chối");
+
+        assertEquals(ParkingLotStatusEnum.REJECTED, lot.getStatus());
+        assertEquals("Từ chối", lot.getReviewReason());
+        verify(parkingLotRepository, times(1)).save(lot);
+    }
+
+    @Test
+    @DisplayName("requestParkingLotChanges updates status to CHANGES_REQUESTED")
+    void testRequestParkingLotChanges() {
+        ParkingLot lot = ParkingLot.builder().id(10L).status(ParkingLotStatusEnum.PENDING_APPROVAL).build();
+        when(parkingLotRepository.findById(10L)).thenReturn(Optional.of(lot));
+
+        parkingLotService.requestParkingLotChanges(1L, 10L, "Bổ sung ảnh");
+
+        assertEquals(ParkingLotStatusEnum.CHANGES_REQUESTED, lot.getStatus());
+        assertEquals("Bổ sung ảnh", lot.getReviewReason());
+        verify(parkingLotRepository, times(1)).save(lot);
+    }
 }

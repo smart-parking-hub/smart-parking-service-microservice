@@ -171,4 +171,24 @@ class WithdrawalServiceImplTest {
         assertEquals(1, page.getContent().size());
         assertEquals(new BigDecimal("80000"), page.getContent().get(0).getAvailableBalance());
     }
+
+    @Test
+    @DisplayName("getAllWithdrawalsForAdmin returns all withdrawal requests")
+    void testGetAllWithdrawalsForAdmin() {
+        WithdrawalRequest req = WithdrawalRequest.builder()
+                .id(withdrawalId)
+                .merchantId(merchantUserId)
+                .amount(new BigDecimal("30000"))
+                .status(WithdrawalStatusEnum.PENDING)
+                .build();
+        when(merchantWalletService.getWalletBalance(merchantUserId)).thenReturn(new BigDecimal("70000"));
+        when(withdrawalRequestRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(req), PageRequest.of(0, 10), 1));
+
+        var page = withdrawalService.getAllWithdrawalsForAdmin(PageRequest.of(0, 10));
+
+        assertNotNull(page);
+        assertEquals(1, page.getContent().size());
+        assertEquals(new BigDecimal("70000"), page.getContent().get(0).getAvailableBalance());
+    }
 }

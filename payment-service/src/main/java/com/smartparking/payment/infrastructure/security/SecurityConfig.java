@@ -28,6 +28,8 @@ public class SecurityConfig {
                 auth.requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                     .requestMatchers("/api/v1/payments/webhook").permitAll()
                     .requestMatchers("/api/v1/internal/**").permitAll()
+                    .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/v1/merchant/**").hasRole("MERCHANT")
                     .requestMatchers("/api/v1/withdrawals/**").hasRole("MERCHANT")
                     .requestMatchers("/api/v1/disputes/merchant").hasRole("MERCHANT")
                     .requestMatchers("/api/v1/disputes/admin/**").hasRole("ADMIN")

@@ -11,7 +11,7 @@ spring:
         - id: identity-service
           uri: ${IDENTITY_SERVICE_URL:http://localhost:8081}
           predicates:
-            - Path=/api/v1/auth/**, /api/auth/**, /api/v1/users/**, /api/users/**, /api/v1/drivers/**, /api/drivers/**, /api/v1/merchants/**, /api/merchants/**, /api/v1/vehicles/**, /api/vehicles/**
+            - Path=/api/v1/auth/**, /api/auth/**, /api/v1/users/**, /api/users/**, /api/v1/drivers/**, /api/drivers/**, /api/v1/merchants/**, /api/merchants/**, /api/v1/merchant/profile/**, /api/merchant/profile/**, /api/v1/vehicles, /api/v1/vehicles/**, /api/vehicles, /api/vehicles/**, /api/v1/admin/users, /api/v1/admin/users/**, /api/admin/users, /api/admin/users/**, /api/v1/admin/audit-logs, /api/v1/admin/audit-logs/**, /api/admin/audit-logs, /api/admin/audit-logs/**
           filters:
             - StripPrefix=0
 
@@ -19,7 +19,7 @@ spring:
         - id: parking-lot-service
           uri: ${PARKING_LOT_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/v1/parking-lots/**, /api/parking-lots/**, /api/v1/slots/**, /api/slots/**, /api/v1/pricing-rules/**, /api/pricing-rules/**
+            - Path=/api/v1/parking-lots, /api/v1/parking-lots/**, /api/parking-lots, /api/parking-lots/**, /api/v1/merchant/parking-lots, /api/v1/merchant/parking-lots/**, /api/merchant/parking-lots, /api/merchant/parking-lots/**, /api/v1/slots/**, /api/slots/**, /api/v1/pricing-rules/**, /api/pricing-rules/**, /api/v1/admin/parking-lots, /api/v1/admin/parking-lots/**, /api/admin/parking-lots, /api/admin/parking-lots/**
           filters:
             - StripPrefix=0
 
@@ -27,7 +27,7 @@ spring:
         - id: booking-service
           uri: ${BOOKING_SERVICE_URL:http://localhost:8083}
           predicates:
-            - Path=/api/v1/bookings/**, /api/bookings/**, /api/v1/queues/**, /api/queues/**, /api/v1/reviews/**, /api/reviews/**, /api/v1/merchant/check-in, /api/merchant/check-in, /api/v1/merchant/check-out, /api/merchant/check-out, /api/v1/merchant/bookings, /api/merchant/bookings
+            - Path=/api/v1/bookings, /api/v1/bookings/**, /api/bookings, /api/bookings/**, /api/v1/queues, /api/v1/queues/**, /api/queues, /api/queues/**, /api/v1/reviews, /api/v1/reviews/**, /api/reviews, /api/reviews/**, /api/v1/merchant/check-in/**, /api/merchant/check-in/**, /api/v1/merchant/check-out/**, /api/merchant/check-out/**, /api/v1/merchant/bookings, /api/v1/merchant/bookings/**
           filters:
             - StripPrefix=0
 
@@ -35,7 +35,7 @@ spring:
         - id: payment-service
           uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
           predicates:
-            - Path=/api/v1/payments/**, /api/payments/**, /api/v1/withdrawals/**, /api/withdrawals/**, /api/v1/disputes/**, /api/disputes/**, /api/v1/merchant/revenue, /api/merchant/revenue
+            - Path=/api/v1/payments, /api/v1/payments/**, /api/payments, /api/payments/**, /api/v1/withdrawals, /api/v1/withdrawals/**, /api/withdrawals, /api/withdrawals/**, /api/v1/disputes, /api/v1/disputes/**, /api/disputes, /api/disputes/**, /api/v1/merchant/revenue, /api/v1/merchant/revenue/**, /api/merchant/revenue, /api/merchant/revenue/**, /api/v1/admin/withdrawals, /api/v1/admin/withdrawals/**, /api/admin/withdrawals, /api/admin/withdrawals/**, /api/v1/admin/transactions, /api/v1/admin/transactions/**, /api/admin/transactions, /api/admin/transactions/**, /api/v1/admin/dashboard, /api/v1/admin/dashboard/**, /api/admin/dashboard, /api/admin/dashboard/**
           filters:
             - StripPrefix=0
 
@@ -43,7 +43,7 @@ spring:
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
           predicates:
-            - Path=/api/v1/notifications/**, /api/notifications/**
+            - Path=/api/v1/notifications, /api/v1/notifications/**, /api/notifications, /api/notifications/**
           filters:
             - StripPrefix=0
 

@@ -24,6 +24,10 @@ public class WithdrawalResponse {
     private LocalDateTime processedAt;
     private Long processedByUserId;
     private String decisionReason;
+    private String merchantName;
+    private String merchantPhone;
+    private String bankName;
+    private String maskedBankAccount;
 
     public static WithdrawalResponse fromEntity(WithdrawalRequest request, BigDecimal currentBalance) {
         return WithdrawalResponse.builder()
@@ -36,6 +40,10 @@ public class WithdrawalResponse {
                 .processedAt(request.getProcessedAt())
                 .processedByUserId(request.getProcessedBy())
                 .decisionReason(request.getDecisionReason())
+                .merchantName("Merchant #" + request.getMerchantId())
+                .merchantPhone("")
+                .bankName("Ngân hàng liên kết")
+                .maskedBankAccount("****")
                 .build();
     }
 }

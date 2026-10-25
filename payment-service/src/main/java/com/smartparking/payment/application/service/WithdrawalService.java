@@ -9,4 +9,5 @@ public interface WithdrawalService {
     WithdrawalResponse requestWithdrawal(Long merchantUserId, CreateWithdrawalRequestDto request);
     PageResponse<WithdrawalResponse> getMyWithdrawals(Long merchantUserId, Pageable pageable);
     WithdrawalResponse processWithdrawal(Long adminUserId, Long withdrawalId, boolean approved, String reason);
+    PageResponse<WithdrawalResponse> getAllWithdrawalsForAdmin(Pageable pageable);
 }
