@@ -24,6 +24,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -174,6 +176,62 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         return toDetail(getOwnedParkingLot(merchantUserId, id));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<AdminParkingLotResponse> getAllParkingLotsForAdmin(Pageable pageable) {
+        Pageable safe = Pageables.sanitize(pageable);
+        Page<ParkingLot> page = parkingLotRepository.findAll(safe);
+        return new PageResponse<>(page.map(AdminParkingLotResponse::from));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminParkingLotDetailResponse getParkingLotDetailForAdmin(Long id) {
+        ParkingLot lot = parkingLotRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
+        List<SlotDto> slots = slotRepository.findByParkingLotId(lot.getId()).stream().map(SlotDto::fromEntity).toList();
+        List<PricingRuleDto> pricing = pricingRuleRepository.findByParkingLotId(lot.getId()).stream().map(PricingRuleDto::fromEntity).toList();
+        List<ParkingLotImageResponse> images = parkingLotImageRepository.findByParkingLotIdOrderByCoverDescCreatedAtAsc(lot.getId())
+                .stream().map(ParkingLotImageResponse::fromEntity).toList();
+        return AdminParkingLotDetailResponse.from(lot, slots, pricing, images);
+    }
+
+    @Override
+    @Transactional
+    public void approveParkingLot(Long adminUserId, Long id, String reason) {
+        ParkingLot lot = parkingLotRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
+        lot.setStatus(ParkingLotStatusEnum.APPROVED);
+        lot.setReviewReason(reason);
+        lot.setReviewedBy(adminUserId);
+        lot.setReviewedAt(LocalDateTime.now());
+        parkingLotRepository.save(lot);
+    }
+
+    @Override
+    @Transactional
+    public void rejectParkingLot(Long adminUserId, Long id, String reason) {
+        ParkingLot lot = parkingLotRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
+        lot.setStatus(ParkingLotStatusEnum.REJECTED);
+        lot.setReviewReason(reason);
+        lot.setReviewedBy(adminUserId);
+        lot.setReviewedAt(LocalDateTime.now());
+        parkingLotRepository.save(lot);
+    }
+
+    @Override
+    @Transactional
+    public void requestParkingLotChanges(Long adminUserId, Long id, String reason) {
+        ParkingLot lot = parkingLotRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
+        lot.setStatus(ParkingLotStatusEnum.CHANGES_REQUESTED);
+        lot.setReviewReason(reason);
+        lot.setReviewedBy(adminUserId);
+        lot.setReviewedAt(LocalDateTime.now());
+        parkingLotRepository.save(lot);
+    }
+
     private ParkingLot getOwnedParkingLot(Long merchantUserId, Long id) {
         ParkingLot lot = parkingLotRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
@@ -228,6 +286,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return 6371.0 * c;
+        double distance = 6371.0 * c;
+        return Math.round(distance * 100.0) / 100.0;
     }
 }

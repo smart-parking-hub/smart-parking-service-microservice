@@ -1,5 +1,6 @@
 package com.smartparking.payment.domain.repository;
 
+import com.smartparking.common.enums.DisputeStatusEnum;
 import com.smartparking.payment.domain.model.Dispute;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,4 +19,6 @@ public interface DisputeRepository extends JpaRepository<Dispute, Long> {
     Optional<Dispute> findByBookingId(Long bookingId);
 
     Page<Dispute> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    long countByStatus(DisputeStatusEnum status);
 }

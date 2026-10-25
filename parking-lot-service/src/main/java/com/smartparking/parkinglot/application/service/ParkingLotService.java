@@ -25,4 +25,9 @@ public interface ParkingLotService {
             Pageable pageable);
     ParkingLotDto getDetail(Long id);
     ParkingLotDto getMerchantDetail(Long merchantUserId, Long id);
+    PageResponse<AdminParkingLotResponse> getAllParkingLotsForAdmin(Pageable pageable);
+    AdminParkingLotDetailResponse getParkingLotDetailForAdmin(Long id);
+    void approveParkingLot(Long adminUserId, Long id, String reason);
+    void rejectParkingLot(Long adminUserId, Long id, String reason);
+    void requestParkingLotChanges(Long adminUserId, Long id, String reason);
 }

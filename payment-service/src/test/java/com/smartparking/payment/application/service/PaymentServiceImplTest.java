@@ -11,7 +11,10 @@ import com.smartparking.payment.application.dto.PaymentDto;
 import com.smartparking.payment.application.service.impl.PaymentServiceImpl;
 import com.smartparking.payment.config.PayOSConfig;
 import com.smartparking.payment.domain.model.Payment;
+import com.smartparking.payment.domain.repository.DisputeRepository;
 import com.smartparking.payment.domain.repository.PaymentRepository;
+import com.smartparking.payment.domain.repository.WalletLedgerEntryRepository;
+import com.smartparking.payment.domain.repository.WithdrawalRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,6 +53,15 @@ class PaymentServiceImplTest {
 
     @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private WithdrawalRequestRepository withdrawalRequestRepository;
+
+    @Mock
+    private DisputeRepository disputeRepository;
+
+    @Mock
+    private WalletLedgerEntryRepository walletLedgerEntryRepository;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;
@@ -206,5 +218,61 @@ class PaymentServiceImplTest {
 
         assertNotNull(res);
         assertEquals(1, res.getContent().size());
+    }
+
+    @Test
+    @DisplayName("getAllTransactionsForAdmin returns page of admin transactions")
+    void testGetAllTransactionsForAdmin() {
+        Payment p = Payment.builder().id(1L).bookingId(10L).driverId(20L).merchantId(30L)
+                .amount(new BigDecimal("50000")).gateway(PaymentGatewayEnum.PAYOS)
+                .paymentType(PaymentTypeEnum.FINAL_PAYMENT).status(PaymentStatusEnum.SUCCESS).build();
+        when(paymentRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
+
+        var res = paymentService.getAllTransactionsForAdmin(org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertNotNull(res);
+        assertEquals(1, res.getContent().size());
+        assertEquals("BK-10", res.getContent().get(0).getBookingCode());
+    }
+
+    @Test
+    @DisplayName("getTransactionForAdmin returns transaction when found")
+    void testGetTransactionForAdmin() {
+        Payment p = Payment.builder().id(1L).bookingId(10L).driverId(20L).merchantId(30L)
+                .amount(new BigDecimal("50000")).gateway(PaymentGatewayEnum.PAYOS)
+                .paymentType(PaymentTypeEnum.FINAL_PAYMENT).status(PaymentStatusEnum.SUCCESS).build();
+        when(paymentRepository.findById(1L)).thenReturn(Optional.of(p));
+
+        var res = paymentService.getTransactionForAdmin(1L);
+
+        assertNotNull(res);
+        assertEquals(1L, res.getId());
+    }
+
+    @Test
+    @DisplayName("getTransactionForAdmin throws NOT_FOUND when payment does not exist")
+    void testGetTransactionForAdminNotFound() {
+        when(paymentRepository.findById(999L)).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () -> paymentService.getTransactionForAdmin(999L));
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("getDashboardStats aggregates counts and revenue")
+    void testGetDashboardStats() {
+        when(paymentRepository.count()).thenReturn(100L);
+        when(withdrawalRequestRepository.countByStatus(any())).thenReturn(5L);
+        when(disputeRepository.countByStatus(any())).thenReturn(2L);
+        when(walletLedgerEntryRepository.sumTotalPlatformFee()).thenReturn(new BigDecimal("1500000"));
+
+        var stats = paymentService.getDashboardStats();
+
+        assertNotNull(stats);
+        assertEquals(100L, stats.getTotalBookings());
+        assertEquals(5L, stats.getPendingWithdrawals());
+        assertEquals(2L, stats.getOpenDisputes());
+        assertEquals(1500000.0, stats.getPlatformRevenue());
     }
 }

@@ -7,6 +7,7 @@ import com.smartparking.identity.application.dto.UserProfileDto;
 import com.smartparking.identity.application.service.impl.UserServiceImpl;
 import com.smartparking.identity.domain.model.Driver;
 import com.smartparking.identity.domain.model.User;
+import com.smartparking.identity.domain.repository.AuditLogRepository;
 import com.smartparking.identity.domain.repository.DriverRepository;
 import com.smartparking.identity.domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +35,9 @@ class UserServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuditLogRepository auditLogRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -139,5 +143,160 @@ class UserServiceImplTest {
         AppException ex = assertThrows(AppException.class, () -> userService.changePassword(userId, req));
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("getAllUsersForAdmin returns page of admin users")
+    void testGetAllUsersForAdmin() {
+        User user = User.builder()
+                .id(1L)
+                .phone("0987654321")
+                .email("admin@test.com")
+                .role(com.smartparking.common.enums.RoleEnum.ADMIN)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .build();
+        org.springframework.data.domain.Page<User> page = new org.springframework.data.domain.PageImpl<>(java.util.List.of(user));
+        when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+
+        com.smartparking.common.dto.PageResponse<com.smartparking.identity.application.dto.AdminUserResponse> res =
+                userService.getAllUsersForAdmin(org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertNotNull(res);
+        assertEquals(1, res.getContent().size());
+        assertEquals("0987654321", res.getContent().get(0).getPhone());
+    }
+
+    @Test
+    @DisplayName("getUserDetailForAdmin returns detail when found")
+    void testGetUserDetailForAdmin() {
+        User user = User.builder()
+                .id(2L)
+                .phone("0912345678")
+                .fullName("Nguyen Van A")
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        com.smartparking.identity.application.dto.AdminUserDetailResponse res = userService.getUserDetailForAdmin(2L);
+        assertNotNull(res);
+        assertEquals("Nguyen Van A", res.getFullName());
+    }
+
+    @Test
+    @DisplayName("banUser successfully bans an active user")
+    void testBanUserSuccess() {
+        User user = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        userService.banUser(1L, 2L, "Spam");
+
+        assertEquals(com.smartparking.common.enums.UserStatusEnum.BANNED, user.getStatus());
+        assertEquals("Spam", user.getStatusReason());
+        verify(userRepository).save(user);
+        verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("banUser throws when admin bans self")
+    void testBanUserSelf() {
+        AppException ex = assertThrows(AppException.class, () -> userService.banUser(1L, 1L, "Self"));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("banUser throws when target is another admin")
+    void testBanUserOtherAdmin() {
+        User targetAdmin = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.ADMIN)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(targetAdmin));
+
+        AppException ex = assertThrows(AppException.class, () -> userService.banUser(1L, 2L, "Admin ban"));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("banUser throws when target already banned")
+    void testBanUserAlreadyBanned() {
+        User banned = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.BANNED)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(banned));
+
+        AppException ex = assertThrows(AppException.class, () -> userService.banUser(1L, 2L, "Already"));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("unbanUser successfully unbans a banned user")
+    void testUnbanUserSuccess() {
+        User user = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.BANNED)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        userService.unbanUser(1L, 2L, "Verified");
+
+        assertEquals(com.smartparking.common.enums.UserStatusEnum.ACTIVE, user.getStatus());
+        assertEquals("Verified", user.getStatusReason());
+        verify(userRepository).save(user);
+        verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("unbanUser throws when user is already active")
+    void testUnbanUserAlreadyActive() {
+        User user = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        AppException ex = assertThrows(AppException.class, () -> userService.unbanUser(1L, 2L, "Active"));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("warnUser writes audit log for warning")
+    void testWarnUserSuccess() {
+        User user = User.builder().id(2L).build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        userService.warnUser(1L, 2L, "Warning note");
+        verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("getAuditLogs returns page of audit logs")
+    void testGetAuditLogs() {
+        com.smartparking.identity.domain.model.AuditLog log = com.smartparking.identity.domain.model.AuditLog.builder()
+                .id(1L)
+                .actorUserId(1L)
+                .action("BAN_USER")
+                .targetType("User")
+                .targetId(2L)
+                .build();
+        org.springframework.data.domain.Page<com.smartparking.identity.domain.model.AuditLog> page =
+                new org.springframework.data.domain.PageImpl<>(java.util.List.of(log));
+        when(auditLogRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+
+        com.smartparking.common.dto.PageResponse<com.smartparking.identity.application.dto.AuditLogResponse> res =
+                userService.getAuditLogs(org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertNotNull(res);
+        assertEquals(1, res.getContent().size());
+        assertEquals("BAN_USER", res.getContent().get(0).getAction());
     }
 }

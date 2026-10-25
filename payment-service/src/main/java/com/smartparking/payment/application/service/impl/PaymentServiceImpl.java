@@ -30,6 +30,14 @@ import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 import vn.payos.model.webhooks.Webhook;
 import vn.payos.model.webhooks.WebhookData;
 
+import com.smartparking.common.enums.DisputeStatusEnum;
+import com.smartparking.common.enums.WithdrawalStatusEnum;
+import com.smartparking.payment.application.dto.AdminDashboardResponse;
+import com.smartparking.payment.application.dto.AdminTransactionResponse;
+import com.smartparking.payment.domain.repository.DisputeRepository;
+import com.smartparking.payment.domain.repository.WalletLedgerEntryRepository;
+import com.smartparking.payment.domain.repository.WithdrawalRequestRepository;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -44,6 +52,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final MerchantWalletService merchantWalletService;
     private final OutboxPublisherService outboxPublisherService;
     private final ObjectMapper objectMapper;
+    private final WithdrawalRequestRepository withdrawalRequestRepository;
+    private final DisputeRepository disputeRepository;
+    private final WalletLedgerEntryRepository walletLedgerEntryRepository;
 
     @Value("${app.demo-payment-enabled:true}")
     private boolean demoPaymentEnabled;
@@ -241,5 +252,43 @@ public class PaymentServiceImpl implements PaymentService {
         }
         String sep = url.contains("?") ? "&" : "?";
         return url + sep + key + "=" + value;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<AdminTransactionResponse> getAllTransactionsForAdmin(Pageable pageable) {
+        Page<AdminTransactionResponse> page = paymentRepository.findAll(pageable)
+                .map(AdminTransactionResponse::from);
+        return new PageResponse<>(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminTransactionResponse getTransactionForAdmin(Long id) {
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Giao dịch không tồn tại"));
+        return AdminTransactionResponse.from(payment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminDashboardResponse getDashboardStats() {
+        long totalTransactions = paymentRepository.count();
+        long pendingWithdrawals = withdrawalRequestRepository.countByStatus(WithdrawalStatusEnum.PENDING);
+        long openDisputes = disputeRepository.countByStatus(DisputeStatusEnum.PENDING);
+        BigDecimal feeSum = walletLedgerEntryRepository.sumTotalPlatformFee();
+        double platformRevenue = feeSum != null ? feeSum.doubleValue() : 0.0;
+
+        return AdminDashboardResponse.builder()
+                .totalUsers(0)
+                .totalDrivers(0)
+                .totalMerchants(0)
+                .totalParkingLots(0)
+                .pendingParkingLots(0)
+                .totalBookings(totalTransactions)
+                .pendingWithdrawals(pendingWithdrawals)
+                .openDisputes(openDisputes)
+                .platformRevenue(platformRevenue)
+                .build();
     }
 }

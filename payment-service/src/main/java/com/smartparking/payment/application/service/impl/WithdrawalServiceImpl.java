@@ -98,4 +98,15 @@ public class WithdrawalServiceImpl implements WithdrawalService {
         BigDecimal currentBalance = merchantWalletService.getWalletBalance(withdrawal.getMerchantId());
         return WithdrawalResponse.fromEntity(saved, currentBalance);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<WithdrawalResponse> getAllWithdrawalsForAdmin(Pageable pageable) {
+        Page<WithdrawalResponse> page = withdrawalRequestRepository.findAll(pageable)
+                .map(req -> {
+                    BigDecimal balance = merchantWalletService.getWalletBalance(req.getMerchantId());
+                    return WithdrawalResponse.fromEntity(req, balance);
+                });
+        return new PageResponse<>(page);
+    }
 }
