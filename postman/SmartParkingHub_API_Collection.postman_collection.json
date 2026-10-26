@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "2caab8b0-4d48-4ec2-8c84-14d8680b5f80",
+    "_postman_id": "991086dc-b374-4e2f-a92a-40aa80d199b5",
     "name": "SmartParkingHub API Collection",
     "description": "Bộ sưu tập kiểm thử toàn diện tất cả các Controller API của hệ thống Microservice SmartParkingHub. Kết nối qua Central API Gateway (:8088).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -99,7 +99,7 @@
       "item": [
         {
           "name": "01. Login as Admin",
-          "id": "86391d02-0205-434c-a899-2486fd004b3e",
+          "id": "a9079ca7-e7ad-4318-8ec0-48828697fffd",
           "request": {
             "method": "POST",
             "header": [
@@ -126,13 +126,13 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập tài khoản System Admin mẫu (admin@smartparking.com / password123)",
+            "description": "Đăng nhập tài khoản System Admin mẫu (SĐT: 0903829145 / password123)",
             "auth": {
               "type": "noauth"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@smartparking.com\",\n  \"password\": \"password123\"\n}",
+              "raw": "{\n  \"phone\": \"0903829145\",\n  \"password\": \"password123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -166,7 +166,7 @@
         },
         {
           "name": "02. Login as Merchant",
-          "id": "2e22270e-3973-4737-aaf4-436d91c302c4",
+          "id": "a3a30b2f-3672-448d-88eb-2b3c12158b3d",
           "request": {
             "method": "POST",
             "header": [
@@ -193,13 +193,13 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập tài khoản Chủ bãi xe mẫu (thanh.dongsaigon@gmail.com / password123)",
+            "description": "Đăng nhập tài khoản Chủ bãi xe mẫu (SĐT: 0908123456 / password123)",
             "auth": {
               "type": "noauth"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"thanh.dongsaigon@gmail.com\",\n  \"password\": \"password123\"\n}",
+              "raw": "{\n  \"phone\": \"0908123456\",\n  \"password\": \"password123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -230,7 +230,7 @@
         },
         {
           "name": "03. Login as Driver",
-          "id": "eaa34b3b-9164-4b91-8e63-5e570506314a",
+          "id": "902d8014-e17f-401a-9ba4-a1471b5faf25",
           "request": {
             "method": "POST",
             "header": [
@@ -257,13 +257,13 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập tài khoản Tài xế mẫu (hung.nguyen@smartparking.com / password123)",
+            "description": "Đăng nhập tài khoản Tài xế mẫu (SĐT: 0909128374 / password123)",
             "auth": {
               "type": "noauth"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"hung.nguyen@smartparking.com\",\n  \"password\": \"password123\"\n}",
+              "raw": "{\n  \"phone\": \"0909128374\",\n  \"password\": \"password123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -294,7 +294,7 @@
         },
         {
           "name": "04. Send Register OTP",
-          "id": "d6275528-695f-4e1d-b4fe-06fe49a9c978",
+          "id": "13d07bc5-c477-4a02-9b2a-18d1bc625ef8",
           "request": {
             "method": "POST",
             "header": [
@@ -340,7 +340,7 @@
         },
         {
           "name": "05. Register New Account",
-          "id": "f3e59b3e-930f-4e5c-be6c-bb71bdb7d722",
+          "id": "590a7ca9-306f-4439-b1f9-e0416a2ad989",
           "request": {
             "method": "POST",
             "header": [
@@ -385,7 +385,7 @@
         },
         {
           "name": "06. Send Forgot Password OTP",
-          "id": "5b41cd6d-bcd9-464c-8762-dfe9d349cfa8",
+          "id": "377dc540-8869-4153-830f-5ba73bdaa662",
           "request": {
             "method": "POST",
             "header": [
@@ -431,7 +431,7 @@
         },
         {
           "name": "07. Reset Password with OTP",
-          "id": "777ee5fb-fc7e-44c3-a7b4-cb15506ed156",
+          "id": "655285a6-72a8-4b9d-bdd9-cbecb73257eb",
           "request": {
             "method": "POST",
             "header": [
@@ -482,7 +482,7 @@
       "item": [
         {
           "name": "01. Get My Profile",
-          "id": "f8e571e7-9ec2-4cbf-b15a-73aaa42032f1",
+          "id": "0af48f53-11bf-4ef6-8303-71e0f9ae55fa",
           "request": {
             "method": "GET",
             "header": [
@@ -520,7 +520,7 @@
         },
         {
           "name": "02. Update My Profile",
-          "id": "46818654-0fe5-402d-a1da-f09683a993fb",
+          "id": "c9c79402-a3a4-4a71-ad9e-6bbe3cb0b3fa",
           "request": {
             "method": "PUT",
             "header": [
@@ -572,7 +572,7 @@
         },
         {
           "name": "03. Change Password",
-          "id": "40188eac-f61f-4377-ba28-37d4354e8394",
+          "id": "328480e8-0939-469b-a2e5-6dd51b1ebe70",
           "request": {
             "method": "POST",
             "header": [
@@ -630,7 +630,7 @@
       "item": [
         {
           "name": "01. Get My Vehicles List",
-          "id": "d9767892-9aa9-44ee-95b5-c21c2adb4afb",
+          "id": "b9b2bcd7-694d-4e1f-b082-fc68ecf0212f",
           "request": {
             "method": "GET",
             "header": [
@@ -694,7 +694,7 @@
         },
         {
           "name": "02. Add New Vehicle",
-          "id": "410d1ab7-abc8-4e0a-a4e3-6468de591a23",
+          "id": "5b2e0a3a-01e8-4a74-8259-f74132b97f86",
           "request": {
             "method": "POST",
             "header": [
@@ -763,7 +763,7 @@
         },
         {
           "name": "03. Update Vehicle",
-          "id": "abb0cd3e-4b0d-470c-a80e-344bc44449ee",
+          "id": "862325a9-b0fc-4a9d-92ec-2615b9ca3755",
           "request": {
             "method": "PUT",
             "header": [
@@ -822,7 +822,7 @@
         },
         {
           "name": "04. Delete Vehicle",
-          "id": "8fd85aac-bf44-471f-a43b-cedeb4eefee1",
+          "id": "169dd853-79bf-466b-9183-fa98f03d24fc",
           "request": {
             "method": "DELETE",
             "header": [
@@ -872,7 +872,7 @@
       "item": [
         {
           "name": "01. Get Merchant Profile",
-          "id": "67e4a54e-98ab-4129-876d-c42056d0df5e",
+          "id": "e711b657-40c9-42ff-9938-c62d838c78c1",
           "request": {
             "method": "GET",
             "header": [
@@ -910,7 +910,7 @@
         },
         {
           "name": "02. Update Merchant Profile",
-          "id": "2f77edfa-0017-4656-b9b7-2a9cf21f3175",
+          "id": "1f6452a0-1e62-46ba-865c-61e6e25076df",
           "request": {
             "method": "PUT",
             "header": [
@@ -962,7 +962,7 @@
         },
         {
           "name": "03. Upload Business License File (Multipart)",
-          "id": "45567880-ff73-4da4-a923-9aa88da6436a",
+          "id": "aaa94deb-47a9-4df3-8731-801e50aaeebf",
           "request": {
             "method": "POST",
             "header": [
@@ -1022,7 +1022,7 @@
       "item": [
         {
           "name": "01. Create Parking Lot",
-          "id": "de558b18-4cfc-4741-8cd3-855bfa92a58c",
+          "id": "f6c10d3c-1f67-4b39-a9ae-7bfb1d54698e",
           "request": {
             "method": "POST",
             "header": [
@@ -1092,7 +1092,7 @@
         },
         {
           "name": "02. Get My Parking Lots",
-          "id": "91acf969-28db-49a2-9284-8ebc2506796b",
+          "id": "404b8a54-14a7-44b3-a61c-5c6b6fcf21d4",
           "request": {
             "method": "GET",
             "header": [
@@ -1162,7 +1162,7 @@
         },
         {
           "name": "03. Get Merchant Parking Lot Detail",
-          "id": "7cd18f5e-14ad-4c99-bffb-ae6347a80389",
+          "id": "a99ac62d-4e60-47ad-be02-3a30795daa06",
           "request": {
             "method": "GET",
             "header": [
@@ -1208,7 +1208,7 @@
         },
         {
           "name": "04. Update Parking Lot Info",
-          "id": "f83ab7a4-44b2-49bf-bae3-5742f8214843",
+          "id": "53161eaa-4c80-44aa-a3cd-3628a9cafaaf",
           "request": {
             "method": "PUT",
             "header": [
@@ -1268,7 +1268,7 @@
         },
         {
           "name": "05. Configure Slot for Single Vehicle Type",
-          "id": "85358230-d1fa-422b-814c-23f7fe31a1b8",
+          "id": "82193a92-ee8c-4b82-b271-23fe431129eb",
           "request": {
             "method": "PUT",
             "header": [
@@ -1329,7 +1329,7 @@
         },
         {
           "name": "06. Bulk Configure All Vehicle Slots",
-          "id": "c6bf88be-75c9-47d5-934f-eac3c01e0dda",
+          "id": "979a9d0c-2960-4be7-8994-0b965d22d261",
           "request": {
             "method": "PUT",
             "header": [
@@ -1391,7 +1391,7 @@
         },
         {
           "name": "07. Configure Single Pricing Rule",
-          "id": "69d910ae-060c-4c13-b945-da8f30623bdc",
+          "id": "55da09bd-94bc-4705-bbb9-d996f3361adf",
           "request": {
             "method": "PUT",
             "header": [
@@ -1452,7 +1452,7 @@
         },
         {
           "name": "08. Bulk Configure Pricing Rules",
-          "id": "d510e039-c27e-4f1a-992b-16e47d95cad9",
+          "id": "56851687-98b9-47f4-8097-400488609dbb",
           "request": {
             "method": "PUT",
             "header": [
@@ -1519,7 +1519,7 @@
       "item": [
         {
           "name": "01. Upload Parking Lot Images (Multipart)",
-          "id": "2faba9cf-2f4d-491a-9594-8267d059a350",
+          "id": "7f30f372-f463-43e8-8841-8dd240ff384c",
           "request": {
             "method": "POST",
             "header": [
@@ -1592,7 +1592,7 @@
         },
         {
           "name": "02. Get Parking Lot Images List",
-          "id": "bf490b5c-9328-494d-bc44-498f98234527",
+          "id": "a3a01fe0-85b1-4ee7-9b3d-75fe07a66100",
           "request": {
             "method": "GET",
             "header": [
@@ -1646,7 +1646,7 @@
         },
         {
           "name": "03. Download / View Image File",
-          "id": "0b929031-0a61-4552-8eba-adb85f961b37",
+          "id": "c53c5630-0dcd-48d6-8edb-67508c07a816",
           "request": {
             "method": "GET",
             "header": [
@@ -1692,7 +1692,7 @@
         },
         {
           "name": "04. Set Image as Cover",
-          "id": "80d74455-a934-4b88-ad1c-a4ea02f6767f",
+          "id": "b40068f3-d910-4f22-9770-003c37b75314",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1746,7 +1746,7 @@
         },
         {
           "name": "05. Delete Image",
-          "id": "6661a57b-c80d-4159-9fe0-387bd32d8eb9",
+          "id": "840e3960-5a69-4d50-a59f-f8eb8757f0ae",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1804,7 +1804,7 @@
       "item": [
         {
           "name": "01. Search Parking Lots (Radius & Vehicle Type)",
-          "id": "b961294f-5cc3-4ce1-8d2a-ae7bdb88f0d7",
+          "id": "542f81e7-5d1e-4bfb-9683-0320b34a261d",
           "request": {
             "method": "GET",
             "header": [
@@ -1872,7 +1872,7 @@
         },
         {
           "name": "02. Get Parking Lot Public Detail",
-          "id": "c3e74a12-6578-4e8a-8102-08737e7fe616",
+          "id": "99c2415e-4b0e-492d-8ddd-801a977103bf",
           "request": {
             "method": "GET",
             "header": [
@@ -1910,7 +1910,7 @@
         },
         {
           "name": "03. Get Available Slots by Parking Lot",
-          "id": "3e527de6-9c15-41ac-925f-f9730c08f0b1",
+          "id": "fa16046b-81b6-4ac8-9e89-22bd79f62f97",
           "request": {
             "method": "GET",
             "header": [
@@ -1949,7 +1949,7 @@
         },
         {
           "name": "04. Get Pricing Rules by Parking Lot",
-          "id": "63e3030f-d366-4f5f-b46d-a92f95f83a63",
+          "id": "718e8d50-1d5d-4570-a8dd-78e0e6ccb6d8",
           "request": {
             "method": "GET",
             "header": [
@@ -1993,7 +1993,7 @@
       "item": [
         {
           "name": "01. Create Booking",
-          "id": "b7efd9bf-3c35-439a-9178-82025dbbc251",
+          "id": "e6a3e818-82fa-4fcb-bab3-fee2bebbeb80",
           "request": {
             "method": "POST",
             "header": [
@@ -2065,7 +2065,7 @@
         },
         {
           "name": "02. Get My Bookings List",
-          "id": "4493a276-9879-42ef-bd9b-e1599d246fe1",
+          "id": "0a8f52e1-2a8b-4e83-934b-bef67fd4b51d",
           "request": {
             "method": "GET",
             "header": [
@@ -2130,7 +2130,7 @@
         },
         {
           "name": "03. Get Booking Detail",
-          "id": "8dc126e5-a47b-4806-bfeb-3f47350870c4",
+          "id": "f883c6ee-ff2e-4555-a9c5-c651aeb4f45a",
           "request": {
             "method": "GET",
             "header": [
@@ -2175,7 +2175,7 @@
         },
         {
           "name": "04. Cancel Booking",
-          "id": "d58a7ff5-30ba-49fb-ad88-b75362aed1a7",
+          "id": "ecb1863a-b9b2-40fb-89cb-f439e1b8ebea",
           "request": {
             "method": "POST",
             "header": [
@@ -2240,7 +2240,7 @@
       "item": [
         {
           "name": "01. Check-In Vehicle into Lot",
-          "id": "3b7e0a0a-b662-444a-8f4f-c35d3c37a124",
+          "id": "18e349fe-7b61-4cc7-bc5e-0ee2e7170065",
           "request": {
             "method": "POST",
             "header": [
@@ -2292,7 +2292,7 @@
         },
         {
           "name": "02. Check-Out Vehicle from Lot",
-          "id": "638dc878-df38-4222-8f12-cdd5a23d6cf8",
+          "id": "1b45f23c-98a6-4750-bc0e-1914c22776d9",
           "request": {
             "method": "POST",
             "header": [
@@ -2344,7 +2344,7 @@
         },
         {
           "name": "03. Get Merchant Bookings List",
-          "id": "7e257112-8fff-411b-8330-f9cda8a58fa5",
+          "id": "0f8df5a3-bdf2-42a0-83ad-e9278cea1e36",
           "request": {
             "method": "GET",
             "header": [
@@ -2399,7 +2399,7 @@
       "item": [
         {
           "name": "01. Join Queue (Waitlist)",
-          "id": "7efd92e6-8566-4fa5-84c6-947ebc562f2c",
+          "id": "5c2c774a-cc3e-482c-9431-c1f8a1013f12",
           "request": {
             "method": "POST",
             "header": [
@@ -2465,7 +2465,7 @@
         },
         {
           "name": "02. Get My Queues List",
-          "id": "f46799ef-3a16-44b3-b380-93a4a169ba9e",
+          "id": "c720237a-c25a-4ce5-b37c-85f8dd659980",
           "request": {
             "method": "GET",
             "header": [
@@ -2514,7 +2514,7 @@
         },
         {
           "name": "03. Get Current Active Queue Status",
-          "id": "887de466-2e9b-410d-adea-6d7c5f9463fe",
+          "id": "974c1013-5e49-4277-a9b4-fcaf6189cee2",
           "request": {
             "method": "GET",
             "header": [
@@ -2552,7 +2552,7 @@
         },
         {
           "name": "04. Cancel / Leave Queue",
-          "id": "9cea50be-85e7-4370-a419-bc249ce94015",
+          "id": "39a2537e-7b4b-47cc-b63a-26234629ee76",
           "request": {
             "method": "POST",
             "header": [
@@ -2603,7 +2603,7 @@
       "item": [
         {
           "name": "01. Create Payment Link (PayOS)",
-          "id": "67687316-a926-469a-83c7-45039285865c",
+          "id": "c1664f09-10a6-4bed-b9e5-962f5a010322",
           "request": {
             "method": "POST",
             "header": [
@@ -2654,7 +2654,7 @@
         },
         {
           "name": "02. Confirm Demo Payment (Instant Success)",
-          "id": "bf688216-2780-497f-be6e-af67c33694a6",
+          "id": "36cd5c35-43fb-4e90-851f-551b27268bca",
           "request": {
             "method": "POST",
             "header": [
@@ -2706,7 +2706,7 @@
         },
         {
           "name": "03. Sync PayOS Payment Status",
-          "id": "471258dc-a2c8-42c7-9782-ba36c8d35360",
+          "id": "d7149afe-b64d-4339-a964-5db95b3e8621",
           "request": {
             "method": "POST",
             "header": [
@@ -2758,7 +2758,7 @@
         },
         {
           "name": "04. Get My Payments History",
-          "id": "f44b36e9-4683-451f-ad3f-e94b954e5459",
+          "id": "b903123e-7407-4121-a5ca-858c6b990280",
           "request": {
             "method": "GET",
             "header": [
@@ -2807,7 +2807,7 @@
         },
         {
           "name": "05. PayOS Webhook Callback",
-          "id": "19c7c423-3c59-4478-a930-f833626e6efb",
+          "id": "e7fb4c42-4eaa-4c98-8354-598dfa3bdd37",
           "request": {
             "method": "POST",
             "header": [
@@ -2857,7 +2857,7 @@
       "item": [
         {
           "name": "01. Merchant - Request Withdrawal",
-          "id": "de13428a-6a80-45c4-a3e1-18d780c42bf4",
+          "id": "0a7bc27e-0121-4db6-ac0a-6d2b52d87c88",
           "request": {
             "method": "POST",
             "header": [
@@ -2923,7 +2923,7 @@
         },
         {
           "name": "02. Merchant - Get My Withdrawals",
-          "id": "358e6851-5121-424f-8f42-7311e4a439ac",
+          "id": "55c3b30e-eb2b-4c71-9112-d37ec8747b5a",
           "request": {
             "method": "GET",
             "header": [
@@ -2972,7 +2972,7 @@
         },
         {
           "name": "03. Admin - Process Withdrawal Request",
-          "id": "012c5ede-c797-4200-bc16-09824faebbb1",
+          "id": "5f0db455-cd72-4c7a-8f7a-0c51763f5596",
           "request": {
             "method": "PUT",
             "header": [
@@ -3035,7 +3035,7 @@
       "item": [
         {
           "name": "01. Driver - Create Dispute",
-          "id": "2e0f72ae-e522-4771-a009-f4f02c01b7e2",
+          "id": "5edb866c-336d-4625-9da7-5c9c11bd4b62",
           "request": {
             "method": "POST",
             "header": [
@@ -3101,7 +3101,7 @@
         },
         {
           "name": "02. Driver - Get My Disputes",
-          "id": "cdc2cb15-d14c-4580-b66b-48804395d686",
+          "id": "c1f0db65-41e5-411d-a6b7-276bf8bd496e",
           "request": {
             "method": "GET",
             "header": [
@@ -3151,7 +3151,7 @@
         },
         {
           "name": "03. Merchant - Get ParkingLot Disputes",
-          "id": "d25e8ff8-bf24-44f6-aedb-09e7e7dc7e3a",
+          "id": "6eef053e-538f-4df2-ad64-dedc02a5dd9d",
           "request": {
             "method": "GET",
             "header": [
@@ -3201,7 +3201,7 @@
         },
         {
           "name": "04. Driver/Merchant - Get Dispute Detail",
-          "id": "e782f9f4-11c7-460f-ad0e-070b0cb62336",
+          "id": "3220770d-43a2-455e-816f-5a64c29e6540",
           "request": {
             "method": "GET",
             "header": [
@@ -3246,7 +3246,7 @@
         },
         {
           "name": "05. Admin - List All Disputes",
-          "id": "affc4e13-d97c-454e-b6e5-cf3c61bd2998",
+          "id": "114f3130-069c-4a57-9c7b-f35b86661013",
           "request": {
             "method": "GET",
             "header": [
@@ -3296,7 +3296,7 @@
         },
         {
           "name": "06. Admin - Get Dispute Detail",
-          "id": "0730d77e-2ffb-4d0d-81f6-4e6eca9eabd2",
+          "id": "f6887b7b-e5de-43b6-ae0a-d8994b0dd204",
           "request": {
             "method": "GET",
             "header": [
@@ -3342,7 +3342,7 @@
         },
         {
           "name": "07. Admin - Resolve Dispute",
-          "id": "ad06b3d7-6cfb-481a-88a5-03e971e28cae",
+          "id": "452a3026-c88a-4816-8cd5-f60d0a88a5a8",
           "request": {
             "method": "PUT",
             "header": [
@@ -3407,7 +3407,7 @@
       "item": [
         {
           "name": "01. Driver - Create Review",
-          "id": "b6f0576d-2ca9-4df0-ac94-72bfe520698b",
+          "id": "ea653488-3413-432c-bd53-88cfa5a00070",
           "request": {
             "method": "POST",
             "header": [
@@ -3458,7 +3458,7 @@
         },
         {
           "name": "02. Get Reviews by Parking Lot",
-          "id": "dcf65684-8892-41f5-9ca4-b0382b1d38ac",
+          "id": "9043990d-aa7d-4c17-8bf4-784eb29c8f7c",
           "request": {
             "method": "GET",
             "header": [
@@ -3514,7 +3514,7 @@
       "item": [
         {
           "name": "01. Get My Notifications",
-          "id": "7bc8c406-03e7-4637-bee4-2a72c45f519b",
+          "id": "bfc7e13c-38cb-42f7-af35-4bd2f7e892ba",
           "request": {
             "method": "GET",
             "header": [
@@ -3578,7 +3578,7 @@
         },
         {
           "name": "02. Get Unread Notification Count",
-          "id": "8e145c36-e667-420c-9235-97c6bbff57f8",
+          "id": "e25a7f0c-fab0-4416-9c7c-237c22731e7d",
           "request": {
             "method": "GET",
             "header": [
@@ -3616,7 +3616,7 @@
         },
         {
           "name": "03. Mark Single Notification as Read",
-          "id": "29ff54dd-83ac-4489-a7cb-753eb57dcded",
+          "id": "7e63cfb2-09f0-44a2-b5be-2dde4f0e80ed",
           "request": {
             "method": "POST",
             "header": [
@@ -3662,7 +3662,7 @@
         },
         {
           "name": "04. Mark All Notifications as Read",
-          "id": "3cfed2f5-297d-4d88-add7-64e3c25548e3",
+          "id": "58dce0fe-5d21-4fb2-982e-a1e4635f30a4",
           "request": {
             "method": "POST",
             "header": [
@@ -3705,7 +3705,7 @@
       "item": [
         {
           "name": "01. Admin - Dashboard Statistics",
-          "id": "9d7eb679-d6fb-4949-b5d6-621ce1d0cb5a",
+          "id": "24d19657-e259-4588-aebc-776bf760b149",
           "request": {
             "method": "GET",
             "header": [
@@ -3743,7 +3743,7 @@
         },
         {
           "name": "02. Admin - List All Transactions",
-          "id": "6016f36e-f09a-4e90-aeb8-1427c7cd27b3",
+          "id": "fa712f75-414b-40fe-985c-2eee1e8dd8d9",
           "request": {
             "method": "GET",
             "header": [
@@ -3793,7 +3793,7 @@
         },
         {
           "name": "03. Admin - Get Transaction Detail",
-          "id": "43bbc22e-12f6-4eca-8371-a913e2c4a392",
+          "id": "61f36e56-6682-4e18-9bce-70d0be0f2ac5",
           "request": {
             "method": "GET",
             "header": [
@@ -3832,7 +3832,7 @@
         },
         {
           "name": "04. Admin - List All Withdrawals",
-          "id": "e8adcc06-1f24-4e6b-9db5-46893881beb9",
+          "id": "44b6acaf-a1e2-41da-bf55-be4a883a7020",
           "request": {
             "method": "GET",
             "header": [
@@ -3882,7 +3882,7 @@
         },
         {
           "name": "05. Admin - Approve Withdrawal",
-          "id": "5514b98f-82fa-4f28-8b4b-b0551f04930b",
+          "id": "8d8f5469-aad0-422d-8d44-dff9da51672f",
           "request": {
             "method": "PUT",
             "header": [
@@ -3943,7 +3943,7 @@
         },
         {
           "name": "06. Admin - Reject Withdrawal",
-          "id": "893963b8-6042-4c9b-96c9-ea68ea4148ac",
+          "id": "a01e7bdf-4f86-4429-979e-592500edb513",
           "request": {
             "method": "PUT",
             "header": [
@@ -4009,7 +4009,7 @@
       "item": [
         {
           "name": "01. Admin - List Users",
-          "id": "f39974ba-52da-493a-b450-58e58d801b1e",
+          "id": "314df293-4ecd-4b37-9ae6-520e821eac1b",
           "request": {
             "method": "GET",
             "header": [
@@ -4074,7 +4074,7 @@
         },
         {
           "name": "02. Admin - Get User Detail",
-          "id": "692767cc-7690-4d83-8184-9b578542b359",
+          "id": "4898c77e-c14f-40ad-8e0f-7b9a7169fed4",
           "request": {
             "method": "GET",
             "header": [
@@ -4120,7 +4120,7 @@
         },
         {
           "name": "03. Admin - Ban User",
-          "id": "9db2a399-8ac8-4c1c-9161-904794cc2edc",
+          "id": "d70376f1-6184-442a-a17e-7001b4669421",
           "request": {
             "method": "PUT",
             "header": [
@@ -4181,7 +4181,7 @@
         },
         {
           "name": "04. Admin - Unban User",
-          "id": "dd90ed76-4d2f-48a7-9ecb-4bac636c4d00",
+          "id": "7d732fa4-b5b5-4b22-84c5-1badc20dfda0",
           "request": {
             "method": "PUT",
             "header": [
@@ -4242,7 +4242,7 @@
         },
         {
           "name": "05. Admin - Send Warning to User",
-          "id": "46679f25-8213-4b74-91e2-1fb09b600f8f",
+          "id": "8ae8be03-33dd-44b2-9c48-f51c284de515",
           "request": {
             "method": "POST",
             "header": [
@@ -4303,7 +4303,7 @@
         },
         {
           "name": "06. Admin - View Audit Logs",
-          "id": "a502496f-88f8-41aa-89de-a34947d3cf80",
+          "id": "16a6e8bb-f22b-47d3-8141-962a928ba412",
           "request": {
             "method": "GET",
             "header": [
@@ -4358,7 +4358,7 @@
       "item": [
         {
           "name": "01. Admin - List All Parking Lots",
-          "id": "bc080ab5-efa3-4f2f-807f-6604d757fa3d",
+          "id": "2499ee7c-a4a2-40a4-a45c-f6a7171a5d5a",
           "request": {
             "method": "GET",
             "header": [
@@ -4408,7 +4408,7 @@
         },
         {
           "name": "02. Admin - Get Parking Lot Detail",
-          "id": "ca297bed-64bf-42fa-a210-b8de98ec2fc5",
+          "id": "d39d24a7-aef9-496c-974d-38cfeef1da6c",
           "request": {
             "method": "GET",
             "header": [
@@ -4454,7 +4454,7 @@
         },
         {
           "name": "03. Admin - Approve Parking Lot",
-          "id": "423919b3-2043-4367-8c88-b859dfe5ab0e",
+          "id": "30628566-b8b6-4180-878d-ab77b511a180",
           "request": {
             "method": "PUT",
             "header": [
@@ -4515,7 +4515,7 @@
         },
         {
           "name": "04. Admin - Reject Parking Lot",
-          "id": "c9739294-1665-49ea-a595-a574118cb4f9",
+          "id": "76071c26-393e-42fe-b7cf-ba3b516057b2",
           "request": {
             "method": "PUT",
             "header": [
@@ -4576,7 +4576,7 @@
         },
         {
           "name": "05. Admin - Request Changes for Parking Lot",
-          "id": "7b38050e-64fc-4e75-bca1-f8abf9ace815",
+          "id": "cdbca518-1fae-4ad9-9356-7745c52a2507",
           "request": {
             "method": "PUT",
             "header": [
@@ -4642,7 +4642,7 @@
       "item": [
         {
           "name": "01. Internal - Hold Slot (Booking -> Parking Lot)",
-          "id": "1853b45b-f985-4148-ba5b-c9d81d07bd87",
+          "id": "18a19b9d-81f1-4367-b2e1-679b0b555ccd",
           "request": {
             "method": "POST",
             "header": [
@@ -4690,7 +4690,7 @@
         },
         {
           "name": "02. Internal - Release Slot (Booking -> Parking Lot)",
-          "id": "7d9082db-e414-404d-bb20-eb958354c789",
+          "id": "ce8b2d30-234f-4cc3-9440-397fb88c0d75",
           "request": {
             "method": "POST",
             "header": [
@@ -4738,7 +4738,7 @@
         },
         {
           "name": "03. Internal - Get Merchant Revenue Summary",
-          "id": "d204672d-890c-4f9a-bef9-527220af1431",
+          "id": "57f074da-40b4-406b-952a-03196015a989",
           "request": {
             "method": "GET",
             "header": [

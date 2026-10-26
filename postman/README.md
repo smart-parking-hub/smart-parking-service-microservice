@@ -21,18 +21,18 @@ Tài liệu hướng dẫn sử dụng bộ sưu tập Postman Collection kiểm
 ## 🔑 Cơ chế xác thực tự động (Auto-Token Scripts)
 Mỗi role đều có tài khoản Demo sẵn được cấu hình với mật khẩu chung `password123`:
 
-| Role | Email | Password | Biến lưu Token |
-| :--- | :--- | :--- | :--- |
-| **System Admin** | `admin@smartparking.com` | `password123` | `{{admin_token}}` |
-| **Merchant (Chủ bãi)** | `thanh.dongsaigon@gmail.com` | `password123` | `{{merchant_token}}` |
-| **Driver (Tài xế)** | `hung.nguyen@smartparking.com` | `password123` | `{{driver_token}}` |
+| Role | Số điện thoại (Tài khoản) | Email | Password | Biến lưu Token |
+| :--- | :--- | :--- | :--- | :--- |
+| **System Admin** | `0903829145` | `admin@smartparking.com` | `password123` | `{{admin_token}}` |
+| **Merchant (Chủ bãi)** | `0908123456` | `thanh.dongsaigon@gmail.com` | `password123` | `{{merchant_token}}` |
+| **Driver (Tài xế)** | `0909128374` | `hung.nguyen@smartparking.com` | `password123` | `{{driver_token}}` |
 
 ### Cách sử dụng Token:
 1. Mở thư mục **`00. Authentication & Quick Logins`**.
 2. Chạy lần lượt 3 request:
-   * `01. Login as Admin`
-   * `02. Login as Merchant`
-   * `03. Login as Driver`
+   * `01. Login as Admin` (SĐT: 0903829145)
+   * `02. Login as Merchant` (SĐT: 0908123456)
+   * `03. Login as Driver` (SĐT: 0909128374)
 3. **Postman Test Script** đã được cài đặt tự động:
    * Tự bóc tách JWT Token từ response và lưu trực tiếp vào các biến môi trường (`{{admin_token}}`, `{{merchant_token}}`, `{{driver_token}}`, `{{token}}`).
    * Các thư mục tiếp theo (`Merchant`, `Driver`, `Admin`) đều đã được gắn quyền tương ứng, **bạn không cần copy paste token thủ công!**
