@@ -59,6 +59,9 @@ public class Booking extends BaseEntity {
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(name = "hourly_rate", precision = 10, scale = 2)
+    private BigDecimal hourlyRate;
+
     @Column(name = "expected_check_in_time")
     private LocalDateTime expectedCheckInTime;
 

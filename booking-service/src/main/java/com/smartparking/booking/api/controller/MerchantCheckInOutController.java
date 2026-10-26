@@ -43,6 +43,15 @@ public class MerchantCheckInOutController {
         return ResponseEntity.ok(ApiResponse.success(response, "Check-out thành công!"));
     }
 
+    @PostMapping("/confirm-cash")
+    @PreAuthorize("hasRole('MERCHANT')")
+    public ResponseEntity<ApiResponse<Void>> confirmCashPayment(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody CheckInRequest request) {
+        checkInOutService.confirmCashPayment(user.getId(), request.getBookingCode(), request.getParkingLotId());
+        return ResponseEntity.ok(ApiResponse.success(null, "Xác nhận thu tiền mặt và trả chỗ thành công!"));
+    }
+
     @GetMapping("/bookings")
     @PreAuthorize("hasRole('MERCHANT')")
     public ResponseEntity<ApiResponse<PageResponse<BookingDto>>> getMerchantBookings(

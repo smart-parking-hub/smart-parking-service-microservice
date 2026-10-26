@@ -34,8 +34,13 @@ public class BookingEvent {
     @EqualsAndHashCode(callSuper = true)
     public static class BookingConfirmedEvent extends DomainEvent {
         private Long bookingId;
+        private Long userId;
+        private Long merchantId;
+        private Long parkingLotId;
         private Long slotId;
         private String paymentRef;
+        private BigDecimal totalAmount;
+        private BigDecimal advanceDeposit;
     }
 
     @Data
@@ -45,7 +50,11 @@ public class BookingEvent {
     @EqualsAndHashCode(callSuper = true)
     public static class BookingCancelledEvent extends DomainEvent {
         private Long bookingId;
+        private Long userId;
+        private Long merchantId;
+        private Long parkingLotId;
         private Long slotId;
         private String reason;
+        private BigDecimal refundAmount;
     }
 }

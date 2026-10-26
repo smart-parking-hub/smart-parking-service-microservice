@@ -20,4 +20,9 @@ public interface ParkingLotClient {
     ApiResponse<Void> releaseSlot(
             @PathVariable("id") Long parkingLotId,
             @RequestBody SlotHoldRequest request);
+
+    @PostMapping("/api/v1/internal/parking-lots/{id}/rating")
+    ApiResponse<Void> updateRating(
+            @PathVariable("id") Long parkingLotId,
+            @org.springframework.web.bind.annotation.RequestParam("rating") Double rating);
 }

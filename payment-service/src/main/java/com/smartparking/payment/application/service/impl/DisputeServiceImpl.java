@@ -8,8 +8,10 @@ import com.smartparking.payment.application.dto.AdminDisputeResponse;
 import com.smartparking.payment.application.dto.CreateDisputeRequest;
 import com.smartparking.payment.application.dto.DisputeDto;
 import com.smartparking.payment.application.service.DisputeService;
+import com.smartparking.payment.application.service.MerchantWalletService;
 import com.smartparking.payment.domain.model.Dispute;
 import com.smartparking.payment.domain.repository.DisputeRepository;
+import com.smartparking.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class DisputeServiceImpl implements DisputeService {
 
     private final DisputeRepository disputeRepository;
+    private final PaymentRepository paymentRepository;
+    private final MerchantWalletService merchantWalletService;
 
     @Override
     @Transactional
@@ -81,6 +85,28 @@ public class DisputeServiceImpl implements DisputeService {
         dispute.setStatus(DisputeStatusEnum.RESOLVED);
         dispute.setResolution(resolution);
         Dispute saved = disputeRepository.save(dispute);
+
+        // Execute financial adjustment if resolution requires refund
+        if (resolution != null && resolution.toUpperCase().contains("REFUND")) {
+            paymentRepository.findByBookingId(dispute.getBookingId()).stream()
+                    .filter(p -> p.getStatus() == com.smartparking.common.enums.PaymentStatusEnum.SUCCESS)
+                    .forEach(payment -> {
+                        payment.setStatus(com.smartparking.common.enums.PaymentStatusEnum.REFUNDED);
+                        paymentRepository.save(payment);
+                        log.info("Payment {} marked REFUNDED due to dispute resolution #{}", payment.getId(), id);
+
+                        if (dispute.getMerchantId() != null) {
+                            try {
+                                merchantWalletService.holdWithdrawal(
+                                        dispute.getMerchantId(),
+                                        payment.getAmount(),
+                                        "Thu hồi doanh thu do giải quyết khiếu nại #" + id + ": " + resolution);
+                            } catch (Exception ex) {
+                                log.warn("Could not debit merchant wallet on dispute refund: {}", ex.getMessage());
+                            }
+                        }
+                    });
+        }
 
         log.info("Admin {} resolved dispute {}", adminUserId, id);
         return AdminDisputeResponse.fromEntity(saved);

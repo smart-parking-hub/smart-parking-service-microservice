@@ -54,6 +54,11 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .aggregateId(String.valueOf(booking.getId()))
                 .timestamp(Instant.now())
                 .bookingId(booking.getId())
+                .userId(booking.getDriverId())
+                .merchantId(booking.getMerchantId())
+                .parkingLotId(booking.getParkingLotId())
+                .totalAmount(booking.getTotalAmount())
+                .advanceDeposit(booking.getAdvanceDeposit())
                 .build();
 
         saveAndPublish(event, "Booking", String.valueOf(booking.getId()), "BOOKING_CHECKED_IN");
@@ -68,6 +73,11 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .aggregateId(String.valueOf(booking.getId()))
                 .timestamp(Instant.now())
                 .bookingId(booking.getId())
+                .userId(booking.getDriverId())
+                .merchantId(booking.getMerchantId())
+                .parkingLotId(booking.getParkingLotId())
+                .totalAmount(booking.getTotalAmount())
+                .advanceDeposit(booking.getAdvanceDeposit())
                 .build();
 
         saveAndPublish(event, "Booking", String.valueOf(booking.getId()), "BOOKING_COMPLETED");
@@ -82,7 +92,11 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .aggregateId(String.valueOf(booking.getId()))
                 .timestamp(Instant.now())
                 .bookingId(booking.getId())
+                .userId(booking.getDriverId())
+                .merchantId(booking.getMerchantId())
+                .parkingLotId(booking.getParkingLotId())
                 .reason(reason)
+                .refundAmount(booking.getAdvanceDeposit())
                 .build();
 
         saveAndPublish(event, "Booking", String.valueOf(booking.getId()), "BOOKING_CANCELLED");

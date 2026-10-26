@@ -30,4 +30,5 @@ public interface ParkingLotService {
     void approveParkingLot(Long adminUserId, Long id, String reason);
     void rejectParkingLot(Long adminUserId, Long id, String reason);
     void requestParkingLotChanges(Long adminUserId, Long id, String reason);
+    void updateRating(Long id, Double rating);
 }

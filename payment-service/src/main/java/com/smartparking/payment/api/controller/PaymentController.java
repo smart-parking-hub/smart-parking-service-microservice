@@ -38,7 +38,12 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentDto>> confirmDemoPayment(
             @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody DemoPaymentRequest request) {
-        PaymentDto payment = paymentService.confirmDemoDeposit(user.getId(), request.getBookingId());
+        PaymentDto payment;
+        if (request.getAmount() != null || request.getMerchantId() != null || request.getParkingLotId() != null) {
+            payment = paymentService.confirmDemoDeposit(user.getId(), request);
+        } else {
+            payment = paymentService.confirmDemoDeposit(user.getId(), request.getBookingId());
+        }
         return ResponseEntity.ok(ApiResponse.success(payment, "Demo payment confirmed"));
     }
 

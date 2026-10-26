@@ -36,6 +36,7 @@ public class BookingEventListener {
 
             Long bookingId = root.has("bookingId") && !root.get("bookingId").isNull() ? root.get("bookingId").asLong() : null;
             Long userId = root.has("userId") && !root.get("userId").isNull() ? root.get("userId").asLong() : null;
+            Long merchantId = root.has("merchantId") && !root.get("merchantId").isNull() ? root.get("merchantId").asLong() : null;
 
             if (userId != null && eventType != null) {
                 switch (eventType) {
@@ -50,25 +51,62 @@ public class BookingEventListener {
                                 "BOOKING",
                                 bookingId
                         );
+                        if (merchantId != null) {
+                            notificationService.createNotification(
+                                    merchantId,
+                                    "Đơn đặt chỗ mới",
+                                    "Bãi xe của bạn vừa có đơn đặt chỗ mới #" + bookingId + (plate.isEmpty() ? "" : " (Xe: " + plate + ")"),
+                                    NotificationTypeEnum.BOOKING,
+                                    "IN_APP",
+                                    "BOOKING",
+                                    bookingId
+                            );
+                        }
                     }
-                    case "BOOKING_CHECKED_IN" -> notificationService.createNotification(
-                            userId,
-                            "Check-in thành công",
-                            "Phương tiện của bạn đã hoàn tất check-in cho booking #" + bookingId + ".",
-                            NotificationTypeEnum.BOOKING,
-                            "IN_APP",
-                            "BOOKING",
-                            bookingId
-                    );
-                    case "BOOKING_COMPLETED" -> notificationService.createNotification(
-                            userId,
-                            "Hoàn tất đỗ xe",
-                            "Lượt đỗ xe #" + bookingId + " đã hoàn tất. Cảm ơn bạn đã sử dụng SmartParking!",
-                            NotificationTypeEnum.BOOKING,
-                            "IN_APP",
-                            "BOOKING",
-                            bookingId
-                    );
+                    case "BOOKING_CHECKED_IN" -> {
+                        notificationService.createNotification(
+                                userId,
+                                "Check-in thành công",
+                                "Phương tiện của bạn đã hoàn tất check-in cho booking #" + bookingId + ".",
+                                NotificationTypeEnum.BOOKING,
+                                "IN_APP",
+                                "BOOKING",
+                                bookingId
+                        );
+                        if (merchantId != null) {
+                            notificationService.createNotification(
+                                    merchantId,
+                                    "Xe đã vào bãi",
+                                    "Khách hàng cho booking #" + bookingId + " đã hoàn tất check-in vào bãi đỗ.",
+                                    NotificationTypeEnum.BOOKING,
+                                    "IN_APP",
+                                    "BOOKING",
+                                    bookingId
+                            );
+                        }
+                    }
+                    case "BOOKING_COMPLETED" -> {
+                        notificationService.createNotification(
+                                userId,
+                                "Hoàn tất đỗ xe",
+                                "Lượt đỗ xe #" + bookingId + " đã hoàn tất. Cảm ơn bạn đã sử dụng SmartParking!",
+                                NotificationTypeEnum.BOOKING,
+                                "IN_APP",
+                                "BOOKING",
+                                bookingId
+                        );
+                        if (merchantId != null) {
+                            notificationService.createNotification(
+                                    merchantId,
+                                    "Lượt đỗ xe hoàn tất",
+                                    "Booking #" + bookingId + " đã check-out và giải phóng vị trí đỗ.",
+                                    NotificationTypeEnum.BOOKING,
+                                    "IN_APP",
+                                    "BOOKING",
+                                    bookingId
+                            );
+                        }
+                    }
                     case "BOOKING_CANCELLED" -> {
                         String reason = root.has("reason") ? root.get("reason").asText() : "";
                         notificationService.createNotification(
@@ -80,6 +118,17 @@ public class BookingEventListener {
                                 "BOOKING",
                                 bookingId
                         );
+                        if (merchantId != null) {
+                            notificationService.createNotification(
+                                    merchantId,
+                                    "Khách hủy đặt chỗ",
+                                    "Đơn đặt chỗ #" + bookingId + " đã bị hủy. Vị trí đỗ đã được mở lại cho khách khác.",
+                                    NotificationTypeEnum.BOOKING,
+                                    "IN_APP",
+                                    "BOOKING",
+                                    bookingId
+                            );
+                        }
                     }
                     default -> log.debug("Unhandled booking event type: {}", eventType);
                 }

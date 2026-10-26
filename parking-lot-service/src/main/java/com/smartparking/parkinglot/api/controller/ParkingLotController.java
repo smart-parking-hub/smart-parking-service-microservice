@@ -74,6 +74,18 @@ public class ParkingLotController {
         return ResponseEntity.ok(ApiResponse.success(parkingLotService.getMerchantDetail(user.getId(), id)));
     }
 
+    @GetMapping("/api/v1/merchant/parking-lots/{id}/revenue")
+    @PreAuthorize("hasRole('MERCHANT')")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getMerchantParkingLotRevenue(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable Long id) {
+        parkingLotService.getMerchantDetail(user.getId(), id);
+        java.util.Map<String, Object> revenue = new java.util.HashMap<>();
+        revenue.put("totalRevenue", java.math.BigDecimal.ZERO);
+        revenue.put("completedBookings", 0);
+        return ResponseEntity.ok(ApiResponse.success(revenue));
+    }
+
     // --- Merchant Slot & Pricing Configuration ---
 
     @PutMapping("/api/v1/merchant/parking-lots/{id}/slots")
@@ -162,5 +174,13 @@ public class ParkingLotController {
             @Valid @RequestBody SlotHoldRequest request) {
         slotService.releaseSlot(id, request.getVehicleType(), request.getBookingId());
         return ResponseEntity.ok(ApiResponse.success(null, "Giải phóng slot thành công"));
+    }
+
+    @PostMapping("/api/v1/internal/parking-lots/{id}/rating")
+    public ResponseEntity<ApiResponse<Void>> updateRating(
+            @PathVariable Long id,
+            @RequestParam("rating") Double rating) {
+        parkingLotService.updateRating(id, rating);
+        return ResponseEntity.ok(ApiResponse.success(null, "Cập nhật đánh giá thành công"));
     }
 }

@@ -8,6 +8,7 @@ import com.smartparking.common.enums.PaymentTypeEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.payment.application.dto.CreatePaymentRequest;
+import com.smartparking.payment.application.dto.DemoPaymentRequest;
 import com.smartparking.payment.application.dto.PaymentDto;
 import com.smartparking.payment.application.service.MerchantWalletService;
 import com.smartparking.payment.application.service.OutboxPublisherService;
@@ -117,10 +118,17 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentDto confirmDemoDeposit(Long driverUserId, Long bookingId) {
+        return confirmDemoDeposit(driverUserId, DemoPaymentRequest.builder().bookingId(bookingId).build());
+    }
+
+    @Override
+    @Transactional
+    public PaymentDto confirmDemoDeposit(Long driverUserId, DemoPaymentRequest request) {
         if (!demoPaymentEnabled) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Thanh toán demo không được bật trên môi trường này.");
         }
 
+        Long bookingId = request.getBookingId();
         boolean alreadyPaid = paymentRepository.existsByBookingIdAndPaymentTypeAndStatus(
                 bookingId, PaymentTypeEnum.DEPOSIT, PaymentStatusEnum.SUCCESS);
         if (alreadyPaid) {
@@ -132,11 +140,15 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         long orderCode = Long.parseLong(bookingId + "" + (System.currentTimeMillis() % 100000));
-        BigDecimal amount = BigDecimal.valueOf(50000);
+        BigDecimal amount = request.getAmount() != null && request.getAmount().compareTo(BigDecimal.ZERO) > 0
+                ? request.getAmount()
+                : BigDecimal.valueOf(50000);
 
         Payment payment = Payment.builder()
                 .bookingId(bookingId)
                 .driverId(driverUserId)
+                .merchantId(request.getMerchantId())
+                .parkingLotId(request.getParkingLotId())
                 .gateway(PaymentGatewayEnum.DEMO)
                 .transactionCode("DEMO-" + bookingId + "-" + System.currentTimeMillis())
                 .orderCode(orderCode)
@@ -146,9 +158,19 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         Payment saved = paymentRepository.save(payment);
+
+        if (saved.getMerchantId() != null) {
+            merchantWalletService.creditSettlement(
+                    saved.getMerchantId(),
+                    saved.getBookingId(),
+                    saved,
+                    saved.getAmount(),
+                    "Thanh toán demo cọc booking #" + saved.getBookingId());
+        }
+
         outboxPublisherService.publishPaymentCompleted(saved);
 
-        log.info("Demo payment confirmed for booking {}", bookingId);
+        log.info("Demo payment confirmed for booking {} amount {}", bookingId, amount);
         return PaymentDto.fromEntity(saved);
     }
 

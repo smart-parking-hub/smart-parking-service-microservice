@@ -148,13 +148,21 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         BigDecimal totalFee = ledgerRepository.sumPlatformFeeByMerchantId(merchantId);
         BigDecimal totalNet = ledgerRepository.sumNetAmountByMerchantId(merchantId);
         BigDecimal currentBalance = getWalletBalance(merchantId);
+        BigDecimal safeGross = totalGross != null ? totalGross : BigDecimal.ZERO;
+        BigDecimal safeNet = totalNet != null ? totalNet : BigDecimal.ZERO;
 
         return MerchantRevenueResponse.builder()
                 .merchantId(merchantId)
-                .totalGrossRevenue(totalGross != null ? totalGross : BigDecimal.ZERO)
+                .totalGrossRevenue(safeGross)
                 .totalPlatformFee(totalFee != null ? totalFee : BigDecimal.ZERO)
-                .totalNetRevenue(totalNet != null ? totalNet : BigDecimal.ZERO)
+                .totalNetRevenue(safeNet)
                 .currentWalletBalance(currentBalance)
+                .totalRevenue(safeGross)
+                .walletBalance(currentBalance)
+                .completedBookings(0L)
+                .platformFeePercent(platformFeePercent)
+                .minWithdrawalAmount(BigDecimal.valueOf(50000))
+                .series(java.util.Collections.emptyList())
                 .build();
     }
 

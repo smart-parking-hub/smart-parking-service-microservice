@@ -32,6 +32,9 @@ class ReviewServiceImplTest {
     @Mock
     private BookingRepository bookingRepository;
 
+    @Mock
+    private com.smartparking.booking.infrastructure.client.ParkingLotClient parkingLotClient;
+
     @InjectMocks
     private ReviewServiceImpl reviewService;
 
@@ -96,6 +99,8 @@ class ReviewServiceImplTest {
                 .comment("Bãi xe rất tốt")
                 .build();
         when(reviewRepository.save(any(Review.class))).thenReturn(saved);
+        when(reviewRepository.findByParkingLotIdOrderByCreatedAtDesc(eq(10L), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(saved)));
 
         CreateReviewRequest req = CreateReviewRequest.builder()
                 .bookingId(bookingId)

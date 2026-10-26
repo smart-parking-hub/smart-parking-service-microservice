@@ -162,6 +162,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void register(RegisterRequest request) {
+        if (request.getRole() == RoleEnum.ADMIN) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Không được phép tự đăng ký tài khoản Quản trị viên (ADMIN)!");
+        }
+
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã tồn tại trong hệ thống!");
         }
