@@ -46,12 +46,12 @@ class SlotServiceImplTest {
     private final Long parkingLotId = 20L;
 
     @Test
-    @DisplayName("Configure slot fails when parking lot is not APPROVED")
+    @DisplayName("Configure slot fails when parking lot is REJECTED or SUSPENDED")
     void testConfigureSlotLotNotApproved() {
         ParkingLot lot = ParkingLot.builder()
                 .id(parkingLotId)
                 .merchantId(merchantUserId)
-                .status(ParkingLotStatusEnum.PENDING_APPROVAL)
+                .status(ParkingLotStatusEnum.REJECTED)
                 .build();
         when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(lot));
 
@@ -63,7 +63,7 @@ class SlotServiceImplTest {
         AppException ex = assertThrows(AppException.class, () ->
                 slotService.configureSlot(merchantUserId, parkingLotId, request));
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
-        assertTrue(ex.getMessage().contains("Admin duyệt"));
+        assertTrue(ex.getMessage().contains("từ chối hoặc tạm ngưng"));
     }
 
     @Test

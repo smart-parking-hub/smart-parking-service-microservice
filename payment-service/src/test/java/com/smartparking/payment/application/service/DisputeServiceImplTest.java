@@ -34,6 +34,12 @@ class DisputeServiceImplTest {
     @Mock
     private DisputeRepository disputeRepository;
 
+    @Mock
+    private com.smartparking.payment.domain.repository.PaymentRepository paymentRepository;
+
+    @Mock
+    private com.smartparking.payment.application.service.MerchantWalletService merchantWalletService;
+
     @InjectMocks
     private DisputeServiceImpl disputeService;
 

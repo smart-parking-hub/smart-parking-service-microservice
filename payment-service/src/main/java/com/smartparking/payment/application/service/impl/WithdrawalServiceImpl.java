@@ -45,6 +45,9 @@ public class WithdrawalServiceImpl implements WithdrawalService {
                 .merchantId(merchantUserId)
                 .amount(request.getAmount())
                 .status(WithdrawalStatusEnum.PENDING)
+                .bankName(request.getBankName())
+                .bankAccountNumber(request.getBankAccountNumber())
+                .accountHolderName(request.getAccountHolderName())
                 .requestedAt(LocalDateTime.now())
                 .build();
 

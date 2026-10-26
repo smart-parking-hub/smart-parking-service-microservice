@@ -68,8 +68,8 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     @Transactional
     public ParkingLotDto updateParkingLot(Long merchantUserId, Long parkingLotId, CreateParkingLotRequest request) {
         ParkingLot lot = getOwnedParkingLot(merchantUserId, parkingLotId);
-        if (lot.getStatus() != ParkingLotStatusEnum.REJECTED) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ được chỉnh sửa hồ sơ bị từ chối!");
+        if (lot.getStatus() != ParkingLotStatusEnum.REJECTED && lot.getStatus() != ParkingLotStatusEnum.CHANGES_REQUESTED) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ được chỉnh sửa hồ sơ bị từ chối hoặc được yêu cầu chỉnh sửa!");
         }
 
         lot.setName(request.getName().trim());
@@ -291,5 +291,16 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         double distance = 6371.0 * c;
         return Math.round(distance * 100.0) / 100.0;
+    }
+
+    @Override
+    @Transactional
+    public void updateRating(Long id, Double rating) {
+        if (rating == null) return;
+        parkingLotRepository.findById(id).ifPresent(lot -> {
+            lot.setRatingAverage(BigDecimal.valueOf(rating).setScale(2, java.math.RoundingMode.HALF_UP));
+            parkingLotRepository.save(lot);
+            log.info("Updated rating for lot {} to {}", id, lot.getRatingAverage());
+        });
     }
 }

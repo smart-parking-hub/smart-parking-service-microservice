@@ -28,6 +28,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
     private final BookingRepository bookingRepository;
     private final ParkingLotClient parkingLotClient;
     private final OutboxPublisherService outboxPublisherService;
+    private final com.smartparking.booking.application.service.QueueService queueService;
 
     @Value("${app.booking.check-in-early-minutes:30}")
     private int checkInEarlyMinutes;
@@ -38,11 +39,22 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         Booking booking = bookingRepository.findByBookingCodeForUpdate(bookingCode)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
+        // Multi-tenant validation: prevent scanning booking for another lot or merchant
+        if (parkingLotId != null && booking.getParkingLotId() != null && !parkingLotId.equals(booking.getParkingLotId())) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Mã đặt chỗ này thuộc về bãi đỗ xe khác!");
+        }
+        if (merchantUserId != null && booking.getMerchantId() != null && !merchantUserId.equals(booking.getMerchantId())) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền check-in cho đơn đặt chỗ của bãi xe này!");
+        }
+
         if (booking.getStatus() != BookingStatusEnum.PENDING_CHECKIN) {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái chờ check-in!");
         }
 
         LocalDateTime now = LocalDateTime.now();
+        if (booking.getExpectedCheckInTime() != null && now.isBefore(booking.getExpectedCheckInTime().minusMinutes(checkInEarlyMinutes))) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + checkInEarlyMinutes + " phút)!");
+        }
         if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");
         }
@@ -61,6 +73,14 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         Booking booking = bookingRepository.findByBookingCodeForUpdate(bookingCode)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
+        // Multi-tenant validation
+        if (parkingLotId != null && booking.getParkingLotId() != null && !parkingLotId.equals(booking.getParkingLotId())) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Mã đặt chỗ này thuộc về bãi đỗ xe khác!");
+        }
+        if (merchantUserId != null && booking.getMerchantId() != null && !merchantUserId.equals(booking.getMerchantId())) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền check-out cho đơn đặt chỗ của bãi xe này!");
+        }
+
         if (booking.getStatus() != BookingStatusEnum.PARKING) {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái đang đỗ!");
         }
@@ -73,8 +93,11 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 checkOutTime).toMinutes());
         long hours = Math.max(1, (long) Math.ceil(minutes / 60.0));
 
-        // Base rate: 20,000 VND / hour
-        BigDecimal totalAmount = BigDecimal.valueOf(hours * 20000L);
+        // Use dynamic hourly rate configured for the lot, fallback to 20,000 VND / hour
+        BigDecimal hourlyRate = booking.getHourlyRate() != null && booking.getHourlyRate().compareTo(BigDecimal.ZERO) > 0
+                ? booking.getHourlyRate()
+                : BigDecimal.valueOf(20000L);
+        BigDecimal totalAmount = hourlyRate.multiply(BigDecimal.valueOf(hours));
         BigDecimal deposit = booking.getAdvanceDeposit() != null ? booking.getAdvanceDeposit() : BigDecimal.ZERO;
         BigDecimal amountDue = totalAmount.subtract(deposit).max(BigDecimal.ZERO);
 
@@ -88,6 +111,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                         .bookingId(booking.getId())
                         .build();
                 parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+                queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
             } catch (Exception ex) {
                 log.warn("Failed to release slot on checkout: {}", ex.getMessage());
             }
@@ -108,5 +132,40 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 .parkingMinutes(minutes)
                 .bookingStatus(booking.getStatus().name())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void confirmCashPayment(Long merchantUserId, String bookingCode, Long parkingLotId) {
+        Booking booking = bookingRepository.findByBookingCodeForUpdate(bookingCode)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
+
+        if (booking.getStatus() != BookingStatusEnum.AWAITING_FINAL_PAYMENT) {
+            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái chờ thanh toán phụ phí!");
+        }
+
+        if (parkingLotId != null && booking.getParkingLotId() != null && !parkingLotId.equals(booking.getParkingLotId())) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Mã đặt chỗ này thuộc về bãi đỗ xe khác!");
+        }
+        if (merchantUserId != null && booking.getMerchantId() != null && !merchantUserId.equals(booking.getMerchantId())) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền xác nhận thu tiền cho bãi xe này!");
+        }
+
+        booking.setStatus(BookingStatusEnum.COMPLETED);
+        bookingRepository.save(booking);
+
+        try {
+            SlotHoldRequest releaseReq = SlotHoldRequest.builder()
+                    .vehicleType(booking.getVehicleType())
+                    .bookingId(booking.getId())
+                    .build();
+            parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+            queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+        } catch (Exception ex) {
+            log.warn("Failed to release slot on cash checkout: {}", ex.getMessage());
+        }
+
+        outboxPublisherService.publishBookingCompleted(booking);
+        log.info("Booking {} completed via cash payment at gate by merchant {}", bookingCode, merchantUserId);
     }
 }

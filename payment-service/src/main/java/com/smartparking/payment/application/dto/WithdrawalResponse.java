@@ -27,9 +27,19 @@ public class WithdrawalResponse {
     private String merchantName;
     private String merchantPhone;
     private String bankName;
+    private String bankAccountNumber;
     private String maskedBankAccount;
+    private String accountHolderName;
 
     public static WithdrawalResponse fromEntity(WithdrawalRequest request, BigDecimal currentBalance) {
+        String rawAccount = request.getBankAccountNumber();
+        String masked = "****";
+        if (rawAccount != null && rawAccount.length() >= 4) {
+            masked = "****" + rawAccount.substring(rawAccount.length() - 4);
+        } else if (rawAccount != null && !rawAccount.isBlank()) {
+            masked = rawAccount;
+        }
+
         return WithdrawalResponse.builder()
                 .id(request.getId())
                 .merchantId(request.getMerchantId())
@@ -40,10 +50,13 @@ public class WithdrawalResponse {
                 .processedAt(request.getProcessedAt())
                 .processedByUserId(request.getProcessedBy())
                 .decisionReason(request.getDecisionReason())
-                .merchantName("Merchant #" + request.getMerchantId())
+                .merchantName(request.getAccountHolderName() != null && !request.getAccountHolderName().isBlank()
+                        ? request.getAccountHolderName() : "Merchant #" + request.getMerchantId())
                 .merchantPhone("")
-                .bankName("Ngân hàng liên kết")
-                .maskedBankAccount("****")
+                .bankName(request.getBankName() != null ? request.getBankName() : "Ngân hàng liên kết")
+                .bankAccountNumber(rawAccount)
+                .maskedBankAccount(masked)
+                .accountHolderName(request.getAccountHolderName())
                 .build();
     }
 }

@@ -35,6 +35,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final ParkingLotClient parkingLotClient;
     private final OutboxPublisherService outboxPublisherService;
+    private final com.smartparking.booking.application.service.QueueService queueService;
 
     @Override
     @Transactional
@@ -44,7 +45,15 @@ public class BookingServiceImpl implements BookingService {
         }
 
         String bookingCode = "BK" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
-        BigDecimal deposit = BigDecimal.valueOf(50000); // Standard advance deposit
+        
+        BigDecimal deposit;
+        if (request.getAdvanceDeposit() != null && request.getAdvanceDeposit().compareTo(BigDecimal.ZERO) > 0) {
+            deposit = request.getAdvanceDeposit();
+        } else if (request.getTotalAmount() != null && request.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
+            deposit = request.getTotalAmount().multiply(new BigDecimal("0.20")).setScale(0, java.math.RoundingMode.HALF_UP);
+        } else {
+            deposit = BigDecimal.valueOf(50000);
+        }
 
         Booking booking = Booking.builder()
                 .bookingCode(bookingCode)
@@ -77,10 +86,24 @@ public class BookingServiceImpl implements BookingService {
             if (holdRes == null || holdRes.getData() == null || !holdRes.getData().isSuccess()) {
                 throw new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Hết chỗ đỗ cho loại xe này tại bãi đỗ đã chọn!");
             }
+            if (holdRes.getData().getBaseHourlyPrice() != null) {
+                saved.setHourlyRate(holdRes.getData().getBaseHourlyPrice());
+                saved = bookingRepository.save(saved);
+            }
         } catch (AppException e) {
             throw e;
+        } catch (feign.FeignException.BadRequest | feign.FeignException.Conflict e) {
+            log.error("Slot hold rejected by parking-lot-service: {}", e.getMessage());
+            throw new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Hết chỗ đỗ cho loại xe này tại bãi đỗ đã chọn!");
+        } catch (feign.FeignException.NotFound e) {
+            log.error("Parking lot not found: {}", e.getMessage());
+            throw new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Bãi đỗ xe không tồn tại hoặc đã ngừng hoạt động!");
+        } catch (feign.FeignException e) {
+            log.error("Feign call to parking-lot-service failed with HTTP {}: {}", e.status(), e.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Không thể kết nối đến hệ thống bãi đỗ xe, vui lòng thử lại sau!");
         } catch (Exception e) {
-            log.warn("Feign call to parking-lot-service failed or unavailable: {}", e.getMessage());
+            log.error("Unexpected error while holding slot: {}", e.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Lỗi hệ thống khi giữ chỗ đỗ xe!");
         }
 
         outboxPublisherService.publishBookingCreated(saved);
@@ -147,6 +170,7 @@ public class BookingServiceImpl implements BookingService {
                     .bookingId(booking.getId())
                     .build();
             parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+            queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
         } catch (Exception ex) {
             log.warn("Failed to release slot in parking-lot-service: {}", ex.getMessage());
         }

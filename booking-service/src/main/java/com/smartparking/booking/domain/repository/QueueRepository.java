@@ -18,4 +18,8 @@ public interface QueueRepository extends JpaRepository<Queue, Long> {
             Long parkingLotId,
             VehicleTypeEnum vehicleType,
             QueueStatusEnum status);
+
+    List<Queue> findByStatusAndResponseDeadlineBefore(
+            QueueStatusEnum status,
+            java.time.LocalDateTime deadline);
 }

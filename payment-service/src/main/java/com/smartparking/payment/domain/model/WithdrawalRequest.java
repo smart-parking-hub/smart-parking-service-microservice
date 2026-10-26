@@ -46,6 +46,15 @@ public class WithdrawalRequest {
     @Column(name = "decision_reason", length = 1000)
     private String decisionReason;
 
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
+    @Column(name = "bank_account_num", length = 50)
+    private String bankAccountNumber;
+
+    @Column(name = "account_holder_name", length = 100)
+    private String accountHolderName;
+
     @PrePersist
     protected void onCreate() {
         if (requestedAt == null) {

@@ -13,6 +13,10 @@ import java.math.BigDecimal;
 @Repository
 public interface WalletLedgerEntryRepository extends JpaRepository<WalletLedgerEntry, Long> {
 
+    java.util.List<WalletLedgerEntry> findByMerchantId(Long merchantId);
+
+    boolean existsByBookingIdAndEntryType(Long bookingId, com.smartparking.common.enums.WalletLedgerEntryTypeEnum entryType);
+
     Page<WalletLedgerEntry> findByMerchantIdOrderByCreatedAtDesc(Long merchantId, Pageable pageable);
 
     @Query("SELECT COALESCE(SUM(w.netAmount), 0) FROM WalletLedgerEntry w WHERE w.merchantId = :merchantId")

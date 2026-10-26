@@ -213,9 +213,9 @@ public class SlotServiceImpl implements SlotService {
     }
 
     private void assertLotApprovedForConfig(ParkingLot lot) {
-        if (lot.getStatus() != ParkingLotStatusEnum.APPROVED) {
+        if (lot.getStatus() == ParkingLotStatusEnum.REJECTED || lot.getStatus() == ParkingLotStatusEnum.SUSPENDED) {
             throw new AppException(ErrorCode.BAD_REQUEST,
-                    "Bãi đỗ phải được Admin duyệt trước khi cấu hình slot hoặc bảng giá. Trạng thái hiện tại: "
+                    "Bãi đỗ đang bị từ chối hoặc tạm ngưng hoạt động, không thể cấu hình slot hoặc bảng giá. Trạng thái hiện tại: "
                             + lot.getStatus());
         }
     }

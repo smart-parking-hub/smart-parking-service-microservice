@@ -44,10 +44,19 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
+
+        // Always strip client-provided internal user identity headers to prevent spoofing
+        ServerHttpRequest.Builder builder = request.mutate()
+                .headers(httpHeaders -> {
+                    httpHeaders.remove(SecurityConstants.HEADER_USER_ID);
+                    httpHeaders.remove(SecurityConstants.HEADER_USER_ROLE);
+                    httpHeaders.remove(SecurityConstants.HEADER_USER_EMAIL);
+                });
+
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-            return chain.filter(exchange);
+            return chain.filter(exchange.mutate().request(builder.build()).build());
         }
 
         String token = authHeader.substring(7);
@@ -63,8 +72,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             String role = claims.get("role", String.class);
             String phone = claims.get("phone", String.class);
             String email = claims.get("email", String.class);
-
-            ServerHttpRequest.Builder builder = request.mutate();
 
             if (StringUtils.hasText(userId)) {
                 builder.header(SecurityConstants.HEADER_USER_ID, userId);

@@ -82,4 +82,19 @@ public class QueueServiceImpl implements QueueService {
         queueRepository.save(queue);
         log.info("Driver {} cancelled queue {}", driverUserId, queueId);
     }
+
+    @Override
+    @Transactional
+    public void promoteNextInQueue(Long parkingLotId, com.smartparking.common.enums.VehicleTypeEnum vehicleType) {
+        List<Queue> waitingList = queueRepository.findByParkingLotIdAndVehicleTypeAndStatusOrderByJoinedAtAsc(
+                parkingLotId, vehicleType, QueueStatusEnum.WAITING);
+        if (!waitingList.isEmpty()) {
+            Queue next = waitingList.get(0);
+            next.setStatus(QueueStatusEnum.NOTIFIED);
+            next.setResponseDeadline(LocalDateTime.now().plusMinutes(15));
+            queueRepository.save(next);
+            log.info("Queue entry {} for driver {} in lot {} promoted to NOTIFIED (15m deadline)",
+                    next.getId(), next.getDriverId(), parkingLotId);
+        }
+    }
 }

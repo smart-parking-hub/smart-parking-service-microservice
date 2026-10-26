@@ -25,6 +25,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final BookingRepository bookingRepository;
+    private final com.smartparking.booking.infrastructure.client.ParkingLotClient parkingLotClient;
 
     @Override
     @Transactional
@@ -54,6 +55,19 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review saved = reviewRepository.save(review);
         log.info("Driver {} reviewed lot {} with rating {}", driverUserId, booking.getParkingLotId(), request.getRating());
+
+        // Synchronize rating average to parking-lot-service
+        try {
+            Double avg = reviewRepository.findByParkingLotIdOrderByCreatedAtDesc(booking.getParkingLotId(), org.springframework.data.domain.Pageable.unpaged())
+                    .getContent().stream()
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(request.getRating().doubleValue());
+            parkingLotClient.updateRating(booking.getParkingLotId(), avg);
+        } catch (Exception ex) {
+            log.warn("Failed to notify parking-lot-service of new rating: {}", ex.getMessage());
+        }
+
         return ReviewDto.fromEntity(saved);
     }
 

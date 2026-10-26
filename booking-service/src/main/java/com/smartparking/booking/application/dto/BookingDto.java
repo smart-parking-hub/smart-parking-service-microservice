@@ -30,6 +30,7 @@ public class BookingDto {
     private BookingStatusEnum status;
     private BigDecimal advanceDeposit;
     private BigDecimal totalAmount;
+    private BigDecimal hourlyRate;
     private LocalDateTime expectedCheckInTime;
     private LocalDateTime expectedCheckOutTime;
     private LocalDateTime expiresAt;
@@ -53,6 +54,7 @@ public class BookingDto {
                 .status(entity.getStatus())
                 .advanceDeposit(entity.getAdvanceDeposit())
                 .totalAmount(entity.getTotalAmount())
+                .hourlyRate(entity.getHourlyRate())
                 .expectedCheckInTime(entity.getExpectedCheckInTime())
                 .expectedCheckOutTime(entity.getExpectedCheckOutTime())
                 .expiresAt(entity.getExpiresAt())
