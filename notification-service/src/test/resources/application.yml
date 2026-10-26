@@ -25,3 +25,7 @@ spring:
 
 jwt:
   secret: smartparkingsecretkeymustbeverylongandsecure2026version
+
+eureka:
+  client:
+    enabled: false

@@ -20,3 +20,7 @@ jwt:
 app:
   otp:
     expose-in-response: true
+
+eureka:
+  client:
+    enabled: false

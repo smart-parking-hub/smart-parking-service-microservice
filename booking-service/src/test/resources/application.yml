@@ -35,3 +35,7 @@ jwt:
 app:
   booking:
     check-in-early-minutes: 30
+
+eureka:
+  client:
+    enabled: false
