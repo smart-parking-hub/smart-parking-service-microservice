@@ -51,7 +51,12 @@ public class BookingServiceImpl implements BookingService {
                 .driverId(driverUserId)
                 .vehicleId(request.getVehicleId())
                 .parkingLotId(request.getParkingLotId())
+                .merchantId(request.getMerchantId())
                 .vehicleType(request.getVehicleType())
+                .vehiclePlate(request.getVehiclePlate())
+                .parkingLotName(request.getParkingLotName())
+                .parkingLotAddress(request.getParkingLotAddress())
+                .totalAmount(request.getTotalAmount())
                 .status(BookingStatusEnum.PENDING_PAYMENT)
                 .advanceDeposit(deposit)
                 .expectedCheckInTime(request.getExpectedCheckInTime())
@@ -94,10 +99,14 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<BookingDto> getMerchantBookings(Long merchantUserId, Pageable pageable) {
-        Page<BookingDto> page = bookingRepository.findByMerchantIdOrderByCreatedAtDesc(merchantUserId, pageable)
-                .map(BookingDto::fromEntity);
-        return new PageResponse<>(page);
+    public PageResponse<BookingDto> getMerchantBookings(Long merchantUserId, Long parkingLotId, Pageable pageable) {
+        Page<Booking> page;
+        if (parkingLotId != null) {
+            page = bookingRepository.findByMerchantIdAndParkingLotIdOrderByCreatedAtDesc(merchantUserId, parkingLotId, pageable);
+        } else {
+            page = bookingRepository.findByMerchantIdOrderByCreatedAtDesc(merchantUserId, pageable);
+        }
+        return new PageResponse<>(page.map(BookingDto::fromEntity));
     }
 
     @Override

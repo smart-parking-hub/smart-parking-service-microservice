@@ -46,6 +46,9 @@ public class Booking extends BaseEntity {
     @Column(name = "parking_lot_name", length = 150)
     private String parkingLotName;
 
+    @Column(name = "parking_lot_address", length = 255)
+    private String parkingLotAddress;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private BookingStatusEnum status;

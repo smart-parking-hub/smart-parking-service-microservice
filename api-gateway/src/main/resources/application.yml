@@ -47,6 +47,14 @@ spring:
           filters:
             - StripPrefix=0
 
+        # AI Service
+        - id: ai-service
+          uri: ${AI_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/ai/**, /api/ai/**
+          filters:
+            - StripPrefix=0
+
       globalcors:
         corsConfigurations:
           '[/**]':

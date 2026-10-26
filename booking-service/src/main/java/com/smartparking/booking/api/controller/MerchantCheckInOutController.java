@@ -47,8 +47,9 @@ public class MerchantCheckInOutController {
     @PreAuthorize("hasRole('MERCHANT')")
     public ResponseEntity<ApiResponse<PageResponse<BookingDto>>> getMerchantBookings(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(required = false) Long parkingLotId,
             @PageableDefault(size = 20) Pageable pageable) {
-        PageResponse<BookingDto> page = bookingService.getMerchantBookings(user.getId(), pageable);
+        PageResponse<BookingDto> page = bookingService.getMerchantBookings(user.getId(), parkingLotId, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Lấy danh sách đặt chỗ thành công"));
     }
 }

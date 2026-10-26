@@ -21,8 +21,10 @@ public class BookingDto {
     private Long driverId;
     private Long vehicleId;
     private String vehiclePlate;
+    private String vehicleLicensePlate;
     private Long parkingLotId;
     private String parkingLotName;
+    private String parkingLotAddress;
     private Long merchantId;
     private VehicleTypeEnum vehicleType;
     private BookingStatusEnum status;
@@ -42,8 +44,10 @@ public class BookingDto {
                 .driverId(entity.getDriverId())
                 .vehicleId(entity.getVehicleId())
                 .vehiclePlate(entity.getVehiclePlate())
+                .vehicleLicensePlate(entity.getVehiclePlate())
                 .parkingLotId(entity.getParkingLotId())
                 .parkingLotName(entity.getParkingLotName())
+                .parkingLotAddress(entity.getParkingLotAddress())
                 .merchantId(entity.getMerchantId())
                 .vehicleType(entity.getVehicleType())
                 .status(entity.getStatus())

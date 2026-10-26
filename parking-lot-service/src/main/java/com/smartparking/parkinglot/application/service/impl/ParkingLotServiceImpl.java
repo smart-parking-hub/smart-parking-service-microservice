@@ -180,6 +180,9 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     @Transactional(readOnly = true)
     public PageResponse<AdminParkingLotResponse> getAllParkingLotsForAdmin(Pageable pageable) {
         Pageable safe = Pageables.sanitize(pageable);
+        if (safe.getSort().isUnsorted()) {
+            safe = PageRequest.of(safe.getPageNumber(), safe.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        }
         Page<ParkingLot> page = parkingLotRepository.findAll(safe);
         return new PageResponse<>(page.map(AdminParkingLotResponse::from));
     }
