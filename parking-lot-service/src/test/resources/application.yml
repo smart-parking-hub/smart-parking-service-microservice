@@ -23,3 +23,7 @@ jwt:
 app:
   storage:
     parking-lot-images-dir: build/test-uploads
+
+eureka:
+  client:
+    enabled: false

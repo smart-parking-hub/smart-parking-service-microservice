@@ -1,0 +1,4776 @@
+{
+  "info": {
+    "_postman_id": "2caab8b0-4d48-4ec2-8c84-14d8680b5f80",
+    "name": "SmartParkingHub API Collection",
+    "description": "Bộ sưu tập kiểm thử toàn diện tất cả các Controller API của hệ thống Microservice SmartParkingHub. Kết nối qua Central API Gateway (:8088).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8088",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "merchant_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "driver_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vehicleId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "parkingLotId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "imageId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "bookingCode",
+      "value": "BK-DEMO-001",
+      "type": "string"
+    },
+    {
+      "key": "queueId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "withdrawalId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "disputeId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "14",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00. Authentication & Quick Logins",
+      "description": "Quản lý đăng nhập, cấp token, đăng ký và lấy lại mật khẩu",
+      "item": [
+        {
+          "name": "01. Login as Admin",
+          "id": "86391d02-0205-434c-a899-2486fd004b3e",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập tài khoản System Admin mẫu (admin@smartparking.com / password123)",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@smartparking.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "    pm.collectionVariables.set(\"admin_token\", res.data.token);",
+                  "    pm.collectionVariables.set(\"token\", res.data.token);",
+                  "    console.log(\"Admin Token saved to {{admin_token}} & {{token}}\");",
+                  "}",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Has valid JWT token\", function () {",
+                  "    pm.expect(res.data.token).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Login as Merchant",
+          "id": "2e22270e-3973-4737-aaf4-436d91c302c4",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập tài khoản Chủ bãi xe mẫu (thanh.dongsaigon@gmail.com / password123)",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"thanh.dongsaigon@gmail.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "    pm.collectionVariables.set(\"merchant_token\", res.data.token);",
+                  "    pm.collectionVariables.set(\"token\", res.data.token);",
+                  "    console.log(\"Merchant Token saved to {{merchant_token}} & {{token}}\");",
+                  "}",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03. Login as Driver",
+          "id": "eaa34b3b-9164-4b91-8e63-5e570506314a",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập tài khoản Tài xế mẫu (hung.nguyen@smartparking.com / password123)",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hung.nguyen@smartparking.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "    pm.collectionVariables.set(\"driver_token\", res.data.token);",
+                  "    pm.collectionVariables.set(\"token\", res.data.token);",
+                  "    console.log(\"Driver Token saved to {{driver_token}} & {{token}}\");",
+                  "}",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04. Send Register OTP",
+          "id": "d6275528-695f-4e1d-b4fe-06fe49a9c978",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/otp/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "otp",
+                "send"
+              ]
+            },
+            "description": "Gửi mã OTP xác thực qua số điện thoại để đăng ký tài khoản",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"0987654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Register New Account",
+          "id": "f3e59b3e-930f-4e5c-be6c-bb71bdb7d722",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Đăng ký tài khoản mới (DRIVER hoặc MERCHANT)",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"0987654321\",\n  \"email\": \"new.driver.test@smartparking.com\",\n  \"password\": \"password123\",\n  \"otpCode\": \"123456\",\n  \"role\": \"DRIVER\",\n  \"fullName\": \"Nguyễn Văn Mới\",\n  \"citizenId\": \"079099001234\",\n  \"bankName\": \"Techcombank\",\n  \"bankAccountNum\": \"190399887766\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06. Send Forgot Password OTP",
+          "id": "5b41cd6d-bcd9-464c-8762-dfe9d349cfa8",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password/otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password",
+                "otp"
+              ]
+            },
+            "description": "Yêu cầu gửi mã OTP để đặt lại mật khẩu",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hung.nguyen@smartparking.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07. Reset Password with OTP",
+          "id": "777ee5fb-fc7e-44c3-a7b4-cb15506ed156",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password",
+                "reset"
+              ]
+            },
+            "description": "Thiết lập mật khẩu mới bằng mã OTP đã nhận",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hung.nguyen@smartparking.com\",\n  \"otpCode\": \"123456\",\n  \"newPassword\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01. User Profile & Settings",
+      "item": [
+        {
+          "name": "01. Get My Profile",
+          "id": "f8e571e7-9ec2-4cbf-b15a-73aaa42032f1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Lấy thông tin tài khoản đang đăng nhập hiện tại",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Update My Profile",
+          "id": "46818654-0fe5-402d-a1da-f09683a993fb",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Cập nhật thông tin họ tên, liên hệ khẩn cấp, địa chỉ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyễn Văn Hùng (Cập nhật)\",\n  \"phone\": \"0909128374\",\n  \"emergencyContact\": \"0909128375\",\n  \"address\": \"Số 42 Đường số 5, Phường Linh Xuân, TP. Thủ Đức, TP. HCM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Change Password",
+          "id": "40188eac-f61f-4377-ba28-37d4354e8394",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "password"
+              ]
+            },
+            "description": "Đổi mật khẩu người dùng",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"password123\",\n  \"newPassword\": \"password123\",\n  \"confirmPassword\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02. Driver - Vehicles Management",
+      "item": [
+        {
+          "name": "01. Get My Vehicles List",
+          "id": "d9767892-9aa9-44ee-95b5-c21c2adb4afb",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Lấy danh sách các phương tiện đã đăng ký của tài xế",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.content && res.data.content.length > 0) {",
+                  "    pm.collectionVariables.set(\"vehicleId\", res.data.content[0].id);",
+                  "    console.log(\"Found vehicleId:\", res.data.content[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Add New Vehicle",
+          "id": "410d1ab7-abc8-4e0a-a4e3-6468de591a23",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles"
+              ]
+            },
+            "description": "Thêm xe mới vào danh sách sở hữu của tài xế",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licensePlate\": \"51A-888.99\",\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"brand\": \"Toyota\",\n  \"model\": \"Camry 2.5Q\",\n  \"color\": \"Trắng ngọc trai\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set(\"vehicleId\", res.data.id);",
+                  "    console.log(\"Saved new vehicleId:\", res.data.id);",
+                  "}",
+                  "pm.test(\"Add vehicle successfully\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03. Update Vehicle",
+          "id": "abb0cd3e-4b0d-470c-a80e-344bc44449ee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                ":vehicleId"
+              ],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": "{{vehicleId}}",
+                  "description": "Target vehicleId"
+                }
+              ]
+            },
+            "description": "Cập nhật thông tin xe theo ID",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licensePlate\": \"51A-888.99\",\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"brand\": \"Toyota\",\n  \"model\": \"Camry 2.5Q Hybrid 2026\",\n  \"color\": \"Đen bóng\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Delete Vehicle",
+          "id": "8fd85aac-bf44-471f-a43b-cedeb4eefee1",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                ":vehicleId"
+              ],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": "{{vehicleId}}",
+                  "description": "Target vehicleId"
+                }
+              ]
+            },
+            "description": "Xóa phương tiện khỏi hệ thống",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03. Merchant - Profile & KYC",
+      "item": [
+        {
+          "name": "01. Get Merchant Profile",
+          "id": "67e4a54e-98ab-4129-876d-c42056d0df5e",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "profile"
+              ]
+            },
+            "description": "Xem thông tin chi tiết hồ sơ kinh doanh và tài khoản ngân hàng của Merchant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Update Merchant Profile",
+          "id": "2f77edfa-0017-4656-b9b7-2a9cf21f3175",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "profile"
+              ]
+            },
+            "description": "Cập nhật CCCD, GPKD và số tài khoản nhận tiền rút",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"citizenId\": \"079085001234\",\n  \"businessLicense\": \"GPKD-0315891234\",\n  \"bankName\": \"Vietcombank\",\n  \"bankAccountNum\": \"0071001234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Upload Business License File (Multipart)",
+          "id": "45567880-ff73-4da4-a923-9aa88da6436a",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/profile/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "profile",
+                "documents"
+              ]
+            },
+            "description": "Tải lên tệp chứng thực giấy phép kinh doanh",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "businessLicense",
+                  "value": "GPKD-0315891234",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Chọn file PDF hoặc ảnh chụp GPKD"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04. Merchant - Parking Lots Management",
+      "item": [
+        {
+          "name": "01. Create Parking Lot",
+          "id": "de558b18-4cfc-4741-8cd3-855bfa92a58c",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots"
+              ]
+            },
+            "description": "Tạo bãi đỗ xe mới (chờ Admin duyệt)",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bãi Xe Thông Minh Cát Lái - Hub Mới\",\n  \"address\": \"Số 789 Nguyễn Thị Định, Phường Cát Lái, TP. Thủ Đức, TP. Hồ Chí Minh\",\n  \"latitude\": 10.771234,\n  \"longitude\": 106.781234\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set(\"parkingLotId\", res.data.id);",
+                  "    console.log(\"Created parkingLotId:\", res.data.id);",
+                  "}",
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Get My Parking Lots",
+          "id": "91acf969-28db-49a2-9284-8ebc2506796b",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots?page=0&size=10&sort=createdAt,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Parameter size"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc",
+                  "description": "Parameter sort"
+                }
+              ]
+            },
+            "description": "Lấy danh sách các bãi xe thuộc quyền quản lý của Merchant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.content && res.data.content.length > 0) {",
+                  "    pm.collectionVariables.set(\"parkingLotId\", res.data.content[0].id);",
+                  "    console.log(\"Active merchant parkingLotId:\", res.data.content[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03. Get Merchant Parking Lot Detail",
+          "id": "7cd18f5e-14ad-4c99-bffb-ae6347a80389",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Xem chi tiết thông tin bãi đỗ của Merchant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Update Parking Lot Info",
+          "id": "f83ab7a4-44b2-49bf-bae3-5742f8214843",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Cập nhật tên, địa chỉ, toạ độ bãi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bãi Xe Thông Minh Cát Lái - Hub 1 Hiện Đại\",\n  \"address\": \"Số 789 Nguyễn Thị Định, Phường Cát Lái, TP. Thủ Đức, TP. Hồ Chí Minh\",\n  \"latitude\": 10.771234,\n  \"longitude\": 106.781234\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Configure Slot for Single Vehicle Type",
+          "id": "85358230-d1fa-422b-814c-23f7fe31a1b8",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "slots"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Cấu hình sức chứa slot cho một loại xe nhất định",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"totalCapacity\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06. Bulk Configure All Vehicle Slots",
+          "id": "c6bf88be-75c9-47d5-934f-eac3c01e0dda",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/slots/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "slots",
+                "bulk"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Cấu hình đồng thời số lượng slot cho toàn bộ các loại xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slots\": [\n    {\n      \"vehicleType\": \"SEDAN_SUV\",\n      \"totalCapacity\": 50\n    },\n    {\n      \"vehicleType\": \"BUS_COACH\",\n      \"totalCapacity\": 20\n    },\n    {\n      \"vehicleType\": \"LIGHT_TRUCK\",\n      \"totalCapacity\": 30\n    },\n    {\n      \"vehicleType\": \"HEAVY_TRUCK\",\n      \"totalCapacity\": 15\n    },\n    {\n      \"vehicleType\": \"CONTAINER\",\n      \"totalCapacity\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07. Configure Single Pricing Rule",
+          "id": "69d910ae-060c-4c13-b945-da8f30623bdc",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/pricing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "pricing"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Thiết lập biểu phí giờ, hệ số giờ cao điểm, hệ số quá giờ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"basePricePerHour\": 25000.0,\n  \"surgeMultiplier\": 1.25,\n  \"surgeStartTime\": \"07:00:00\",\n  \"surgeEndTime\": \"09:00:00\",\n  \"overtimePenaltyMultiplier\": 1.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08. Bulk Configure Pricing Rules",
+          "id": "d510e039-c27e-4f1a-992b-16e47d95cad9",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/pricing/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "pricing",
+                "bulk"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Cấu hình đồng thời bảng giá cho toàn bộ loại xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pricingRules\": [\n    {\n      \"vehicleType\": \"SEDAN_SUV\",\n      \"basePricePerHour\": 20000.0,\n      \"surgeMultiplier\": 1.2,\n      \"surgeStartTime\": \"07:00:00\",\n      \"surgeEndTime\": \"09:00:00\",\n      \"overtimePenaltyMultiplier\": 1.5\n    },\n    {\n      \"vehicleType\": \"BUS_COACH\",\n      \"basePricePerHour\": 40000.0,\n      \"surgeMultiplier\": 1.2,\n      \"surgeStartTime\": \"07:00:00\",\n      \"surgeEndTime\": \"09:00:00\",\n      \"overtimePenaltyMultiplier\": 1.5\n    },\n    {\n      \"vehicleType\": \"LIGHT_TRUCK\",\n      \"basePricePerHour\": 35000.0,\n      \"surgeMultiplier\": 1.15,\n      \"surgeStartTime\": \"06:00:00\",\n      \"surgeEndTime\": \"08:00:00\",\n      \"overtimePenaltyMultiplier\": 1.4\n    },\n    {\n      \"vehicleType\": \"HEAVY_TRUCK\",\n      \"basePricePerHour\": 60000.0,\n      \"surgeMultiplier\": 1.15,\n      \"surgeStartTime\": \"06:00:00\",\n      \"surgeEndTime\": \"08:00:00\",\n      \"overtimePenaltyMultiplier\": 1.4\n    },\n    {\n      \"vehicleType\": \"CONTAINER\",\n      \"basePricePerHour\": 90000.0,\n      \"surgeMultiplier\": 1.1,\n      \"surgeStartTime\": \"00:00:00\",\n      \"surgeEndTime\": \"06:00:00\",\n      \"overtimePenaltyMultiplier\": 1.5\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05. Merchant & Public - Parking Lot Images",
+      "item": [
+        {
+          "name": "01. Upload Parking Lot Images (Multipart)",
+          "id": "2faba9cf-2f4d-491a-9594-8267d059a350",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "images"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Tải lên hình ảnh khuôn viên bãi xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "",
+                  "description": "Tối đa 5 file ảnh JPG/PNG"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"imageId\", res.data[0].id);",
+                  "    console.log(\"Saved imageId:\", res.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Get Parking Lot Images List",
+          "id": "bf490b5c-9328-494d-bc44-498f98234527",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parking-lots/{{parkingLotId}}/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parking-lots",
+                ":parkingLotId",
+                "images"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Lấy danh sách thông tin metadata hình ảnh bãi",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"imageId\", res.data[0].id);",
+                  "    console.log(\"ImageId set to:\", res.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03. Download / View Image File",
+          "id": "0b929031-0a61-4552-8eba-adb85f961b37",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parking-lots/{{parkingLotId}}/images/{{imageId}}/content",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parking-lots",
+                ":parkingLotId",
+                "images",
+                ":imageId",
+                "content"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                },
+                {
+                  "key": "imageId",
+                  "value": "{{imageId}}",
+                  "description": "Target imageId"
+                }
+              ]
+            },
+            "description": "Lấy nội dung file ảnh nhị phân",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Set Image as Cover",
+          "id": "80d74455-a934-4b88-ad1c-a4ea02f6767f",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/images/{{imageId}}/cover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "images",
+                ":imageId",
+                "cover"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                },
+                {
+                  "key": "imageId",
+                  "value": "{{imageId}}",
+                  "description": "Target imageId"
+                }
+              ]
+            },
+            "description": "Đặt ảnh được chọn làm ảnh bìa đại diện",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Delete Image",
+          "id": "6661a57b-c80d-4159-9fe0-387bd32d8eb9",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/parking-lots/{{parkingLotId}}/images/{{imageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "parking-lots",
+                ":parkingLotId",
+                "images",
+                ":imageId"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                },
+                {
+                  "key": "imageId",
+                  "value": "{{imageId}}",
+                  "description": "Target imageId"
+                }
+              ]
+            },
+            "description": "Xóa ảnh khỏi bãi xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06. Public & Driver - Search & View Lots",
+      "item": [
+        {
+          "name": "01. Search Parking Lots (Radius & Vehicle Type)",
+          "id": "b961294f-5cc3-4ce1-8d2a-ae7bdb88f0d7",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parking-lots/search?vehicleType=SEDAN_SUV&includeFull=false&latitude=10.771234&longitude=106.781234&radiusKm=15.0&page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parking-lots",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "vehicleType",
+                  "value": "SEDAN_SUV",
+                  "description": "Parameter vehicleType"
+                },
+                {
+                  "key": "includeFull",
+                  "value": "false",
+                  "description": "Parameter includeFull"
+                },
+                {
+                  "key": "latitude",
+                  "value": "10.771234",
+                  "description": "Parameter latitude"
+                },
+                {
+                  "key": "longitude",
+                  "value": "106.781234",
+                  "description": "Parameter longitude"
+                },
+                {
+                  "key": "radiusKm",
+                  "value": "15.0",
+                  "description": "Parameter radiusKm"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Tìm kiếm bãi còn chỗ trống gần vị trí hiện tại",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Get Parking Lot Public Detail",
+          "id": "c3e74a12-6578-4e8a-8102-08737e7fe616",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parking-lots/{{parkingLotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parking-lots",
+                ":parkingLotId"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Xem chi tiết bãi đỗ xe cho khách vãng lai và tài xế",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Get Available Slots by Parking Lot",
+          "id": "3e527de6-9c15-41ac-925f-f9730c08f0b1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parking-lots/{{parkingLotId}}/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parking-lots",
+                ":parkingLotId",
+                "slots"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Xem số lượng slot còn trống theo từng loại phương tiện",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Get Pricing Rules by Parking Lot",
+          "id": "63e3030f-d366-4f5f-b46d-a92f95f83a63",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parking-lots/{{parkingLotId}}/pricing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parking-lots",
+                ":parkingLotId",
+                "pricing"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Xem bảng giá áp dụng cho từng loại xe",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07. Driver - Booking Operations",
+      "item": [
+        {
+          "name": "01. Create Booking",
+          "id": "b7efd9bf-3c35-439a-9178-82025dbbc251",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
+            },
+            "description": "Tài xế thực hiện đặt chỗ gửi xe trước",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": 1,\n  \"parkingLotId\": 1,\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"expectedCheckInTime\": \"2026-10-26T15:00:00\",\n  \"expectedCheckOutTime\": \"2026-10-26T18:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set(\"bookingId\", res.data.id);",
+                  "    if (res.data.bookingCode) {",
+                  "        pm.collectionVariables.set(\"bookingCode\", res.data.bookingCode);",
+                  "    }",
+                  "    console.log(\"Booking created with ID:\", res.data.id, \"Code:\", res.data.bookingCode);",
+                  "}",
+                  "pm.test(\"Booking created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Get My Bookings List",
+          "id": "4493a276-9879-42ef-bd9b-e1599d246fe1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem danh sách đặt chỗ của tài xế",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.content && res.data.content.length > 0) {",
+                  "    pm.collectionVariables.set(\"bookingId\", res.data.content[0].id);",
+                  "    pm.collectionVariables.set(\"bookingCode\", res.data.content[0].bookingCode);",
+                  "    console.log(\"Latest bookingCode:\", res.data.content[0].bookingCode);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03. Get Booking Detail",
+          "id": "8dc126e5-a47b-4806-bfeb-3f47350870c4",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                ":bookingId"
+              ],
+              "variable": [
+                {
+                  "key": "bookingId",
+                  "value": "{{bookingId}}",
+                  "description": "Target bookingId"
+                }
+              ]
+            },
+            "description": "Xem thông tin chi tiết một lượt đặt chỗ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Cancel Booking",
+          "id": "d58a7ff5-30ba-49fb-ad88-b75362aed1a7",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                ":bookingId",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "bookingId",
+                  "value": "{{bookingId}}",
+                  "description": "Target bookingId"
+                }
+              ]
+            },
+            "description": "Tài xế hủy đặt chỗ trước giờ nhận bãi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Thay đổi lịch trình công tác đột xuất\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08. Merchant - Check-In & Check-Out",
+      "item": [
+        {
+          "name": "01. Check-In Vehicle into Lot",
+          "id": "3b7e0a0a-b662-444a-8f4f-c35d3c37a124",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/check-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "check-in"
+              ]
+            },
+            "description": "Chủ bãi quét mã và xác nhận xe vào bãi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingCode\": \"{{bookingCode}}\",\n  \"parkingLotId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Check-Out Vehicle from Lot",
+          "id": "638dc878-df38-4222-8f12-cdd5a23d6cf8",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/check-out",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "check-out"
+              ]
+            },
+            "description": "Xác nhận xe rời bãi và tính tổng phí đỗ xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingCode\": \"{{bookingCode}}\",\n  \"parkingLotId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Get Merchant Bookings List",
+          "id": "7e257112-8fff-411b-8330-f9cda8a58fa5",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/bookings?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchant",
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem danh sách các xe đã/đang đặt chỗ tại bãi của Merchant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09. Driver - Smart Queue System",
+      "item": [
+        {
+          "name": "01. Join Queue (Waitlist)",
+          "id": "7efd92e6-8566-4fa5-84c6-947ebc562f2c",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "queues"
+              ]
+            },
+            "description": "Đăng ký xếp hàng chờ slot khi bãi đang đầy chỗ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parkingLotId\": 1,\n  \"vehicleId\": 1,\n  \"vehicleType\": \"SEDAN_SUV\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set(\"queueId\", res.data.id);",
+                  "    console.log(\"Joined queueId:\", res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Get My Queues List",
+          "id": "f46799ef-3a16-44b3-b380-93a4a169ba9e",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "queues"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Lấy danh sách các lượt xếp hàng của tài xế",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Get Current Active Queue Status",
+          "id": "887de466-2e9b-410d-adea-6d7c5f9463fe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "queues",
+                "me"
+              ]
+            },
+            "description": "Xem vị trí thứ hạng xếp hàng hiện tại",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Cancel / Leave Queue",
+          "id": "9cea50be-85e7-4370-a419-bc249ce94015",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/{{queueId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "queues",
+                ":queueId",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "queueId",
+                  "value": "{{queueId}}",
+                  "description": "Target queueId"
+                }
+              ]
+            },
+            "description": "Rút khỏi danh sách hàng đợi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. Driver - Payments & PayOS Integration",
+      "item": [
+        {
+          "name": "01. Create Payment Link (PayOS)",
+          "id": "67687316-a926-469a-83c7-45039285865c",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments"
+              ]
+            },
+            "description": "Tạo link thanh toán QR Code PayOS để đặt cọc / trả phí",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": 1,\n  \"paymentType\": \"DEPOSIT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Confirm Demo Payment (Instant Success)",
+          "id": "bf688216-2780-497f-be6e-af67c33694a6",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/demo-confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "demo-confirm"
+              ]
+            },
+            "description": "Xác nhận cọc ngay lập tức mà không cần quét QR thực tế (Dành cho Dev / Test)",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Sync PayOS Payment Status",
+          "id": "471258dc-a2c8-42c7-9782-ba36c8d35360",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/sync",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "sync"
+              ]
+            },
+            "description": "Chủ động đồng bộ trạng thái giao dịch từ PayOS",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderCode\": 10001,\n  \"bookingId\": 1,\n  \"paymentLinkId\": \"demo-payos-link-001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Get My Payments History",
+          "id": "f44b36e9-4683-451f-ad3f-e94b954e5459",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem toàn bộ lịch sử thanh toán của tài xế",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. PayOS Webhook Callback",
+          "id": "19c7c423-3c59-4478-a930-f833626e6efb",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "webhook"
+              ]
+            },
+            "description": "Webhook từ cổng PayOS gửi về khi tài xế quét mã QR thành công",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"00\",\n  \"desc\": \"success\",\n  \"data\": {\n    \"orderCode\": 10001,\n    \"amount\": 50000,\n    \"description\": \"Thanh toan giu cho SmartParking\",\n    \"accountNumber\": \"0071001234567\",\n    \"reference\": \"FT26001002\",\n    \"transactionDateTime\": \"2026-10-26 14:00:00\",\n    \"currency\": \"VND\",\n    \"paymentLinkId\": \"demo-payos-link-001\",\n    \"code\": \"00\",\n    \"desc\": \"Thành công\"\n  },\n  \"signature\": \"mock_valid_signature_for_testing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11. Merchant & Admin - Withdrawals",
+      "item": [
+        {
+          "name": "01. Merchant - Request Withdrawal",
+          "id": "de13428a-6a80-45c4-a3e1-18d780c42bf4",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/withdrawals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "withdrawals"
+              ]
+            },
+            "description": "Merchant tạo yêu cầu rút doanh thu về tài khoản ngân hàng (tối thiểu 50,000 VND)",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500000.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set(\"withdrawalId\", res.data.id);",
+                  "    console.log(\"Created withdrawalId:\", res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Merchant - Get My Withdrawals",
+          "id": "358e6851-5121-424f-8f42-7311e4a439ac",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/withdrawals?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "withdrawals"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Merchant theo dõi trạng thái các lệnh rút tiền đã tạo",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Admin - Process Withdrawal Request",
+          "id": "012c5ede-c797-4200-bc16-09824faebbb1",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/withdrawals/{{withdrawalId}}/process?approved=true&reason=Duyệt lệnh rút tiền hợp lệ",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "withdrawals",
+                ":withdrawalId",
+                "process"
+              ],
+              "variable": [
+                {
+                  "key": "withdrawalId",
+                  "value": "{{withdrawalId}}",
+                  "description": "Target withdrawalId"
+                }
+              ],
+              "query": [
+                {
+                  "key": "approved",
+                  "value": "true",
+                  "description": "Parameter approved"
+                },
+                {
+                  "key": "reason",
+                  "value": "Duyệt lệnh rút tiền hợp lệ",
+                  "description": "Parameter reason"
+                }
+              ]
+            },
+            "description": "Admin phê duyệt hoặc từ chối lệnh rút tiền",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12. Disputes Management",
+      "item": [
+        {
+          "name": "01. Driver - Create Dispute",
+          "id": "2e0f72ae-e522-4771-a009-f4f02c01b7e2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes"
+              ]
+            },
+            "description": "Tài xế khiếu nại vấn đề phát sinh từ đơn đỗ xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": 1,\n  \"reason\": \"Tính sai phí đỗ xe quá giờ\",\n  \"description\": \"Tôi đã check-out đúng 18:00 nhưng hệ thống tính thêm phí quá hạn.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set(\"disputeId\", res.data.id);",
+                  "    console.log(\"Created disputeId:\", res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Driver - Get My Disputes",
+          "id": "cdc2cb15-d14c-4580-b66b-48804395d686",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes/me?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Danh sách các khiếu nại do tài xế gửi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Merchant - Get ParkingLot Disputes",
+          "id": "d25e8ff8-bf24-44f6-aedb-09e7e7dc7e3a",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes/merchant?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                "merchant"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Danh sách các khiếu nại liên quan đến bãi xe của Merchant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{merchant_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Driver/Merchant - Get Dispute Detail",
+          "id": "e782f9f4-11c7-460f-ad0e-070b0cb62336",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes/{{disputeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                ":disputeId"
+              ],
+              "variable": [
+                {
+                  "key": "disputeId",
+                  "value": "{{disputeId}}",
+                  "description": "Target disputeId"
+                }
+              ]
+            },
+            "description": "Xem chi tiết nội dung khiếu nại",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Admin - List All Disputes",
+          "id": "affc4e13-d97c-454e-b6e5-cf3c61bd2998",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes/admin?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Admin xem danh sách tất cả các khiếu nại trong hệ thống",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06. Admin - Get Dispute Detail",
+          "id": "0730d77e-2ffb-4d0d-81f6-4e6eca9eabd2",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes/admin/{{disputeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                "admin",
+                ":disputeId"
+              ],
+              "variable": [
+                {
+                  "key": "disputeId",
+                  "value": "{{disputeId}}",
+                  "description": "Target disputeId"
+                }
+              ]
+            },
+            "description": "Admin xem hồ sơ chi tiết khiếu nại",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07. Admin - Resolve Dispute",
+          "id": "ad06b3d7-6cfb-481a-88a5-03e971e28cae",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/disputes/{{disputeId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                ":disputeId",
+                "resolve"
+              ],
+              "variable": [
+                {
+                  "key": "disputeId",
+                  "value": "{{disputeId}}",
+                  "description": "Target disputeId"
+                }
+              ]
+            },
+            "description": "Admin ban hành quyết định giải quyết khiếu nại",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolution\": \"Đã đối soát dữ liệu camera bãi xe và hoàn lại 50,000 VND cho tài xế.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13. Reviews & Ratings",
+      "item": [
+        {
+          "name": "01. Driver - Create Review",
+          "id": "b6f0576d-2ca9-4df0-ac94-72bfe520698b",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ]
+            },
+            "description": "Tài xế đánh giá sao và nhận xét bãi sau khi hoàn thành lượt gửi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": 1,\n  \"rating\": 5,\n  \"comment\": \"Bãi xe rất rộng, bảo vệ hướng dẫn tận tình, ra vào nhanh chóng!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Get Reviews by Parking Lot",
+          "id": "dcf65684-8892-41f5-9ca4-b0382b1d38ac",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews/parking-lot/{{parkingLotId}}?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "parking-lot",
+                ":parkingLotId"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem danh sách đánh giá của khách hàng về bãi đỗ xe",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14. Notifications System",
+      "item": [
+        {
+          "name": "01. Get My Notifications",
+          "id": "7bc8c406-03e7-4637-bee4-2a72c45f519b",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Lấy danh sách thông báo của tài khoản hiện tại",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.content && res.data.content.length > 0) {",
+                  "    pm.collectionVariables.set(\"notificationId\", res.data.content[0].id);",
+                  "    console.log(\"Captured notificationId:\", res.data.content[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Get Unread Notification Count",
+          "id": "8e145c36-e667-420c-9235-97c6bbff57f8",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": "Đếm số lượng thông báo chưa đọc",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Mark Single Notification as Read",
+          "id": "29ff54dd-83ac-4489-a7cb-753eb57dcded",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                ":notificationId",
+                "read"
+              ],
+              "variable": [
+                {
+                  "key": "notificationId",
+                  "value": "{{notificationId}}",
+                  "description": "Target notificationId"
+                }
+              ]
+            },
+            "description": "Đánh dấu 1 thông báo cụ thể là đã đọc",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Mark All Notifications as Read",
+          "id": "3cfed2f5-297d-4d88-add7-64e3c25548e3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "Đánh dấu toàn bộ thông báo là đã đọc",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "15. Admin - Financial Operations & Dashboard",
+      "item": [
+        {
+          "name": "01. Admin - Dashboard Statistics",
+          "id": "9d7eb679-d6fb-4949-b5d6-621ce1d0cb5a",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "dashboard"
+              ]
+            },
+            "description": "Xem thống kê tổng quan doanh thu, lượt booking và giao dịch toàn sàn",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Admin - List All Transactions",
+          "id": "6016f36e-f09a-4e90-aeb8-1427c7cd27b3",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/transactions?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem toàn bộ lịch sử biến động số dư và thanh toán",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Admin - Get Transaction Detail",
+          "id": "43bbc22e-12f6-4eca-8371-a913e2c4a392",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/transactions/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "transactions",
+                "1"
+              ]
+            },
+            "description": "Xem chi tiết giao dịch tài chính theo ID",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Admin - List All Withdrawals",
+          "id": "e8adcc06-1f24-4e6b-9db5-46893881beb9",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/withdrawals?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "withdrawals"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem danh sách các lệnh rút tiền từ chủ bãi xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Admin - Approve Withdrawal",
+          "id": "5514b98f-82fa-4f28-8b4b-b0551f04930b",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/withdrawals/{{withdrawalId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "withdrawals",
+                ":withdrawalId",
+                "approve"
+              ],
+              "variable": [
+                {
+                  "key": "withdrawalId",
+                  "value": "{{withdrawalId}}",
+                  "description": "Target withdrawalId"
+                }
+              ]
+            },
+            "description": "Admin duyệt chuyển tiền rút",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Phê duyệt chi trả doanh thu cho chủ bãi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06. Admin - Reject Withdrawal",
+          "id": "893963b8-6042-4c9b-96c9-ea68ea4148ac",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/withdrawals/{{withdrawalId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "withdrawals",
+                ":withdrawalId",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "withdrawalId",
+                  "value": "{{withdrawalId}}",
+                  "description": "Target withdrawalId"
+                }
+              ]
+            },
+            "description": "Admin từ chối lệnh rút tiền",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Số tài khoản ngân hàng không trùng khớp với tên chủ doanh nghiệp\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "16. Admin - Users Moderation & Audit Logs",
+      "item": [
+        {
+          "name": "01. Admin - List Users",
+          "id": "f39974ba-52da-493a-b450-58e58d801b1e",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem danh sách tài khoản người dùng trong hệ thống",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.content && res.data.content.length > 0) {",
+                  "    pm.collectionVariables.set(\"userId\", res.data.content[0].id);",
+                  "    console.log(\"Target userId set to:\", res.data.content[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Admin - Get User Detail",
+          "id": "692767cc-7690-4d83-8184-9b578542b359",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":userId"
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Target userId"
+                }
+              ]
+            },
+            "description": "Xem hồ sơ chi tiết người dùng và lịch sử vi phạm",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Admin - Ban User",
+          "id": "9db2a399-8ac8-4c1c-9161-904794cc2edc",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/ban",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":userId",
+                "ban"
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Target userId"
+                }
+              ]
+            },
+            "description": "Khóa tài khoản người dùng",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Tài khoản có hành vi gian lận mã cọc và bỏ xe tại bãi quá hạn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Admin - Unban User",
+          "id": "dd90ed76-4d2f-48a7-9ecb-4bac636c4d00",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/unban",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":userId",
+                "unban"
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Target userId"
+                }
+              ]
+            },
+            "description": "Mở khóa tài khoản người dùng",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Đã xác minh và hoàn tất nộp phạt vi phạm\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Admin - Send Warning to User",
+          "id": "46679f25-8213-4b74-91e2-1fb09b600f8f",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/warnings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":userId",
+                "warnings"
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Target userId"
+                }
+              ]
+            },
+            "description": "Gửi thông báo cảnh cáo vi phạm tới người dùng",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Cảnh cáo lần 1: Đỗ xe sai vị trí ô quy định tại bãi xe Hub Cát Lái\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06. Admin - View Audit Logs",
+          "id": "a502496f-88f8-41aa-89de-a34947d3cf80",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/audit-logs?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem nhật ký toàn bộ hành động quản trị của Admin",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "17. Admin - Parking Lots Moderation",
+      "item": [
+        {
+          "name": "01. Admin - List All Parking Lots",
+          "id": "bc080ab5-efa3-4f2f-807f-6604d757fa3d",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/parking-lots?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "parking-lots"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Parameter page"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Parameter size"
+                }
+              ]
+            },
+            "description": "Xem danh sách bãi đỗ xe chờ kiểm duyệt hoặc đang hoạt động",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Admin - Get Parking Lot Detail",
+          "id": "ca297bed-64bf-42fa-a210-b8de98ec2fc5",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/parking-lots/{{parkingLotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "parking-lots",
+                ":parkingLotId"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Xem hồ sơ pháp lý chi tiết bãi đỗ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Admin - Approve Parking Lot",
+          "id": "423919b3-2043-4367-8c88-b859dfe5ab0e",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/parking-lots/{{parkingLotId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "parking-lots",
+                ":parkingLotId",
+                "approve"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Duyệt mở bãi đỗ xe lên sàn hoạt động",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Hồ sơ bãi đỗ đầy đủ giấy phép kinh doanh và nghiệm thu PCCC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04. Admin - Reject Parking Lot",
+          "id": "c9739294-1665-49ea-a595-a574118cb4f9",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/parking-lots/{{parkingLotId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "parking-lots",
+                ":parkingLotId",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Từ chối phê duyệt bãi xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Bãi xe không đáp ứng tiêu chuẩn an toàn PCCC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Admin - Request Changes for Parking Lot",
+          "id": "7b38050e-64fc-4e75-bca1-f8abf9ace815",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/parking-lots/{{parkingLotId}}/request-changes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "parking-lots",
+                ":parkingLotId",
+                "request-changes"
+              ],
+              "variable": [
+                {
+                  "key": "parkingLotId",
+                  "value": "{{parkingLotId}}",
+                  "description": "Target parkingLotId"
+                }
+              ]
+            },
+            "description": "Yêu cầu chủ bãi bổ sung sửa đổi hồ sơ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Vui lòng cập nhật lại hình ảnh sơ đồ mặt bằng rõ nét hơn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "18. Internal RPC Endpoints",
+      "item": [
+        {
+          "name": "01. Internal - Hold Slot (Booking -> Parking Lot)",
+          "id": "1853b45b-f985-4148-ba5b-c9d81d07bd87",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/internal/parking-lots/1/slots/hold",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "internal",
+                "parking-lots",
+                "1",
+                "slots",
+                "hold"
+              ]
+            },
+            "description": "Giữ trước slot tạm thời khi bắt đầu tạo booking",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"bookingId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02. Internal - Release Slot (Booking -> Parking Lot)",
+          "id": "7d9082db-e414-404d-bb20-eb958354c789",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/internal/parking-lots/1/slots/release",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "internal",
+                "parking-lots",
+                "1",
+                "slots",
+                "release"
+              ]
+            },
+            "description": "Giải phóng slot khi hủy hoặc hết hạn thanh toán",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleType\": \"SEDAN_SUV\",\n  \"bookingId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03. Internal - Get Merchant Revenue Summary",
+          "id": "d204672d-890c-4f9a-bef9-527220af1431",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/internal/merchants/1/revenue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "internal",
+                "merchants",
+                "1",
+                "revenue"
+              ]
+            },
+            "description": "Lấy báo cáo doanh thu bãi xe phục vụ các dịch vụ nội bộ",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
