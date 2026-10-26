@@ -78,10 +78,10 @@ class MerchantCheckInOutControllerTest {
     @DisplayName("getMerchantBookings returns paginated bookings")
     void testGetMerchantBookings() {
         PageResponse<BookingDto> page = new PageResponse<>(new PageImpl<>(List.of(BookingDto.builder().id(1L).build())));
-        when(bookingService.getMerchantBookings(eq(200L), any())).thenReturn(page);
+        when(bookingService.getMerchantBookings(eq(200L), any(), any())).thenReturn(page);
 
         ResponseEntity<ApiResponse<PageResponse<BookingDto>>> response =
-                controller.getMerchantBookings(user, PageRequest.of(0, 20));
+                controller.getMerchantBookings(user, null, PageRequest.of(0, 20));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().getData().getContent().size());

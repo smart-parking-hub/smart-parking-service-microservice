@@ -28,4 +28,10 @@ public class CreateBookingRequest {
 
     @NotNull(message = "Thiếu expectedCheckOutTime")
     private LocalDateTime expectedCheckOutTime;
+
+    private String vehiclePlate;
+    private String parkingLotName;
+    private String parkingLotAddress;
+    private Long merchantId;
+    private java.math.BigDecimal totalAmount;
 }

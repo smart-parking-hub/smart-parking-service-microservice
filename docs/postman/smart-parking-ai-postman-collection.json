@@ -1,0 +1,529 @@
+{
+  "info": {
+    "_postman_id": "a9b8c7d6-e5f4-4a3b-2c1d-0e9f8a7b6c5d",
+    "name": "SmartParkingHub - AI Integration Test Suite",
+    "description": "Bộ Collection và Kịch bản kiểm thử API tự động cho phân hệ AI Integration (ai-service) thuộc hệ sinh thái SmartParkingHub.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8088",
+      "type": "string",
+      "description": "URL API Gateway (Port 8088)"
+    },
+    {
+      "key": "ai_direct_url",
+      "value": "http://localhost:8086",
+      "type": "string",
+      "description": "URL trực tiếp của ai-service (Port 8086)"
+    },
+    {
+      "key": "user_id",
+      "value": "1024",
+      "type": "string",
+      "description": "Mã tài xế giả lập trong Header nội bộ"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. AI Copilot Chatbot (Driver Assistant)",
+      "description": "Các kịch bản kiểm thử Chatbot tư vấn, Tool Calling thời gian thực và tra cứu chính sách",
+      "item": [
+        {
+          "name": "1.1. Tool Calling - Tìm bãi xe ô tô con (SEDAN_SUV)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "X-Correlation-Id",
+                "value": "test-chat-tool-001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tìm bãi xe ô tô gần Landmark 81 còn slot trống giúp tôi\",\n  \"userLat\": 10.795000,\n  \"userLon\": 106.721000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            },
+            "description": "Kiểm tra cơ chế Tool Calling tự động trích xuất loại xe SEDAN_SUV và tọa độ để gọi sang parking-lot-service"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success=true\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data).to.have.property('reply');",
+                  "    pm.expect(json.data.source).to.eql('REALTIME_SLOTS');",
+                  "});",
+                  "",
+                  "pm.test(\"Suggested lots array is present\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.data.suggestedLots).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2. Tool Calling - Tìm bãi xe cho xe tải (LIGHT_TRUCK)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{user_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Có bãi nào nhận xe tải nhỏ 2 tấn ở gần khu vực Thủ Đức không?\",\n  \"userLat\": 10.850000,\n  \"userLon\": 106.770000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            },
+            "description": "Nhận diện từ khóa 'xe tải nhỏ' -> ánh xạ thành VehicleTypeEnum.LIGHT_TRUCK"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Engine source is REALTIME_SLOTS\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.data.source).to.eql('REALTIME_SLOTS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3. In-Memory RAG - Quy định Giữ chỗ 10 phút & Hủy vé",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Quy định giữ chỗ 10 phút và hủy vé trước giờ check in thế nào?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            },
+            "description": "Kiểm tra cơ chế tra cứu chính sách trong In-Memory Policy Knowledge Store"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Source is POLICY_FAQ\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.data.source).to.eql('POLICY_FAQ');",
+                  "    pm.expect(json.data.reply).to.include('10 phút');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4. In-Memory RAG - Phí phạt quá giờ (Overtime)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Nếu tôi check out muộn quá giờ thì bị phạt bao nhiêu tiền?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            },
+            "description": "Truy vấn điều khoản phạt phụ trội 1.5x đơn giá"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Reply contains overtime policy\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.data.source).to.eql('POLICY_FAQ');",
+                  "    pm.expect(json.data.reply).to.include('quá giờ');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5. General Conversation - Chào hỏi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Xin chào bạn, bạn là ai và có thể giúp gì cho tôi?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            },
+            "description": "Xử lý hội thoại mở đầu thân thiện"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Source is GENERAL\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.data.source).to.eql('GENERAL');",
+                  "    pm.expect(json.data.reply).to.include('SmartParking AI Copilot');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.6. [Validation Error] Tin nhắn rỗng (400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"   \"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            },
+            "description": "Kiểm tra GlobalExceptionHandler bắt lỗi validation @NotBlank"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error response contains validation message\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. AI Content Generator (Merchant Support)",
+      "description": "Sinh mô tả bãi xe, nội quy an toàn PCCC và hướng dẫn đường đi cho chủ bãi",
+      "item": [
+        {
+          "name": "2.1. Sinh mô tả bãi xe chuẩn SEO (Happy Path)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "ROLE_MERCHANT"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lotName\": \"Bãi Đỗ Xe An Khánh Thủ Đức\",\n  \"address\": \"120 Song Hành, P. An Phú, TP. Thủ Đức, TP.HCM\",\n  \"totalCapacity\": 75,\n  \"supportedVehicleTypes\": [\"SEDAN_SUV\", \"LIGHT_TRUCK\"],\n  \"amenities\": [\"Camera 24/7\", \"Có mái che\", \"Trạm sạc EV\"],\n  \"nearbyLandmarks\": \"Đối diện Mega Market An Phú, cách cầu Sài Gòn 1km\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/generate-description",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "generate-description"]
+            },
+            "description": "Sinh đủ 3 phần: marketingDescription, operatingRegulations, wayfindingGuide"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"All 3 sections are generated\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.marketingDescription).to.be.a('string');",
+                  "    pm.expect(json.data.operatingRegulations).to.be.a('string');",
+                  "    pm.expect(json.data.wayfindingGuide).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2. [Validation Error] Thiếu tên bãi xe (400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lotName\": \"\",\n  \"address\": \"Số 10 Lê Duẩn, Quận 1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/generate-description",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "generate-description"]
+            },
+            "description": "Kiểm tra validation trường @NotBlank lotName"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. AI Synthetic Mock Data (Admin & Tester)",
+      "description": "Tự động sinh danh sách bãi xe có tọa độ GPS thật để test tải và demo",
+      "item": [
+        {
+          "name": "3.1. Sinh Mock Data bãi xe theo khu vực (Count = 5)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "ROLE_ADMIN"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetArea\": \"Quận 1, TP.HCM\",\n  \"count\": 5,\n  \"vehicleTypes\": [\"SEDAN_SUV\", \"LIGHT_TRUCK\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/generate-mock-data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "generate-mock-data"]
+            },
+            "description": "Tạo ra 5 bãi xe với tọa độ GPS, phân bổ slot và mẫu review"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Array of 5 mock lots returned\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data).to.be.an('array');",
+                  "    pm.expect(json.data.length).to.eql(5);",
+                  "    pm.expect(json.data[0]).to.have.property('latitude');",
+                  "    pm.expect(json.data[0]).to.have.property('longitude');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2. [Validation Error] Vượt quá giới hạn count > 20",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetArea\": \"Quận 7\",\n  \"count\": 99\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/generate-mock-data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "generate-mock-data"]
+            },
+            "description": "Kiểm tra chặn lỗi @Max(20)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Observability & Health",
+      "description": "Giám sát sức khỏe dịch vụ và số liệu Prometheus",
+      "item": [
+        {
+          "name": "4.1. Actuator Health Check (Port 8086)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{ai_direct_url}}/actuator/health",
+              "host": ["{{ai_direct_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Application status is UP\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2. Actuator Prometheus Metrics (Port 8086)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{ai_direct_url}}/actuator/prometheus",
+              "host": ["{{ai_direct_url}}"],
+              "path": ["actuator", "prometheus"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns Prometheus metric lines\", function () {",
+                  "    pm.expect(pm.response.text()).to.include('jvm_memory_used_bytes');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

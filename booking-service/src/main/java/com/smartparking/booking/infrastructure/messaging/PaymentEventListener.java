@@ -23,12 +23,25 @@ public class PaymentEventListener {
 
     @KafkaListener(topics = "payment.events", groupId = "booking-service-group")
     @Transactional
-    public void handlePaymentEvent(String payload) {
+    public void handlePaymentEvent(Object payload) {
         try {
             log.info("Received payment event: {}", payload);
-            PaymentEvent.PaymentCompletedEvent event = objectMapper.readValue(payload, PaymentEvent.PaymentCompletedEvent.class);
+            if (payload instanceof org.apache.kafka.clients.consumer.ConsumerRecord<?, ?> record) {
+                payload = record.value();
+            }
 
-            if (event.getBookingId() == null) {
+            final PaymentEvent.PaymentCompletedEvent event;
+            if (payload instanceof PaymentEvent.PaymentCompletedEvent completedEvent) {
+                event = completedEvent;
+            } else if (payload instanceof String str) {
+                event = objectMapper.readValue(str, PaymentEvent.PaymentCompletedEvent.class);
+            } else if (payload != null) {
+                event = objectMapper.convertValue(payload, PaymentEvent.PaymentCompletedEvent.class);
+            } else {
+                event = null;
+            }
+
+            if (event == null || event.getBookingId() == null) {
                 return;
             }
 

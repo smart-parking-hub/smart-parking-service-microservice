@@ -171,6 +171,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if (payment.getStatus() == PaymentStatusEnum.SUCCESS) {
+            outboxPublisherService.publishPaymentCompleted(payment);
             return PaymentDto.fromEntity(payment);
         }
 
