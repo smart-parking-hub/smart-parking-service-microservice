@@ -1,4 +1,3 @@
-
 services:
   api-gateway:
     build:
@@ -15,6 +14,7 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:8084
       NOTIFICATION_SERVICE_URL: http://notification-service:8085
       SPRING_DATA_REDIS_HOST: redis
+      EUREKA_CLIENT_ENABLED: "false"
     networks:
       - smart-parking-net
 
@@ -24,7 +24,11 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-identity
     restart: always
+    ports:
+      - "8081:8081"
     environment:
+      PORT: 8081
+      EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: root
       DB_PASSWORD: root
@@ -37,7 +41,11 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-parkinglot
     restart: always
+    ports:
+      - "8082:8082"
     environment:
+      PORT: 8082
+      EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_lot_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: root
       DB_PASSWORD: root
@@ -51,7 +59,11 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-booking
     restart: always
+    ports:
+      - "8083:8083"
     environment:
+      PORT: 8083
+      EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_booking_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: root
       DB_PASSWORD: root
@@ -68,7 +80,11 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-payment
     restart: always
+    ports:
+      - "8084:8084"
     environment:
+      PORT: 8084
+      EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_payment_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: root
       DB_PASSWORD: root
@@ -82,7 +98,11 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-notification
     restart: always
+    ports:
+      - "8085:8085"
     environment:
+      PORT: 8085
+      EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: root
       DB_PASSWORD: root
