@@ -11,5 +11,29 @@ Nguyên tắc cốt lõi: **Tuyệt đối không truy cập chéo database**. M
 | **notification-service** | `smart_parking_notification_db` | `notifications`, `processed_events` | `notificationId`, `status` |
 
 ## Quy tắc xử lý dữ liệu liên service
+
+### Booking address snapshot (Flyway V4)
+
+`bookings.parking_lot_address` is a nullable `VARCHAR(255)` snapshot owned by
+booking-service. V4 adds it without changing existing rows; historical bookings
+retain `NULL`. Keep V1-V3 unchanged and apply V4 through Flyway before Hibernate
+schema validation. On application rollback, retain this optional column.
+
+```mermaid
+erDiagram
+    bookings {
+        BIGINT id PK
+        BIGINT parking_lot_id
+        VARCHAR parking_lot_name
+        VARCHAR parking_lot_address "nullable, max 255 characters, V4"
+    }
+```
+
+`BookingSchemaMigrationTest` exercises the V1/V3/V4 DDL upgrade and preservation
+of an existing booking using H2 MySQL mode. It excludes demo seeds and does not
+replace validation of the full Flyway chain on MySQL before deployment.
+
+### Quy tắc chung
+
 1. **Dữ liệu tổng hợp (Composition)**: Khi client cần xem danh sách Booking kèm tên bãi xe và địa chỉ, Client gọi Gateway hoặc Booking Service thực hiện API Composition (gọi ParkingLot lấy tên bãi xe theo `parkingLotId`). Không bao giờ thực hiện SQL JOIN giữa các database.
 2. **Snapshot dữ liệu tại thời điểm giao dịch**: `Booking` lưu snapshot `vehicle_plate`, `total_amount`, và `slot_id`. Nếu bãi xe sau này đổi giá giờ, giá của booking cũ đã lưu vẫn bất biến.
