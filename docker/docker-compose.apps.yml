@@ -120,7 +120,7 @@ services:
     environment:
       PARKING_LOT_SERVICE_URL: http://parking-lot-service:8082
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
     networks:
       - smart-parking-net
 
