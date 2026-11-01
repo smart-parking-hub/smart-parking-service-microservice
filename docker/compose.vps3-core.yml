@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  smart-parking-parkinglot:
+    image: ghcr.io/${IMAGE_REPO:-smart-parking-hub}/parking-lot-service:latest
+    container_name: smart-parking-parkinglot
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      EUREKA_CLIENT_ENABLED: "false"
+      DB_URL: jdbc:mysql://116.118.61.107:3306/smart_parking_lot_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      REDIS_HOST: smart-parking-redis-core
+    depends_on:
+      - smart-parking-redis-core
+    networks:
+      - smart-parking-net
+
+  smart-parking-booking:
+    image: ghcr.io/${IMAGE_REPO:-smart-parking-hub}/booking-service:latest
+    container_name: smart-parking-booking
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      EUREKA_CLIENT_ENABLED: "false"
+      DB_URL: jdbc:mysql://116.118.61.107:3306/smart_parking_booking_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      REDIS_HOST: smart-parking-redis-core
+      KAFKA_BOOTSTRAP_SERVERS: 116.118.61.107:9092
+      PARKING_LOT_SERVICE_URL: http://smart-parking-parkinglot:8082
+      PAYMENT_SERVICE_URL: http://116.118.61.107:8084
+    depends_on:
+      - smart-parking-redis-core
+      - smart-parking-parkinglot
+    networks:
+      - smart-parking-net
+
+  smart-parking-redis-core:
+    image: redis:7.2-alpine
+    container_name: smart-parking-redis-core
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - smart-parking-net
+
+networks:
+  smart-parking-net:
+    name: smart-parking-net
+    driver: bridge
