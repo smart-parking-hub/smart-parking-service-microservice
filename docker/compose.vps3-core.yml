@@ -25,7 +25,7 @@ services:
     container_name: smart-parking-booking
     restart: always
     ports:
-      - "8083:8083"
+      - "8087:8083"
     environment:
       PORT: 8083
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
