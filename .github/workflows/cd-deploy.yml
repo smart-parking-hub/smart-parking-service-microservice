@@ -61,9 +61,11 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS1_HOST }}
+          port: ${{ secrets.VPS1_PORT || 2222 }}
           username: ${{ secrets.VPS1_USER }}
           password: ${{ secrets.VPS1_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           script: |
             TARGET_DIR=~/smartparking
             mkdir -p $TARGET_DIR
@@ -89,9 +91,11 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS2_HOST }}
+          port: ${{ secrets.VPS2_PORT || 22 }}
           username: ${{ secrets.VPS2_USER }}
           password: ${{ secrets.VPS2_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           script: |
             TARGET_DIR=~/smartparking
             mkdir -p $TARGET_DIR
@@ -117,9 +121,11 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS3_HOST }}
+          port: ${{ secrets.VPS3_PORT || 22 }}
           username: ${{ secrets.VPS3_USER }}
           password: ${{ secrets.VPS3_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           script: |
             TARGET_DIR=~/smartparking
             mkdir -p $TARGET_DIR
@@ -135,3 +141,4 @@ jobs:
             docker compose -f docker/compose.vps3-core.yml pull
             docker compose -f docker/compose.vps3-core.yml up -d --remove-orphans
             docker image prune -f
+
