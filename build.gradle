@@ -95,7 +95,7 @@ sonar {
         property "sonar.projectKey", "SmartParkingHub"
         property "sonar.projectName", "SmartParkingHub Microservices"
         property "sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "http://localhost:9000"
-        def token = System.getenv("SONAR_TOKEN") ?: (project.hasProperty("sonar.token") ? project.property("sonar.token") : "squ_a06530b3405c05b02bd2e13cb9147faae4207b3e")
+        def token = System.getenv("SONAR_TOKEN") ?: project.findProperty("sonar.token")
         if (token) {
             property "sonar.token", token
             property "sonar.login", token

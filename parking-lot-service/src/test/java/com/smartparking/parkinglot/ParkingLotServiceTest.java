@@ -7,7 +7,9 @@ import com.smartparking.parkinglot.application.dto.*;
 import com.smartparking.parkinglot.application.service.ParkingLotService;
 import com.smartparking.parkinglot.application.service.SlotService;
 import com.smartparking.parkinglot.domain.model.ParkingLot;
+import com.smartparking.parkinglot.domain.model.PricingRule;
 import com.smartparking.parkinglot.domain.repository.ParkingLotRepository;
+import com.smartparking.parkinglot.domain.repository.PricingRuleRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,9 @@ public class ParkingLotServiceTest {
 
     @Autowired
     private ParkingLotRepository parkingLotRepository;
+
+    @Autowired
+    private PricingRuleRepository pricingRuleRepository;
 
     private final Long merchantUserId = 100L;
 
@@ -79,6 +84,13 @@ public class ParkingLotServiceTest {
                 .build();
         SlotDto slot = slotService.configureSlot(merchantUserId, created.getId(), slotReq);
         assertEquals(2, slot.getAvailableCapacity());
+
+        // Configure pricing rule for SEDAN_SUV
+        pricingRuleRepository.save(PricingRule.builder()
+                .parkingLot(lot)
+                .vehicleType(VehicleTypeEnum.SEDAN_SUV)
+                .basePricePerHour(BigDecimal.valueOf(15000))
+                .build());
 
         // Hold slot 1
         SlotHoldResponse hold1 = slotService.holdSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 1L);
