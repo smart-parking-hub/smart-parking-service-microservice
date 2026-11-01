@@ -26,9 +26,9 @@ services:
       IDENTITY_SERVICE_URL: http://smart-parking-identity:8081
       PARKING_LOT_SERVICE_URL: http://103.20.102.137:8082
       BOOKING_SERVICE_URL: http://103.20.102.137:8083
-      PAYMENT_SERVICE_URL: http://116.118.61.107:8084
-      NOTIFICATION_SERVICE_URL: http://116.118.61.107:8085
-      AI_SERVICE_URL: http://116.118.61.107:8086
+      PAYMENT_SERVICE_URL: http://116.118.6.107:8084
+      NOTIFICATION_SERVICE_URL: http://116.118.6.107:8085
+      AI_SERVICE_URL: http://116.118.6.107:8086
       SPRING_DATA_REDIS_HOST: smart-parking-redis-edge
       EUREKA_CLIENT_ENABLED: "false"
     depends_on:
@@ -47,7 +47,7 @@ services:
       PORT: 8081
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
       EUREKA_CLIENT_ENABLED: "false"
-      DB_URL: jdbc:mysql://116.118.61.107:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      DB_URL: jdbc:mysql://116.118.6.107:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
     networks:
