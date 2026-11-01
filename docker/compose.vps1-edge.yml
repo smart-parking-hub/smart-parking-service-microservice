@@ -19,7 +19,7 @@ services:
     container_name: smart-parking-gateway
     restart: always
     ports:
-      - "8088:8088"
+      - "127.0.0.1:8088:8088"
     environment:
       PORT: 8088
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
@@ -42,7 +42,7 @@ services:
     container_name: smart-parking-identity
     restart: always
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       PORT: 8081
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
@@ -58,7 +58,7 @@ services:
     container_name: smart-parking-redis-edge
     restart: always
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     networks:
       - smart-parking-net
 
