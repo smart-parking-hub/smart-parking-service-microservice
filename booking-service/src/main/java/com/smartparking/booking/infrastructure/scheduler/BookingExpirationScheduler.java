@@ -31,9 +31,10 @@ public class BookingExpirationScheduler {
     @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void expireUnpaidBookings() {
-        LocalDateTime now = LocalDateTime.now();
+        // Thêm 3 phút Grace Period tránh race condition khi webhook thanh toán PayOS đến trễ
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(3);
         List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(
-                BookingStatusEnum.PENDING_PAYMENT, now);
+                BookingStatusEnum.PENDING_PAYMENT, threshold);
 
         if (expiredBookings.isEmpty()) {
             return;
