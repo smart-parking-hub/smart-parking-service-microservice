@@ -46,15 +46,6 @@ public class BookingServiceImpl implements BookingService {
 
         String bookingCode = "BK" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         
-        BigDecimal deposit;
-        if (request.getAdvanceDeposit() != null && request.getAdvanceDeposit().compareTo(BigDecimal.ZERO) > 0) {
-            deposit = request.getAdvanceDeposit();
-        } else if (request.getTotalAmount() != null && request.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
-            deposit = request.getTotalAmount().multiply(new BigDecimal("0.20")).setScale(0, java.math.RoundingMode.HALF_UP);
-        } else {
-            deposit = BigDecimal.valueOf(50000);
-        }
-
         Booking booking = Booking.builder()
                 .bookingCode(bookingCode)
                 .driverId(driverUserId)
@@ -65,9 +56,7 @@ public class BookingServiceImpl implements BookingService {
                 .vehiclePlate(request.getVehiclePlate())
                 .parkingLotName(request.getParkingLotName())
                 .parkingLotAddress(request.getParkingLotAddress())
-                .totalAmount(request.getTotalAmount())
                 .status(BookingStatusEnum.PENDING_PAYMENT)
-                .advanceDeposit(deposit)
                 .expectedCheckInTime(request.getExpectedCheckInTime())
                 .expectedCheckOutTime(request.getExpectedCheckOutTime())
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
@@ -75,9 +64,10 @@ public class BookingServiceImpl implements BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        // Call parking-lot-service to hold slot
+        // Call parking-lot-service to hold slot & lấy đơn giá giờ chính thức từ backend
         try {
             SlotHoldRequest holdReq = SlotHoldRequest.builder()
+                    .parkingLotId(request.getParkingLotId())
                     .vehicleType(request.getVehicleType())
                     .bookingId(saved.getId())
                     .build();
@@ -86,10 +76,25 @@ public class BookingServiceImpl implements BookingService {
             if (holdRes == null || holdRes.getData() == null || !holdRes.getData().isSuccess()) {
                 throw new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Hết chỗ đỗ cho loại xe này tại bãi đỗ đã chọn!");
             }
-            if (holdRes.getData().getBaseHourlyPrice() != null) {
-                saved.setHourlyRate(holdRes.getData().getBaseHourlyPrice());
-                saved = bookingRepository.save(saved);
+
+            BigDecimal basePrice = holdRes.getData().getBaseHourlyPrice();
+            if (basePrice == null || basePrice.compareTo(BigDecimal.ZERO) <= 0) {
+                basePrice = BigDecimal.valueOf(20000);
             }
+
+            // Tính toán lại tổng tiền và tiền cọc tại Backend dựa trên thời lượng thực tế
+            long durationMinutes = java.time.Duration.between(
+                    request.getExpectedCheckInTime(),
+                    request.getExpectedCheckOutTime()
+            ).toMinutes();
+            long hours = Math.max(1, (durationMinutes + 59) / 60);
+            BigDecimal calculatedTotal = basePrice.multiply(BigDecimal.valueOf(hours));
+            BigDecimal calculatedDeposit = calculatedTotal.multiply(new BigDecimal("0.20")).setScale(0, java.math.RoundingMode.HALF_UP);
+
+            saved.setHourlyRate(basePrice);
+            saved.setTotalAmount(calculatedTotal);
+            saved.setAdvanceDeposit(calculatedDeposit);
+            saved = bookingRepository.save(saved);
         } catch (AppException e) {
             throw e;
         } catch (feign.FeignException.BadRequest | feign.FeignException.Conflict e) {
@@ -100,7 +105,11 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Bãi đỗ xe không tồn tại hoặc đã ngừng hoạt động!");
         } catch (feign.FeignException e) {
             log.error("Feign call to parking-lot-service failed with HTTP {}: {}", e.status(), e.getMessage());
-            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Không thể kết nối đến hệ thống bãi đỗ xe, vui lòng thử lại sau!");
+            String detail = "Không thể kết nối đến hệ thống bãi đỗ xe (cổng 8082), vui lòng đảm bảo parking-lot-service đang chạy!";
+            if (e.contentUTF8() != null && !e.contentUTF8().isBlank()) {
+                detail = e.contentUTF8();
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, detail);
         } catch (Exception e) {
             log.error("Unexpected error while holding slot: {}", e.getMessage());
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Lỗi hệ thống khi giữ chỗ đỗ xe!");

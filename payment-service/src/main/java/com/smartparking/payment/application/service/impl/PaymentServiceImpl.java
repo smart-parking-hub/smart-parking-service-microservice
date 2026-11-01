@@ -1,5 +1,7 @@
 package com.smartparking.payment.application.service.impl;
 
+import java.util.Comparator;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.common.dto.PageResponse;
 import com.smartparking.common.enums.PaymentGatewayEnum;
@@ -183,7 +185,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
         if (payment == null && bookingId != null) {
             payment = paymentRepository.findByBookingId(bookingId).stream()
-                    .filter(p -> p.getStatus() == PaymentStatusEnum.PENDING)
+                    .sorted(Comparator.comparing(Payment::getId).reversed())
                     .findFirst()
                     .orElse(null);
         }

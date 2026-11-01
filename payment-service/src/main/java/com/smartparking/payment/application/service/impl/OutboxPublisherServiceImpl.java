@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -79,22 +81,40 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
 
             outboxEventRepository.save(outbox);
 
-            // Asynchronously dispatch to Kafka
-            if (kafkaTemplate != null) {
-                kafkaTemplate.send(TOPIC_PAYMENT_EVENTS, aggregateId, event)
-                        .whenComplete((result, ex) -> {
-                            if (ex == null) {
-                                outbox.setStatus("PUBLISHED");
-                                outbox.setProcessedAt(LocalDateTime.now());
-                                outboxEventRepository.save(outbox);
-                                log.info("Successfully published {} event to topic {}", eventType, TOPIC_PAYMENT_EVENTS);
-                            } else {
-                                log.warn("Kafka publish failed for {}: {}. Retained in outbox.", eventType, ex.getMessage());
+            // Asynchronously dispatch to Kafka AFTER current transaction commits cleanly
+            Runnable dispatchTask = () -> dispatchToKafka(aggregateId, event, eventId, eventType);
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(
+                        new TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                dispatchTask.run();
                             }
-                        });
+                        }
+                );
+            } else {
+                dispatchTask.run();
             }
         } catch (Exception e) {
             log.error("Failed to serialize or save outbox event {}: {}", eventType, e.getMessage());
+        }
+    }
+
+    private void dispatchToKafka(String aggregateId, Object event, String outboxId, String eventType) {
+        if (kafkaTemplate != null) {
+            kafkaTemplate.send(TOPIC_PAYMENT_EVENTS, aggregateId, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            outboxEventRepository.findById(outboxId).ifPresent(ob -> {
+                                ob.setStatus("PUBLISHED");
+                                ob.setProcessedAt(LocalDateTime.now());
+                                outboxEventRepository.save(ob);
+                            });
+                            log.info("Successfully published {} event to topic {}", eventType, TOPIC_PAYMENT_EVENTS);
+                        } else {
+                            log.warn("Kafka publish failed for {}: {}. Retained in outbox.", eventType, ex.getMessage());
+                        }
+                    });
         }
     }
 }

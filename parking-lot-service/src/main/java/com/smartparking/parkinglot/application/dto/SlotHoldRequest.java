@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SlotHoldRequest {
-    @NotNull
     private Long parkingLotId;
     @NotNull
     private VehicleTypeEnum vehicleType;

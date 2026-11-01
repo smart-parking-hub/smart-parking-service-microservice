@@ -204,6 +204,21 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     public void approveParkingLot(Long adminUserId, Long id, String reason) {
         ParkingLot lot = parkingLotRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
+
+        // Validate: Mọi loại xe có slot > 0 bắt buộc phải có bảng giá tương ứng
+        List<Slot> slots = slotRepository.findByParkingLotId(lot.getId());
+        List<PricingRule> rules = pricingRuleRepository.findByParkingLotId(lot.getId());
+        Set<VehicleTypeEnum> pricedVehicles = rules.stream()
+                .map(PricingRule::getVehicleType)
+                .collect(Collectors.toSet());
+
+        for (Slot slot : slots) {
+            if (slot.getTotalCapacity() > 0 && !pricedVehicles.contains(slot.getVehicleType())) {
+                throw new AppException(ErrorCode.BAD_REQUEST,
+                        "Bãi đỗ có cấu hình slot cho loại xe " + slot.getVehicleType() + " nhưng chưa thiết lập bảng giá tương ứng!");
+            }
+        }
+
         lot.setStatus(ParkingLotStatusEnum.APPROVED);
         lot.setReviewReason(reason);
         lot.setReviewedBy(adminUserId);

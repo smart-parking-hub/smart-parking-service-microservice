@@ -173,7 +173,7 @@ public class SlotServiceImpl implements SlotService {
 
         BigDecimal basePrice = pricingRuleRepository.findByParkingLotIdAndVehicleType(parkingLotId, vehicleType)
                 .map(PricingRule::getBasePricePerHour)
-                .orElse(BigDecimal.valueOf(20000));
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Loại xe này chưa có bảng giá khả dụng tại bãi đỗ!"));
 
         log.info("Held slot {} in lot {} for booking {}. Remaining capacity: {}",
                 slot.getId(), parkingLotId, bookingId, slot.getAvailableCapacity());

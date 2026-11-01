@@ -96,7 +96,7 @@ public class BookingServiceTest {
         assertNotNull(dto.getId());
         assertNotNull(dto.getBookingCode());
         assertEquals(BookingStatusEnum.PENDING_PAYMENT, dto.getStatus());
-        assertEquals(new BigDecimal("50000"), dto.getAdvanceDeposit());
+        assertEquals(new BigDecimal("8000"), dto.getAdvanceDeposit());
 
         assertTrue(bookingRepository.findById(dto.getId()).isPresent());
         assertFalse(outboxEventRepository.findAll().isEmpty());
