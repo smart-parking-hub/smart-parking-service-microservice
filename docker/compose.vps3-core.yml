@@ -12,8 +12,8 @@ services:
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
       EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://116.118.6.107:3306/smart_parking_lot_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-      DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_USERNAME: ${PARKING_DB_USERNAME:-parking_svc}
+      DB_PASSWORD: ${PARKING_DB_PASSWORD:-SP_SecUser_Park2026_vT8!}
       REDIS_HOST: smart-parking-redis-core
     depends_on:
       - smart-parking-redis-core
@@ -31,8 +31,8 @@ services:
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
       EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://116.118.6.107:3306/smart_parking_booking_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-      DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_USERNAME: ${BOOKING_DB_USERNAME:-booking_svc}
+      DB_PASSWORD: ${BOOKING_DB_PASSWORD:-SP_SecUser_Book2026_wR5!}
       REDIS_HOST: smart-parking-redis-core
       KAFKA_BOOTSTRAP_SERVERS: 116.118.6.107:9092
       PARKING_LOT_SERVICE_URL: http://smart-parking-parkinglot:8082
