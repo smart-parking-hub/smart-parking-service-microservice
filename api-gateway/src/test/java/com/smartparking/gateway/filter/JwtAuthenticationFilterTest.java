@@ -31,12 +31,19 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("Filter passes through without modification when Authorization header is absent")
+    @DisplayName("Filter passes through without modification when Authorization header is absent, stripping client internal secret")
     void testFilterWithoutAuthHeader() {
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/public").build();
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/public")
+                .header(SecurityConstants.HEADER_INTERNAL_SECRET, "malicious-secret")
+                .header(SecurityConstants.HEADER_USER_ROLE, "ROLE_ADMIN")
+                .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-        GatewayFilterChain chain = mutatedExchange -> Mono.empty();
+        GatewayFilterChain chain = mutatedExchange -> {
+            assertEquals(SecurityConstants.DEFAULT_INTERNAL_SECRET, mutatedExchange.getRequest().getHeaders().getFirst(SecurityConstants.HEADER_INTERNAL_SECRET));
+            assertNull(mutatedExchange.getRequest().getHeaders().getFirst(SecurityConstants.HEADER_USER_ROLE));
+            return Mono.empty();
+        };
 
         filter.filter(exchange, chain).block();
         assertNull(exchange.getResponse().getStatusCode());
@@ -78,6 +85,7 @@ class JwtAuthenticationFilterTest {
             assertEquals("999", mutatedExchange.getRequest().getHeaders().getFirst(SecurityConstants.HEADER_USER_ID));
             assertEquals("DRIVER", mutatedExchange.getRequest().getHeaders().getFirst(SecurityConstants.HEADER_USER_ROLE));
             assertEquals("driver@example.com", mutatedExchange.getRequest().getHeaders().getFirst(SecurityConstants.HEADER_USER_EMAIL));
+            assertEquals(SecurityConstants.DEFAULT_INTERNAL_SECRET, mutatedExchange.getRequest().getHeaders().getFirst(SecurityConstants.HEADER_INTERNAL_SECRET));
             return Mono.empty();
         };
 

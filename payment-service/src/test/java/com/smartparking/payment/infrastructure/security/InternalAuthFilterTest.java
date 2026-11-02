@@ -27,9 +27,10 @@ class InternalAuthFilterTest {
     private InternalAuthFilter filter;
 
     @Test
-    @DisplayName("Filter populates security context when gateway headers are present")
+    @DisplayName("Filter populates security context when gateway headers are present with valid secret")
     void testFilterWithHeaders() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(SecurityConstants.HEADER_INTERNAL_SECRET, SecurityConstants.DEFAULT_INTERNAL_SECRET);
         request.addHeader(SecurityConstants.HEADER_USER_ID, "300");
         request.addHeader(SecurityConstants.HEADER_USER_ROLE, "MERCHANT");
         request.addHeader(SecurityConstants.HEADER_USER_EMAIL, "merchant@example.com");
@@ -41,6 +42,22 @@ class InternalAuthFilterTest {
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals(300L, ((AuthenticatedUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId());
+    }
+
+    @Test
+    @DisplayName("Filter rejects gateway headers when X-Internal-Secret is absent to prevent spoofing")
+    void testFilterWithGatewayHeadersWithoutSecretIsRejected() throws Exception {
+        SecurityContextHolder.clearContext();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(SecurityConstants.HEADER_USER_ID, "300");
+        request.addHeader(SecurityConstants.HEADER_USER_ROLE, "ROLE_ADMIN");
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = new MockFilterChain();
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test

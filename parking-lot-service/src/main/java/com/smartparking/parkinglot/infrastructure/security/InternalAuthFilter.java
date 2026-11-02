@@ -24,6 +24,9 @@ public class InternalAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenValidator jwtTokenValidator;
 
+    @org.springframework.beans.factory.annotation.Value("${internal.secret:" + SecurityConstants.DEFAULT_INTERNAL_SECRET + "}")
+    private String internalSecret = SecurityConstants.DEFAULT_INTERNAL_SECRET;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -32,11 +35,18 @@ public class InternalAuthFilter extends OncePerRequestFilter {
             String headerUserId = request.getHeader(SecurityConstants.HEADER_USER_ID);
             String headerRole = request.getHeader(SecurityConstants.HEADER_USER_ROLE);
             String headerEmail = request.getHeader(SecurityConstants.HEADER_USER_EMAIL);
+            String internalSecretHeader = request.getHeader(SecurityConstants.HEADER_INTERNAL_SECRET);
+            boolean isValidInternalSecret = StringUtils.hasText(internalSecretHeader)
+                    && internalSecretHeader.equals(internalSecret);
 
             if (StringUtils.hasText(headerUserId)) {
-                Long userId = Long.parseLong(headerUserId.trim());
-                AuthenticatedUser user = new AuthenticatedUser(userId, headerEmail, headerRole);
-                setAuthentication(request, user);
+                if (!isValidInternalSecret) {
+                    log.warn("Blocked untrusted request: X-User-Id received without valid X-Internal-Secret from IP: {}", request.getRemoteAddr());
+                } else {
+                    Long userId = Long.parseLong(headerUserId.trim());
+                    AuthenticatedUser user = new AuthenticatedUser(userId, headerEmail, headerRole);
+                    setAuthentication(request, user);
+                }
             } else {
                 String jwt = parseJwt(request);
                 if (jwt != null && jwtTokenValidator.validate(jwt)) {

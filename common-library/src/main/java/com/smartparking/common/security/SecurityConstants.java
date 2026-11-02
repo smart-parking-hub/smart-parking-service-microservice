@@ -9,6 +9,8 @@ public final class SecurityConstants {
     public static final String HEADER_USER_ROLE = "X-User-Role";
     public static final String HEADER_USER_EMAIL = "X-User-Email";
     public static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
+    public static final String HEADER_INTERNAL_SECRET = "X-Internal-Secret";
+    public static final String DEFAULT_INTERNAL_SECRET = "SP_SecInternal_2026_qK8mZ99xP2!";
 
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
     public static final String ROLE_MERCHANT = "ROLE_MERCHANT";
