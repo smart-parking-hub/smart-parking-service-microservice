@@ -35,6 +35,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Value("${jwt.secret:smartparkingsecretkeymustbeverylongandsecure2026version}")
     private String jwtSecret;
 
+    @Value("${internal.secret:" + SecurityConstants.DEFAULT_INTERNAL_SECRET + "}")
+    private String internalSecret = SecurityConstants.DEFAULT_INTERNAL_SECRET;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private SecretKey getSigningKey() {
@@ -46,12 +49,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
 
         // Always strip client-provided internal user identity headers to prevent spoofing
+        // and inject valid trusted internal secret for downstream microservices
         ServerHttpRequest.Builder builder = request.mutate()
                 .headers(httpHeaders -> {
                     httpHeaders.remove(SecurityConstants.HEADER_USER_ID);
                     httpHeaders.remove(SecurityConstants.HEADER_USER_ROLE);
                     httpHeaders.remove(SecurityConstants.HEADER_USER_EMAIL);
-                });
+                    httpHeaders.remove(SecurityConstants.HEADER_INTERNAL_SECRET);
+                })
+                .header(SecurityConstants.HEADER_INTERNAL_SECRET, internalSecret);
 
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
