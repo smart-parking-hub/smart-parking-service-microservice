@@ -3,7 +3,7 @@ echo ==========================================================
 echo  [SmartParkingHub] Automated Test Suite Runner
 echo ==========================================================
 
-cd /d "%~dp0.."
+cd /d "%~dp0..\.."
 call gradlew.bat test --no-daemon
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Automated tests failed! Please inspect reports in build/reports/tests/test/index.html

@@ -3,8 +3,8 @@ echo ==========================================================
 echo  [SmartParkingHub] Starting SonarQube Quality Platform
 echo ==========================================================
 
-cd /d "%~dp0..\docker"
-docker compose -f docker-compose.infra.yml up -d sonarqube
+cd /d "%~dp0..\..\docker"
+docker compose -f compose\local\docker-compose.infra.yml up -d sonarqube
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Failed to start SonarQube container!
     pause
@@ -13,7 +13,4 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [SUCCESS] SonarQube container started!
-echo Open your browser at: http://localhost:9000
-echo Default login: admin / admin (First login will ask you to change password)
-echo.
 pause
