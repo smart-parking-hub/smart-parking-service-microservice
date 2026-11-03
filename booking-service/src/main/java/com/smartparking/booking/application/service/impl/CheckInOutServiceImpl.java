@@ -40,10 +40,12 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
         // Multi-tenant validation: prevent scanning booking for another lot or merchant
-        if (parkingLotId != null && booking.getParkingLotId() != null && !parkingLotId.equals(booking.getParkingLotId())) {
+        if (parkingLotId != null && booking.getParkingLotId() != null
+                && !parkingLotId.equals(booking.getParkingLotId())) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Mã đặt chỗ này thuộc về bãi đỗ xe khác!");
         }
-        if (merchantUserId != null && booking.getMerchantId() != null && !merchantUserId.equals(booking.getMerchantId())) {
+        if (merchantUserId != null && booking.getMerchantId() != null
+                && !merchantUserId.equals(booking.getMerchantId())) {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền check-in cho đơn đặt chỗ của bãi xe này!");
         }
 
@@ -51,9 +53,11 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái chờ check-in!");
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        if (booking.getExpectedCheckInTime() != null && now.isBefore(booking.getExpectedCheckInTime().minusMinutes(checkInEarlyMinutes))) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + checkInEarlyMinutes + " phút)!");
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (booking.getExpectedCheckInTime() != null
+                && now.isBefore(booking.getExpectedCheckInTime().minusMinutes(checkInEarlyMinutes))) {
+            throw new AppException(ErrorCode.BAD_REQUEST,
+                    "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + checkInEarlyMinutes + " phút)!");
         }
         if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");
@@ -74,10 +78,12 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
         // Multi-tenant validation
-        if (parkingLotId != null && booking.getParkingLotId() != null && !parkingLotId.equals(booking.getParkingLotId())) {
+        if (parkingLotId != null && booking.getParkingLotId() != null
+                && !parkingLotId.equals(booking.getParkingLotId())) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Mã đặt chỗ này thuộc về bãi đỗ xe khác!");
         }
-        if (merchantUserId != null && booking.getMerchantId() != null && !merchantUserId.equals(booking.getMerchantId())) {
+        if (merchantUserId != null && booking.getMerchantId() != null
+                && !merchantUserId.equals(booking.getMerchantId())) {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền check-out cho đơn đặt chỗ của bãi xe này!");
         }
 
@@ -94,9 +100,10 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         long hours = Math.max(1, (long) Math.ceil(minutes / 60.0));
 
         // Use dynamic hourly rate configured for the lot, fallback to 20,000 VND / hour
-        BigDecimal hourlyRate = booking.getHourlyRate() != null && booking.getHourlyRate().compareTo(BigDecimal.ZERO) > 0
-                ? booking.getHourlyRate()
-                : BigDecimal.valueOf(20000L);
+        BigDecimal hourlyRate = booking.getHourlyRate() != null
+                && booking.getHourlyRate().compareTo(BigDecimal.ZERO) > 0
+                        ? booking.getHourlyRate()
+                        : BigDecimal.valueOf(20000L);
         BigDecimal totalAmount = hourlyRate.multiply(BigDecimal.valueOf(hours));
         BigDecimal deposit = booking.getAdvanceDeposit() != null ? booking.getAdvanceDeposit() : BigDecimal.ZERO;
         BigDecimal amountDue = totalAmount.subtract(deposit).max(BigDecimal.ZERO);
@@ -141,13 +148,16 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
         if (booking.getStatus() != BookingStatusEnum.AWAITING_FINAL_PAYMENT) {
-            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái chờ thanh toán phụ phí!");
+            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID,
+                    "Booking không ở trạng thái chờ thanh toán phụ phí!");
         }
 
-        if (parkingLotId != null && booking.getParkingLotId() != null && !parkingLotId.equals(booking.getParkingLotId())) {
+        if (parkingLotId != null && booking.getParkingLotId() != null
+                && !parkingLotId.equals(booking.getParkingLotId())) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Mã đặt chỗ này thuộc về bãi đỗ xe khác!");
         }
-        if (merchantUserId != null && booking.getMerchantId() != null && !merchantUserId.equals(booking.getMerchantId())) {
+        if (merchantUserId != null && booking.getMerchantId() != null
+                && !merchantUserId.equals(booking.getMerchantId())) {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền xác nhận thu tiền cho bãi xe này!");
         }
 
