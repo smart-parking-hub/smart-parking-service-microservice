@@ -3,7 +3,7 @@ echo ==========================================================
 echo  [SmartParkingHub] Running Test Suite + JaCoCo + SonarQube Scan
 echo ==========================================================
 
-cd /d "%~dp0.."
+cd /d "%~dp0..\.."
 
 echo [1/2] Running automated unit tests and generating JaCoCo coverage reports...
 call gradlew.bat test jacocoTestReport --no-daemon

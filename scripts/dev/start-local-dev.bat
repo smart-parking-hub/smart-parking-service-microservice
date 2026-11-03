@@ -3,7 +3,7 @@ echo ==========================================================
 echo  [SmartParkingHub] Starting Local Dev Profile
 echo ==========================================================
 
-cd /d "%~dp0.."
-docker compose -f compose.yaml -f compose.local.yaml up -d --build
+cd /d "%~dp0..\.."
+docker compose --project-directory . -f docker\compose\local\compose.yaml -f docker\compose\local\compose.local.yaml up -d --build
 echo Local Dev services started!
 pause

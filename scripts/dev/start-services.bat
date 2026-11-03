@@ -2,7 +2,7 @@
 echo ==========================================
 echo  Building Microservice JARs
 echo ==========================================
-cd /d "%~dp0.."
+cd /d "%~dp0..\.."
 call gradlew.bat bootJar -x test
 if errorlevel 1 (
     echo [ERROR] Build failed! Please check logs above.
@@ -13,9 +13,6 @@ if errorlevel 1 (
 echo ==========================================
 echo  Starting Microservices Containers
 echo ==========================================
-cd /d "%~dp0..\docker"
-docker compose -f docker-compose.apps.yml up -d --build
-echo ==========================================
-echo  Microservices started successfully!
-echo ==========================================
+docker compose --project-directory . -f docker\compose\local\compose.yaml up -d --build
+echo All microservices started!
 pause
