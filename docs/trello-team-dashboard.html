@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartParkingHub - Trello Team Task Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+    }
+    body {
+      background-color: #0b1120;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen custom-scrollbar pb-16">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+          <i class="fa-solid fa-square-parking text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white flex items-center gap-2">
+            SmartParkingHub <span class="text-xs px-2 py-0.5 rounded-full bg-teal-950 text-teal-400 border border-teal-800">OJT Sprint Board</span>
+          </h1>
+          <p class="text-xs text-slate-400">Bảng phân bổ công việc & tiến độ thành viên từ Trello</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a id="trelloBoardLink" href="https://trello.com/b/DMVyjk4S/ojt-smart-parking" target="_blank"
+           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:bg-blue-600/30 text-sm font-medium transition">
+          <i class="fa-brands fa-trello"></i> Mở trên Trello
+        </a>
+        <button id="refreshBtn" onclick="refreshData()"
+           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium shadow-md shadow-teal-600/20 transition">
+          <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i> Làm mới dữ liệu
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+
+    <!-- KPI Summary Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs text-slate-400 font-medium">Tổng số Task</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="statTotal" class="text-2xl font-bold text-white">47</span>
+          <span class="text-xs text-slate-500">100%</span>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-emerald-900/40 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đã hoàn thành
+        </span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="statDone" class="text-2xl font-bold text-emerald-400">29</span>
+          <span id="statDonePct" class="text-xs text-emerald-500/80">61.7%</span>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-amber-900/40 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs text-amber-400 font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> In Progress
+        </span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="statInProgress" class="text-2xl font-bold text-amber-400">4</span>
+          <span class="text-xs text-amber-500/80">8.5%</span>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-purple-900/40 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs text-purple-400 font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-purple-500"></span> Review / PR
+        </span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="statReview" class="text-2xl font-bold text-purple-400">3</span>
+          <span class="text-xs text-purple-500/80">6.4%</span>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-red-900/40 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs text-red-400 font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-red-500"></span> Blocked
+        </span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="statBlocked" class="text-2xl font-bold text-red-400">4</span>
+          <span class="text-xs text-red-500/80">8.5%</span>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-slate-500"></span> Product Backlog
+        </span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="statBacklog" class="text-2xl font-bold text-slate-300">7</span>
+          <span class="text-xs text-slate-500">14.9%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Member Workload Bar Chart -->
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-chart-column text-teal-400"></i> Phân Bổ Khối Lượng Task Từng Thành Viên
+          </h2>
+          <span class="text-xs text-slate-400">Xếp theo số lượng task phụ trách</span>
+        </div>
+        <div class="h-64 sm:h-72">
+          <canvas id="memberChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Donut Status Distribution -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-teal-400"></i> Trạng Thái Toàn Dự Án
+          </h2>
+        </div>
+        <div class="h-56 relative flex items-center justify-center">
+          <canvas id="statusChart"></canvas>
+        </div>
+        <div class="text-center text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+          Tỷ lệ hoàn thành đạt <strong class="text-emerald-400" id="completionRateText">61.7%</strong> trên toàn bộ 47 task
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Members Cards Grid -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-users text-teal-400"></i> Danh Sách Thành Viên & Tiến Độ Cá Nhân
+        </h2>
+        <span class="text-xs text-slate-400">Click vào thành viên để lọc danh sách task bên dưới</span>
+      </div>
+      <div id="membersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Filterable Task Explorer -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-teal-400"></i> Danh Sách Chi Tiết Công Việc
+            <span id="filteredCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">47 thẻ</span>
+          </h2>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+          <input type="text" id="searchInput" placeholder="Tìm theo mã hoặc tên task..."
+                 oninput="renderTasks()"
+                 class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-teal-500">
+
+          <select id="memberFilter" onchange="renderTasks()"
+                  class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-teal-500">
+            <option value="ALL">Tất cả thành viên</option>
+          </select>
+
+          <select id="statusFilter" onchange="renderTasks()"
+                  class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-teal-500">
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Review">Review</option>
+            <option value="Blocked">Blocked</option>
+            <option value="Done">Đã hoàn thành</option>
+            <option value="Backlog">Backlog</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Task Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-800">
+              <th class="py-2.5 px-3">Mã & Tiêu đề Task</th>
+              <th class="py-2.5 px-3">Phụ trách</th>
+              <th class="py-2.5 px-3">Cột Hiện Tại</th>
+              <th class="py-2.5 px-3">Nhãn</th>
+              <th class="py-2.5 px-3 text-right">Trello</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Dữ liệu nhúng trực tiếp từ Snapshot (hoạt động offline 100%)
+    let trelloData = null;
+    let selectedMember = 'ALL';
+    let memberChartInstance = null;
+    let statusChartInstance = null;
+
+    async function loadInitialData() {
+      try {
+        const el = document.getElementById('embeddedSnapshot');
+        if (el && el.textContent) {
+          trelloData = JSON.parse(el.textContent);
+          initDashboard();
+          return;
+        }
+        const res = await fetch('trello-snapshot.json');
+        if (res.ok) {
+          trelloData = await res.json();
+          initDashboard();
+        }
+      } catch (e) {
+        console.warn('Lỗi nạp dữ liệu:', e);
+      }
+    }
+
+    function initDashboard() {
+      if (!trelloData) return;
+
+      const { board, members, lists, cards } = trelloData;
+      const listMap = Object.fromEntries(lists.map(l => [l.id, l.name]));
+
+      // 1. Phân loại theo status
+      const stats = {
+        total: cards.length,
+        done: 0,
+        inProgress: 0,
+        review: 0,
+        blocked: 0,
+        backlog: 0
+      };
+
+      cards.forEach(c => {
+        const lName = (listMap[c.idList] || '').toLowerCase();
+        if (lName.includes('done')) stats.done++;
+        else if (lName.includes('in progress')) stats.inProgress++;
+        else if (lName.includes('review')) stats.review++;
+        else if (lName.includes('blocked')) stats.blocked++;
+        else stats.backlog++;
+      });
+
+      document.getElementById('statTotal').innerText = stats.total;
+      document.getElementById('statDone').innerText = stats.done;
+      document.getElementById('statDonePct').innerText = ((stats.done / stats.total) * 100).toFixed(1) + '%';
+      document.getElementById('statInProgress').innerText = stats.inProgress;
+      document.getElementById('statReview').innerText = stats.review;
+      document.getElementById('statBlocked').innerText = stats.blocked;
+      document.getElementById('statBacklog').innerText = stats.backlog;
+      document.getElementById('completionRateText').innerText = ((stats.done / stats.total) * 100).toFixed(1) + '%';
+
+      // 2. Thống kê theo thành viên
+      const memberMap = {};
+      members.forEach(m => {
+        memberMap[m.id] = {
+          id: m.id,
+          name: m.fullName,
+          username: m.username,
+          total: 0,
+          done: 0,
+          inProgress: 0,
+          review: 0,
+          blocked: 0,
+          backlog: 0
+        };
+      });
+      memberMap['unassigned'] = {
+        id: 'unassigned',
+        name: 'Chưa phân công',
+        username: 'none',
+        total: 0,
+        done: 0,
+        inProgress: 0,
+        review: 0,
+        blocked: 0,
+        backlog: 0
+      };
+
+      cards.forEach(c => {
+        const lName = (listMap[c.idList] || '').toLowerCase();
+        let statusKey = 'backlog';
+        if (lName.includes('done')) statusKey = 'done';
+        else if (lName.includes('in progress')) statusKey = 'inProgress';
+        else if (lName.includes('review')) statusKey = 'review';
+        else if (lName.includes('blocked')) statusKey = 'blocked';
+
+        if (!c.idMembers || c.idMembers.length === 0) {
+          memberMap['unassigned'].total++;
+          memberMap['unassigned'][statusKey]++;
+        } else {
+          c.idMembers.forEach(mId => {
+            if (memberMap[mId]) {
+              memberMap[mId].total++;
+              memberMap[mId][statusKey]++;
+            }
+          });
+        }
+      });
+
+      renderCharts(memberMap, stats);
+      renderMemberCards(memberMap);
+      populateMemberSelect(members);
+      renderTasks();
+    }
+
+    function renderCharts(memberMap, stats) {
+      // Sort members by total desc
+      const sortedMembers = Object.values(memberMap).sort((a, b) => b.total - a.total);
+
+      // Stacked Bar Chart
+      const ctxBar = document.getElementById('memberChart').getContext('2d');
+      if (memberChartInstance) memberChartInstance.destroy();
+
+      memberChartInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: sortedMembers.map(m => m.name.split(' ').slice(-2).join(' ')),
+          datasets: [
+            { label: 'Hoàn thành (Done)', data: sortedMembers.map(m => m.done), backgroundColor: '#10b981' },
+            { label: 'In Progress', data: sortedMembers.map(m => m.inProgress), backgroundColor: '#f59e0b' },
+            { label: 'Review / PR', data: sortedMembers.map(m => m.review), backgroundColor: '#a855f7' },
+            { label: 'Blocked', data: sortedMembers.map(m => m.blocked), backgroundColor: '#ef4444' },
+            { label: 'Backlog', data: sortedMembers.map(m => m.backlog), backgroundColor: '#64748b' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+          },
+          plugins: {
+            legend: { position: 'top', labels: { color: '#cbd5e1', font: { size: 11 }, boxWidth: 12 } }
+          }
+        }
+      });
+
+      // Status Donut Chart
+      const ctxDonut = document.getElementById('statusChart').getContext('2d');
+      if (statusChartInstance) statusChartInstance.destroy();
+
+      statusChartInstance = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Đã xong', 'In Progress', 'Review', 'Blocked', 'Backlog'],
+          datasets: [{
+            data: [stats.done, stats.inProgress, stats.review, stats.blocked, stats.backlog],
+            backgroundColor: ['#10b981', '#f59e0b', '#a855f7', '#ef4444', '#64748b'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 10 } }
+          },
+          cutout: '68%'
+        }
+      });
+    }
+
+    function renderMemberCards(memberMap) {
+      const container = document.getElementById('membersGrid');
+      container.innerHTML = '';
+      const sorted = Object.values(memberMap).sort((a, b) => b.total - a.total);
+
+      sorted.forEach(m => {
+        const pct = m.total > 0 ? Math.round((m.done / m.total) * 100) : 0;
+        const initials = m.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const isSelected = selectedMember === m.id;
+
+        const card = document.createElement('div');
+        card.className = `cursor-pointer transition-all p-4 rounded-xl border ${
+          isSelected ? 'bg-slate-800 border-teal-500 shadow-lg shadow-teal-500/10' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+        }`;
+        card.onclick = () => selectMember(m.id);
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-teal-800 text-teal-200 font-bold flex items-center justify-center text-xs">
+                ${initials}
+              </div>
+              <div>
+                <h3 class="text-sm font-semibold text-white truncate max-w-[150px]">${m.name}</h3>
+                <span class="text-xs text-slate-400">@${m.username}</span>
+              </div>
+            </div>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${m.total > 0 ? 'bg-slate-800 text-teal-400' : 'bg-slate-800 text-slate-500'}">
+              ${m.total} tasks
+            </span>
+          </div>
+
+          <div class="mt-4 space-y-1.5">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Tiến độ hoàn thành</span>
+              <span class="font-medium text-emerald-400">${pct}%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-full rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="text-amber-400">${m.inProgress} active</span>
+            <span class="text-purple-400">${m.review} review</span>
+            <span class="text-red-400">${m.blocked} blocked</span>
+            <span class="text-emerald-400">${m.done} xong</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function populateMemberSelect(members) {
+      const sel = document.getElementById('memberFilter');
+      sel.innerHTML = '<option value="ALL">Tất cả thành viên</option>';
+      members.forEach(m => {
+        sel.innerHTML += `<option value="${m.id}">${m.fullName}</option>`;
+      });
+      sel.innerHTML += '<option value="unassigned">Chưa phân công</option>';
+    }
+
+    function selectMember(memberId) {
+      selectedMember = (selectedMember === memberId) ? 'ALL' : memberId;
+      document.getElementById('memberFilter').value = selectedMember;
+      renderTasks();
+      // Highlight card
+      const memberMap = {};
+      trelloData.members.forEach(m => memberMap[m.id] = m);
+      initDashboard();
+    }
+
+    function renderTasks() {
+      if (!trelloData) return;
+      const { members, lists, cards } = trelloData;
+      const listMap = Object.fromEntries(lists.map(l => [l.id, l.name]));
+      const memberMap = Object.fromEntries(members.map(m => [m.id, m.fullName]));
+
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value;
+      const memberFilter = document.getElementById('memberFilter').value;
+
+      const filtered = cards.filter(c => {
+        const lName = listMap[c.idList] || '';
+        // Search query
+        if (query && !c.name.toLowerCase().includes(query)) return false;
+
+        // Status Filter
+        if (statusFilter !== 'ALL') {
+          if (statusFilter === 'In Progress' && !lName.toLowerCase().includes('in progress')) return false;
+          if (statusFilter === 'Review' && !lName.toLowerCase().includes('review')) return false;
+          if (statusFilter === 'Blocked' && !lName.toLowerCase().includes('blocked')) return false;
+          if (statusFilter === 'Done' && !lName.toLowerCase().includes('done')) return false;
+          if (statusFilter === 'Backlog' && (lName.toLowerCase().includes('done') || lName.toLowerCase().includes('in progress') || lName.toLowerCase().includes('review') || lName.toLowerCase().includes('blocked'))) return false;
+        }
+
+        // Member Filter
+        if (memberFilter !== 'ALL') {
+          if (memberFilter === 'unassigned') {
+            if (c.idMembers && c.idMembers.length > 0) return false;
+          } else {
+            if (!c.idMembers || !c.idMembers.includes(memberFilter)) return false;
+          }
+        }
+        return true;
+      });
+
+      document.getElementById('filteredCount').innerText = `${filtered.length} thẻ`;
+
+      const tbody = document.getElementById('taskTableBody');
+      tbody.innerHTML = '';
+
+      filtered.forEach(c => {
+        const lName = listMap[c.idList] || 'Khác';
+        let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-slate-800 text-slate-300">${lName}</span>`;
+        if (lName.toLowerCase().includes('blocked')) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-red-950 text-red-400 border border-red-800">🛑 ${lName}</span>`;
+        } else if (lName.toLowerCase().includes('in progress')) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-amber-950 text-amber-400 border border-amber-800">⏳ ${lName}</span>`;
+        } else if (lName.toLowerCase().includes('review')) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-purple-950 text-purple-400 border border-purple-800">🔍 ${lName}</span>`;
+        } else if (lName.toLowerCase().includes('done')) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800">✅ ${lName}</span>`;
+        }
+
+        const assignees = (c.idMembers && c.idMembers.length > 0)
+          ? c.idMembers.map(mId => memberMap[mId] || mId).join(', ')
+          : '<span class="text-slate-500 italic">Chưa gán</span>';
+
+        const labelsHtml = (c.labels && c.labels.length > 0)
+          ? c.labels.map(lb => `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 mr-1">${lb.name}</span>`).join('')
+          : '<span class="text-slate-600">-</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition';
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-medium text-white max-w-md">
+            <div class="truncate" title="${c.name}">${c.name}</div>
+          </td>
+          <td class="py-2.5 px-3 text-slate-300 truncate max-w-xs">${assignees}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${statusBadge}</td>
+          <td class="py-2.5 px-3">${labelsHtml}</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap">
+            <a href="${c.url}" target="_blank" class="text-teal-400 hover:text-teal-300 font-medium inline-flex items-center gap-1">
+              Xem <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function refreshData() {
+      const icon = document.getElementById('refreshIcon');
+      icon.classList.add('fa-spin');
+      try {
+        await loadInitialData();
+      } finally {
+        setTimeout(() => icon.classList.remove('fa-spin'), 600);
+      }
+    }
+
+    window.onload = loadInitialData;
+  </script>
+<script id="embeddedSnapshot" type="application/json">
+{
+  "board": {
+    "id": "6adecae3ac6c046e8c80ed81",
+    "name": "OJT - Smart Parking",
+    "url": "https://trello.com/b/DMVyjk4S/ojt-smart-parking"
+  },
+  "members": [
+    {
+      "id": "5b14b950955ce26052d2fa7d",
+      "fullName": "daonguyendev",
+      "username": "daonguyendev"
+    },
+    {
+      "id": "6a6b571e2274ff581eb61742",
+      "fullName": "Ho Quoc Khai",
+      "username": "hoquockhai"
+    },
+    {
+      "id": "68f0354b7e270498cfc5666a",
+      "fullName": "Huynh La Tien Loc",
+      "username": "huynhlatienloc"
+    },
+    {
+      "id": "69016d7a8c58ffe25753e224",
+      "fullName": "Huyy Gia",
+      "username": "huyygia1"
+    },
+    {
+      "id": "692e4f13a054491cdb09b6f8",
+      "fullName": "Khangvo",
+      "username": "vothanhkhang"
+    },
+    {
+      "id": "6ab4b7856efcfa57d202df2b",
+      "fullName": "Lu Nhựt Đình",
+      "username": "dinhluit"
+    },
+    {
+      "id": "6930e5b55d3528613be81a82",
+      "fullName": "TUNG D24TXCN01-N HOANG DINH",
+      "username": "tungd24txcn01nhoangdinh"
+    }
+  ],
+  "lists": [
+    {
+      "id": "6adecb83c59ce2c7fc21ec4f",
+      "name": "Product Backlog"
+    },
+    {
+      "id": "6adecb92813c403d4d9ff7ce",
+      "name": "In Progress"
+    },
+    {
+      "id": "6adecbaac88305e14a31ed50",
+      "name": "Review"
+    },
+    {
+      "id": "6adecb85c3978f5d53c9fdba",
+      "name": "Sprint Backlog 1 (Done)"
+    },
+    {
+      "id": "6ae1717ab0d54f6059bc253e",
+      "name": "Sprint Backlog 2"
+    },
+    {
+      "id": "6adecc33f1b35f096a0e9871",
+      "name": "Sprint Backlog 2 (Done)"
+    },
+    {
+      "id": "6adecc372498509fdc5e6c55",
+      "name": "Blocked"
+    }
+  ],
+  "cards": [
+    {
+      "id": "6ae173553703ad4d4ab825e1",
+      "name": "[SP-PB-03] [Epic] Thuật toán Điều chỉnh Biểu phí Đỗ xe Động (Dynamic Surge Pricing)",
+      "idList": "6adecb83c59ce2c7fc21ec4f",
+      "idMembers": [],
+      "url": "https://trello.com/c/KF6HRupo/6-sp-pb-03-epic-thu%E1%BA%ADt-to%C3%A1n-%C4%91i%E1%BB%81u-ch%E1%BB%89nh-bi%E1%BB%83u-ph%C3%AD-%C4%91%E1%BB%97-xe-%C4%91%E1%BB%99ng-dynamic-surge-pricing",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng thuật toán định giá thông minh theo cơ chế cung - cầu thị trường. Tự động tăng giá vé theo tỷ lệ phần trăm khi bãi xe đạt tỷ lệ lấp đầy trên 85% hoặc vào khung giờ cao điểm (18h - 22h cuối tuần), đồng thời giảm giá giờ thấp điểm để kích cầu, tối ưu hóa doanh thu cho chủ bãi.\n\n---\n## 🔍 [AUD"
+    },
+    {
+      "id": "6ae36ef66e84b9b36e0318c7",
+      "name": "[SP-ID-01-T05] [BE] Lọc phương tiện ACTIVE trong VehicleServiceImpl và chặn xóa phương tiện đang có Booking hoạt động",
+      "idList": "6adecb83c59ce2c7fc21ec4f",
+      "idMembers": [],
+      "url": "https://trello.com/c/wS6lmMFg/46-sp-id-01-t05-be-l%E1%BB%8Dc-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-active-trong-vehicleserviceimpl-v%C3%A0-ch%E1%BA%B7n-x%C3%B3a-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-%C4%91ang-c%C3%B3-booking-ho%E1%BA%A1t-%C4%91%E1%BB%99ng",
+      "labels": [
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-ID-01` → Story `SP-ID-01-US03` → Task `SP-ID-01-T05`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `6h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nSửa lỗi các phương tiện đã bị Tài xế xóa (`INACTIVE`) vẫn tiếp tục hiển thị "
+    },
+    {
+      "id": "6ae36f00451aeeb73c38a0aa",
+      "name": "[SP-PK-01-T04] [BE] Tích hợp đồng bộ điểm đánh giá trung bình (ratingAverage) và doanh thu từng bãi đỗ cho parking-lot-service",
+      "idList": "6adecb83c59ce2c7fc21ec4f",
+      "idMembers": [],
+      "url": "https://trello.com/c/H7pjQxdK/48-sp-pk-01-t04-be-t%C3%ADch-h%E1%BB%A3p-%C4%91%E1%BB%93ng-b%E1%BB%99-%C4%91i%E1%BB%83m-%C4%91%C3%A1nh-gi%C3%A1-trung-b%C3%ACnh-ratingaverage-v%C3%A0-doanh-thu-t%E1%BB%ABng-b%C3%A3i-%C4%91%E1%BB%97-cho-parking-lot-service",
+      "labels": [
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-PK-01` → Story `SP-PK-01-US02` → Task `SP-PK-01-T04`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `8h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nCập nhật tự động điểm đánh giá trung bình (`ratingAverage`) của bãi đỗ khi T"
+    },
+    {
+      "id": "6ae36f0455004faa2680233f",
+      "name": "[SP-AI-01-T02] [AI] Xây dựng API POST /api/v1/ai/extract-layout sử dụng Gemini Multimodal Vision để trích xuất cấu trúc ô đỗ 2D từ hình ảnh",
+      "idList": "6adecb83c59ce2c7fc21ec4f",
+      "idMembers": [],
+      "url": "https://trello.com/c/kFIChlua/49-sp-ai-01-t02-ai-x%C3%A2y-d%E1%BB%B1ng-api-post-api-v1-ai-extract-layout-s%E1%BB%AD-d%E1%BB%A5ng-gemini-multimodal-vision-%C4%91%E1%BB%83-tr%C3%ADch-xu%E1%BA%A5t-c%E1%BA%A5u-tr%C3%BAc-%C3%B4-%C4%91%E1%BB%97-2d-t%E1%BB%AB-h%C3%AC",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-AI-01` → Story `SP-AI-01-US02` → Task `SP-AI-01-T02`\n> **Priority:** `Medium` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nTriển khai tính năng AI trích xuất sơ đồ bãi đỗ xe 2D từ ảnh chụp thực tế h"
+    },
+    {
+      "id": "6ae36f095d1ef73e58738bc8",
+      "name": "[SP-AI-01-T03] [BE] Xây dựng Schema và REST API lưu trữ/truy xuất Sơ đồ Bãi đỗ 2D (Layout JSON & Slot Cells) trong parking-lot-service",
+      "idList": "6adecb83c59ce2c7fc21ec4f",
+      "idMembers": [],
+      "url": "https://trello.com/c/IxCD1JJ3/50-sp-ai-01-t03-be-x%C3%A2y-d%E1%BB%B1ng-schema-v%C3%A0-rest-api-l%C6%B0u-tr%E1%BB%AF-truy-xu%E1%BA%A5t-s%C6%A1-%C4%91%E1%BB%93-b%C3%A3i-%C4%91%E1%BB%97-2d-layout-json-slot-cells-trong-parking-lot-service",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-AI-01` → Story `SP-AI-01-US02` → Task `SP-AI-01-T03`\n> **Priority:** `Medium` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nCung cấp cơ sở dữ liệu và REST API trong `parking-lot-service` để lưu trữ, "
+    },
+    {
+      "id": "6ae1746b652c0eaffbf1b803",
+      "name": "[SP-INP-01] [FE] Xây dựng Cổng Quản Trị Viên Sàn (Admin Portal)",
+      "idList": "6adecb92813c403d4d9ff7ce",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/sarKOgX7/13-sp-inp-01-fe-x%C3%A2y-d%E1%BB%B1ng-c%E1%BB%95ng-qu%E1%BA%A3n-tr%E1%BB%8B-vi%C3%AAn-s%C3%A0n-admin-portal",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng giao diện cho Super Admin phê duyệt các đối tác bãi xe mới nộp hồ sơ và duyệt các lệnh rút tiền doanh thu.\n\n- Trang `/admin/merchants`: Danh sách đối tác chờ duyệt, xem giấy phép kinh doanh, nút Phê duyệt / Từ chối.\n- Trang `/admin/withdrawals`: Danh sách yêu cầu rút tiền, nút Duyệt chi.\n- "
+    },
+    {
+      "id": "6ae174b727f6c43b2e2f73e9",
+      "name": "[SP-INP-02] [DevOps] Dựng Dashboard Giám sát Prometheus & Grafana",
+      "idList": "6adecb92813c403d4d9ff7ce",
+      "idMembers": [
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/gwVnFTDn/15-sp-inp-02-devops-d%E1%BB%B1ng-dashboard-gi%C3%A1m-s%C3%A1t-prometheus-grafana",
+      "labels": [
+        {
+          "name": "DevOps / Infra",
+          "color": "purple"
+        }
+      ],
+      "desc": "Thu thập và trực quan hóa số liệu đo lường hiệu năng của các microservices trên Grafana Dashboard.\n\n- Thu thập metrics từ Spring Boot Actuator (`/actuator/prometheus`).\n- Dựng dashboard hiển thị: CPU, RAM, Latency P95 và số kết nối database pool của 6 services."
+    },
+    {
+      "id": "6ae174ea57079234fc9fb738",
+      "name": "[SP-INP-03] [QA] Kiểm thử Toàn trình End-to-End theo Postman Collection",
+      "idList": "6adecb92813c403d4d9ff7ce",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/uRdaZz0r/16-sp-inp-03-qa-ki%E1%BB%83m-th%E1%BB%AD-to%C3%A0n-tr%C3%ACnh-end-to-end-theo-postman-collection",
+      "labels": [
+        {
+          "name": "Testing / QA",
+          "color": "yellow"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Chạy kiểm thử toàn bộ các kịch bản API từ Đăng ký, Tìm kiếm, Đặt chỗ, Thanh toán đến Check-in/out bằng Postman Collection Runner.\n\n---\n## 🔍 [AUDIT VERIFICATION & BACKLOG TRACEABILITY]\n- **Trạng thái Kiểm toán Source Code:** `BLOCKED BY CRITICAL BUGS (BUG-001, BUG-005, BUG-006, BUG-008)`\n- **Liên kế"
+    },
+    {
+      "id": "6ae36efa4fcde41de1c4e18a",
+      "name": "[SP-PK-01-T02] [BE] Bổ sung State Guards cho quy trình kiểm duyệt bãi đỗ, API tạm ngưng (SUSPEND), kiểm tra trùng tên khi cập nhật và phát sự kiện thông báo",
+      "idList": "6adecb92813c403d4d9ff7ce",
+      "idMembers": [],
+      "url": "https://trello.com/c/ecYavpVo/47-sp-pk-01-t02-be-b%E1%BB%95-sung-state-guards-cho-quy-tr%C3%ACnh-ki%E1%BB%83m-duy%E1%BB%87t-b%C3%A3i-%C4%91%E1%BB%97-api-t%E1%BA%A1m-ng%C6%B0ng-suspend-ki%E1%BB%83m-tra-tr%C3%B9ng-t%C3%AAn-khi-c%E1%BA%ADp-nh%E1%BA%ADt-v%C3%A0-ph",
+      "labels": [
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-PK-01` → Story `SP-PK-01-US01` → Task `SP-PK-01-T02`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `8h` | **Status:** `In Progress` (`In Progress`)\n\n### 1. Business Objective\nĐảm bảo máy trạng thái kiểm duyệt bãi đỗ (`PENDING_APPROVAL`, `CHANGES_REQUE"
+    },
+    {
+      "id": "6ae175501b7574a3b970245a",
+      "name": "[SP-REV-02] [FE] Bổ sung Form Nhập Thông tin Ngân hàng khi Rút tiền",
+      "idList": "6adecbaac88305e14a31ed50",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/BUeMThmH/19-sp-rev-02-fe-b%E1%BB%95-sung-form-nh%E1%BA%ADp-th%C3%B4ng-tin-ng%C3%A2n-h%C3%A0ng-khi-r%C3%BAt-ti%E1%BB%81n",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        }
+      ],
+      "desc": "Cập nhật Modal yêu cầu rút tiền của Merchant Portal để gửi đầy đủ thông tin tài khoản ngân hàng thụ hưởng.\n\n- Thêm 3 trường input: Tên ngân hàng, Số tài khoản, Tên chủ tài khoản.\n- Validate bắt buộc nhập và kiểm tra số tiền rút không vượt quá số dư khả dụng trong ví."
+    },
+    {
+      "id": "6ae1758f72e89bbb46b93264",
+      "name": "[SP-REV-03] [QA] Nâng độ bao phủ Unit Test toàn hệ thống vượt 80% SonarQube",
+      "idList": "6adecbaac88305e14a31ed50",
+      "idMembers": [
+        "5b14b950955ce26052d2fa7d",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/VsusLRwT/21-sp-rev-03-qa-n%C3%A2ng-%C4%91%E1%BB%99-bao-ph%E1%BB%A7-unit-test-to%C3%A0n-h%E1%BB%87-th%E1%BB%91ng-v%C6%B0%E1%BB%A3t-80-sonarqube",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Testing / QA",
+          "color": "yellow"
+        }
+      ],
+      "desc": "Viết bổ sung bộ 282 Unit Tests tự động bằng JUnit 5 & Mockito theo chuẩn AAA, đảm bảo toàn bộ hệ thống vượt qua Quality Gate của SonarQube.\n\n---\n## 🔍 [AUDIT VERIFICATION & BACKLOG TRACEABILITY]\n- **Trạng thái Kiểm toán Source Code:** `PARTIALLY IMPLEMENTED (Missing Schema & Contract Integration Tes"
+    },
+    {
+      "id": "6ae173a96e93980953ec72b5",
+      "name": "[SP-S2-01] [Chore] Chuẩn bị Dữ liệu Seed Mẫu & Kịch bản Demo Nghiệm thu",
+      "idList": "6adecbaac88305e14a31ed50",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224",
+        "6930e5b55d3528613be81a82",
+        "6a6b571e2274ff581eb61742"
+      ],
+      "url": "https://trello.com/c/y1hsAAcG/8-sp-s2-01-chore-chu%E1%BA%A9n-b%E1%BB%8B-d%E1%BB%AF-li%E1%BB%87u-seed-m%E1%BA%ABu-k%E1%BB%8Bch-b%E1%BA%A3n-demo-nghi%E1%BB%87m-thu",
+      "labels": [
+        {
+          "name": "DevOps / Infra",
+          "color": "purple"
+        }
+      ],
+      "desc": "Làm sạch dữ liệu và nạp sẵn dữ liệu mẫu thực tế chuẩn bị cho buổi báo cáo nghiệm thu với giảng viên.\n\n- Dữ liệu bãi xe: 10 bãi xe thật tại TP.HCM kèm hình ảnh thực tế và tọa độ GPS chính xác.\n- Tạo 3 tài khoản demo: `driver@demo.com`, `merchant@demo.com`, `admin@demo.com` có sẵn xe và số dư ví.\n\n---"
+    },
+    {
+      "id": "6ae172b4b6fe12ec8daaf367",
+      "name": "[SP-S1-01] [DevOps] Khởi tạo Multi-project Gradle & Common Library DTO (3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/Kvdp2fzX/4-sp-s1-01-devops-kh%E1%BB%9Fi-t%E1%BA%A1o-multi-project-gradle-common-library-dto-3-stp",
+      "labels": [
+        {
+          "name": "DevOps / Infra",
+          "color": "purple"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Thiết lập cấu trúc dự án đa module chuẩn Enterprise bằng Gradle Java 21. Đóng gói thư viện dùng chung common-library để chia sẻ giữa các microservices.\n\nFile settings.gradle: Khai báo 8 modules.\ncommon-library: Định nghĩa chuẩn ApiResponse<T>, ErrorCode, GlobalExceptionHandler, base entity BaseEntit"
+    },
+    {
+      "id": "6ae1736af287ef5244ca6cbd",
+      "name": "[SP-S1-02] [DevOps] Thiết lập Docker Compose Multi-Database & Kafka Broker(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6930e5b55d3528613be81a82",
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/8EO2ECGJ/7-sp-s1-02-devops-thi%E1%BA%BFt-l%E1%BA%ADp-docker-compose-multi-database-kafka-broker5-stp",
+      "labels": [
+        {
+          "name": "DevOps / Infra",
+          "color": "purple"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Cấu hình môi trường containerization cục bộ với Docker Compose, bảo đảm nguyên tắc Database-per-service (mỗi service 1 database riêng biệt) và hệ thống message broker Kafka.\n\nMySQL 8.4 port 3307: Tạo sẵn 5 database độc lập (smart\\_parking\\_identity\\_db, smart\\_parking\\_lot\\_db, smart\\_parking\\_booki"
+    },
+    {
+      "id": "6ae173f03f0882c9ee22dbcd",
+      "name": "[SP-S1-03] [BE] Xây dựng API Gateway Routing & CORS Configuration(3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6930e5b55d3528613be81a82",
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/7CIoKns8/10-sp-s1-03-be-x%C3%A2y-d%E1%BB%B1ng-api-gateway-routing-cors-configuration3-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "DevOps / Infra",
+          "color": "purple"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng cửa ngõ API Gateway duy nhất (Port 8088) tiếp nhận mọi request từ Frontend, thực hiện định tuyến và xử lý CORS.\n\nSpring Cloud Gateway routes map đến từng service nội bộ.\nCorsWebFilter: Cho phép domain Frontend [http://localhost:5173](http://localhost:5173 \"‌\") với đầy đủ methods và headers."
+    },
+    {
+      "id": "6ae17456194783238b764d29",
+      "name": "[SP-S1-04] [BE] Xây dựng JWT Token Provider & Filter xác thực tại Gateway(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6930e5b55d3528613be81a82",
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/r9NR2IIM/12-sp-s1-04-be-x%C3%A2y-d%E1%BB%B1ng-jwt-token-provider-filter-x%C3%A1c-th%E1%BB%B1c-t%E1%BA%A1i-gateway5-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Bảo mật API Gateway bằng cơ chế xác thực tập trung. Giải mã Access Token JWT và truyền thông tin người dùng xuống các microservices qua header.\n\nJwtAuthenticationFilter: Đọc header Authorization: Bearer <token>, trích xuất userId, role, email và inject vào header nội bộ: X-User-Id, X-User-Role.\n\n---"
+    },
+    {
+      "id": "6ae174ae3f8ab9b339965f88",
+      "name": "[SP-S1-05] [FE] Khởi tạo Dự án React TypeScript, Design System & Axios Client(3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8",
+        "6a6b571e2274ff581eb61742"
+      ],
+      "url": "https://trello.com/c/allYvsqn/14-sp-s1-05-fe-kh%E1%BB%9Fi-t%E1%BA%A1o-d%E1%BB%B1-%C3%A1n-react-typescript-design-system-axios-client3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "Khởi tạo khung ứng dụng Frontend chuẩn Enterprise sử dụng React 18, Vite, TypeScript và xây dựng Design System đồng nhất.\n\nCấu trúc thư mục theo tính năng tại src/features/.\nDesign Tokens tại src/index.css: Bảng màu HSL, typography, components base.\nCấu hình Axios Client tập trung (src/shared/api/ap"
+    },
+    {
+      "id": "6ae174f380de86071406d93f",
+      "name": "[SP-S1-06] [BE] Thiết kế Database Schema & Entity Identity Service(3 STP)- (3STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/zgQFldV1/17-sp-s1-06-be-thi%E1%BA%BFt-k%E1%BA%BF-database-schema-entity-identity-service3-stp-3stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng lược đồ cơ sở dữ liệu và các Entity ánh xạ JPA cho dịch vụ quản lý danh tính (identity-service, Port 8081).\n\nFlyway migration V1\\_\\_init\\_identity\\_schema.sql: Bảng users, roles, user\\_roles, driver\\_profiles, merchant\\_profiles, refresh\\_tokens.\nCác Entity: User.java, Role.java, DriverProf"
+    },
+    {
+      "id": "6ae1756154eb8e459d12cac3",
+      "name": "[SP-S1-07] [BE] Viết API Đăng ký, Đăng nhập & Cấp phát Refresh Token-(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224",
+        "692e4f13a054491cdb09b6f8"
+      ],
+      "url": "https://trello.com/c/gWzxaOee/20-sp-s1-07-be-vi%E1%BA%BFt-api-%C4%91%C4%83ng-k%C3%BD-%C4%91%C4%83ng-nh%E1%BA%ADp-c%E1%BA%A5p-ph%C3%A1t-refresh-token-5-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Hiện thực hóa logic nghiệp vụ xác thực người dùng, băm mật khẩu với BCrypt và cấp cặp token JWT (identity-service).\n\nAPI POST /api/v1/auth/login: Trả về Access Token (15m) và Refresh Token (7 ngày).\nAPI POST /api/v1/auth/register/driver: Đăng ký tài xế.\nAPI POST /api/v1/auth/register/merchant: Đăng "
+    },
+    {
+      "id": "6ae175dca13d009d388771ca",
+      "name": "[SP-S1-08] [FE] Xây dựng Màn hình Đăng nhập & Đăng ký phân luồng Role-(2 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8",
+        "6a6b571e2274ff581eb61742"
+      ],
+      "url": "https://trello.com/c/msycuRnp/23-sp-s1-08-fe-x%C3%A2y-d%E1%BB%B1ng-m%C3%A0n-h%C3%ACnh-%C4%91%C4%83ng-nh%E1%BA%ADp-%C4%91%C4%83ng-k%C3%BD-ph%C3%A2n-lu%E1%BB%93ng-role-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "Phát triển giao diện xác thực người dùng thân thiện, phân biệt rõ luồng đăng ký của Tài xế cá nhân và Chủ bãi xe đối tác.\n\nMàn hình /login: Form nhập email/mật khẩu, ghi nhớ đăng nhập, bắt lỗi trực quan.\nMàn hình /register: Tab chuyển đổi giữa Tài xế và Chủ bãi.\nQuản lý trạng thái đăng nhập với Reac"
+    },
+    {
+      "id": "6ae1765d87c7e6e83deec860",
+      "name": "[SP-S1-09] [BE] Thiết kế Database Schema & Entity Parking Lot Service-(3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/4Mt6dW7r/27-sp-s1-09-be-thi%E1%BA%BFt-k%E1%BA%BF-database-schema-entity-parking-lot-service-3-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng cấu trúc lưu trữ cho dịch vụ quản lý bãi xe (parking-lot-service, Port 8082).\n\nFlyway migration V1\\_\\_init\\_parkinglot\\_schema.sql: Bảng parking\\_lots, slots, pricing\\_rules, parking\\_lot\\_images.\nEntity Slot với enum AVAILABLE, HOLD, OCCUPIED, MAINTENANCE.\n\n---\n## 🔍 [AUDIT VERIFICATION & "
+    },
+    {
+      "id": "6ae1769abd64c1dc8ab75e73",
+      "name": "[SP-S1-10] [BE] Viết API Tìm kiếm Bãi xe theo Tọa độ GPS & Bộ lọc Xe-(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224",
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/IplxD27P/29-sp-s1-10-be-vi%E1%BA%BFt-api-t%C3%ACm-ki%E1%BA%BFm-b%C3%A3i-xe-theo-t%E1%BB%8Da-%C4%91%E1%BB%99-gps-b%E1%BB%99-l%E1%BB%8Dc-xe-5-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Cung cấp API tìm kiếm bãi xe xung quanh vị trí người dùng với tốc độ cao, hỗ trợ phân trang và lọc đa tiêu chí.\n\nAPI GET /api/v1/parking-lots/search: Nhận lat, lng, radiusKm, vehicleType, maxPrice.\nÁp dụng công thức Haversine tính khoảng cách đường tròn trực tiếp trong câu query SQL.\nTích hợp Redis "
+    },
+    {
+      "id": "6ae176d6ae9fc4137492caa4",
+      "name": "[SP-S1-11] [FE] Tích hợp Bản đồ Leaflet/OpenStreetMap & Bộ lọc Tìm kiếm-(3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/C4zXqEzr/31-sp-s1-11-fe-t%C3%ADch-h%E1%BB%A3p-b%E1%BA%A3n-%C4%91%E1%BB%93-leaflet-openstreetmap-b%E1%BB%99-l%E1%BB%8Dc-t%C3%ACm-ki%E1%BA%BFm-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng giao diện tìm kiếm bãi xe tương tác trên nền bản đồ số cho tài xế (smart-parking-app).\n\nComponent ParkingMap.tsx sử dụng thư viện leaflet và react-leaflet.\nHiển thị Custom Pin Marker: Xanh (còn chỗ), Vàng (sắp đầy), Đỏ (hết chỗ).\nTự động lấy tọa độ vị trí hiện tại của tài xế qua trình duyệt"
+    },
+    {
+      "id": "6ae1771ccba580a0bd20fa57",
+      "name": "[SP-S1-12] [FE] Xây dựng Trang Chi tiết Bãi xe & Sơ đồ Slot đỗ trực quan-(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8",
+        "6a6b571e2274ff581eb61742"
+      ],
+      "url": "https://trello.com/c/LIgVPMhd/33-sp-s1-12-fe-x%C3%A2y-d%E1%BB%B1ng-trang-chi-ti%E1%BA%BFt-b%C3%A3i-xe-s%C6%A1-%C4%91%E1%BB%93-slot-%C4%91%E1%BB%97-tr%E1%BB%B1c-quan-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Trang chi tiết bãi đỗ xe (/parking-lots/:id) cho phép tài xế xem thông tin chi tiết, biểu phí theo giờ và chọn vị trí ô đỗ cụ thể.\n\nSlider ảnh bãi xe, địa chỉ, giờ hoạt động, tiện ích.\nBảng giá niêm yết: Giá giờ đầu, giá các giờ tiếp theo, giá qua đêm.\nSơ đồ chỗ đỗ dạng Grid trực quan: Ô màu xanh (c"
+    },
+    {
+      "id": "6ae175c52814970e9d3ebdac",
+      "name": "[SP-DON-01] [BE] Thiết kế Schema Booking & Redis Distributed Lock giữ chỗ-(8 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6a6b571e2274ff581eb61742",
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/BQGMFKaA/22-sp-don-01-be-thi%E1%BA%BFt-k%E1%BA%BF-schema-booking-redis-distributed-lock-gi%E1%BB%AF-ch%E1%BB%97-8-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng tầng lưu trữ và cơ chế chống tranh chấp chỗ đỗ (Race Condition) khi nhiều tài xế cùng bấm đặt 1 vị trí đỗ (`booking-service`, Port 8083).\n\n- Flyway migration `V1__init_booking_schema.sql` và `V3__add_hourly_rate_to_bookings.sql`.\n- Entity `Booking`: Mã `booking_code`, `status`, `advance_dep"
+    },
+    {
+      "id": "6ae175ef0529bc5ea2b2c524",
+      "name": "[SP-DON-02] [BE] Xây dựng Logic Giữ chỗ tạm thời (Hold TTL 10m) & Transactional Outbox-(8 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6a6b571e2274ff581eb61742",
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/sFodiLA7/24-sp-don-02-be-x%C3%A2y-d%E1%BB%B1ng-logic-gi%E1%BB%AF-ch%E1%BB%97-t%E1%BA%A1m-th%E1%BB%9Di-hold-ttl-10m-transactional-outbox-8-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Nghiệp vụ tạo lượt đặt chỗ với thời hạn thanh toán 10 phút và lưu sự kiện vào Transactional Outbox để truyền tin cậy sang Kafka.\n\n- API `POST /api/v1/bookings`: Tạo booking với `status = PENDING_PAYMENT`, `expires_at = now() + 10m`.\n- Gọi FeignClient `ParkingLotClient.holdSlot` cập nhật trạng thái s"
+    },
+    {
+      "id": "6ae1761b05602c900c73a66b",
+      "name": "[SP-DON-03] [BE] Viết Scheduler Tự động Hủy Booking quá hạn 10 phút-(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/PzrOLSJS/25-sp-don-03-be-vi%E1%BA%BFt-scheduler-t%E1%BB%B1-%C4%91%E1%BB%99ng-h%E1%BB%A7y-booking-qu%C3%A1-h%E1%BA%A1n-10-ph%C3%BAt-5-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Scheduled Job định kỳ chạy nền để tự động thu hồi chỗ đỗ nếu tài xế không hoàn tất thanh toán trong 10 phút.\n\n- Class `BookingExpirationScheduler.java` với annotation `@Scheduled(fixedDelay = 60000)` (chạy mỗi 1 phút).\n- Quét các booking có `status = PENDING_PAYMENT` và `expires_at < now()`.\n- Đổi t"
+    },
+    {
+      "id": "6ae1764a02238dba8d5d0a97",
+      "name": "[SP-DON-04] [FE] Xây dựng Modal Đặt chỗ & Đồng hồ đếm ngược 10 phút (Hold Timer)-(3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8",
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/aVqa1HjM/26-sp-don-04-fe-x%C3%A2y-d%E1%BB%B1ng-modal-%C4%91%E1%BA%B7t-ch%E1%BB%97-%C4%91%E1%BB%93ng-h%E1%BB%93-%C4%91%E1%BA%BFm-ng%C6%B0%E1%BB%A3c-10-ph%C3%BAt-hold-timer-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Giao diện xác nhận thông tin đặt chỗ và hiển thị bộ đếm thời gian giữ chỗ 10 phút cho tài xế.\n\n- Modal `CreateBookingModal.tsx`: Chọn xe từ danh sách cá nhân, chọn giờ vào/ra dự kiến, hiển thị tiền cọc cần trả.\n- Component `HoldCountdownTimer.tsx`: Đếm ngược từ 600 giây về 0, hiển thị thanh tiến độ "
+    },
+    {
+      "id": "6ae1767dec26ca32755dd44c",
+      "name": "[SP-DON-05] [BE] Tích hợp Cổng thanh toán PayOS VietQR & Tạo Payment Link-(5 STp)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a",
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/woafim4k/28-sp-don-05-be-t%C3%ADch-h%E1%BB%A3p-c%E1%BB%95ng-thanh-to%C3%A1n-payos-vietqr-t%E1%BA%A1o-payment-link-5-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Kết nối dịch vụ thanh toán (`payment-service`, Port 8084) với cổng thanh toán PayOS tạo mã VietQR động cho từng đơn đặt chỗ.\n\n- Tích hợp thư viện PayOS Java SDK (`vn.payos:payos-java`).\n- API `POST /api/v1/payments/create-link`: Nhận `bookingId`, `amount`, sinh mã `orderCode` ngẫu nhiên duy nhất.\n- "
+    },
+    {
+      "id": "6ae176bddf50b0947544a961",
+      "name": "[SP-DON-06] [BE] Xử lý Webhook PayOS với Xác thực chữ ký HMAC-SHA256 -(8 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/RCL3UmUA/30-sp-don-06-be-x%E1%BB%AD-l%C3%BD-webhook-payos-v%E1%BB%9Bi-x%C3%A1c-th%E1%BB%B1c-ch%E1%BB%AF-k%C3%BD-hmac-sha256-8-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Tiếp nhận và xác thực thông báo giao dịch chuyển khoản thành công từ ngân hàng thông qua Webhook của PayOS.\n\n- Endpoint `POST /api/v1/payments/webhook`: Nhận payload kết quả thanh toán.\n- Xác thực chữ ký số: Dùng `PAYOS_CHECKSUM_KEY` tạo chữ ký HMAC-SHA256 trên payload và so khớp với trường `signatu"
+    },
+    {
+      "id": "6ae176f2969ff02f5a1faf48",
+      "name": "[SP-DON-07] [FE] Xây dựng Màn hình Quét mã VietQR & Trang Kết quả Callback- (3 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/97r96gUu/32-sp-don-07-fe-x%C3%A2y-d%E1%BB%B1ng-m%C3%A0n-h%C3%ACnh-qu%C3%A9t-m%C3%A3-vietqr-trang-k%E1%BA%BFt-qu%E1%BA%A3-callback-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Giao diện thanh toán hiển thị mã VietQR động và trang tiếp nhận kết quả trả về từ cổng thanh toán.\n\n- Màn hình thanh toán `/payments/checkout/:bookingId`: Hiển thị ảnh QR VietQR, thông tin tài khoản thụ hưởng, số tiền và nội dung chuyển khoản.\n- Cơ chế tự động kiểm tra (Polling): Cứ 3 giây gọi API k"
+    },
+    {
+      "id": "6ae177239e021f1e8121db87",
+      "name": "[SP-DON-08] [BE] Kafka Listener Cập nhật trạng thái Booking khi nhận Thanh toán-(5 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a",
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/uvKi4aRd/34-sp-don-08-be-kafka-listener-c%E1%BA%ADp-nh%E1%BA%ADt-tr%E1%BA%A1ng-th%C3%A1i-booking-khi-nh%E1%BA%ADn-thanh-to%C3%A1n-5-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Lắng nghe sự kiện thanh toán thành công từ Kafka để tự động xác nhận vé đặt chỗ trong `booking-service`.\n\n- Class `PaymentEventListener.java` lắng nghe topic `payment.events`.\n- Khi nhận event `PAYMENT_COMPLETED`: Chuyển trạng thái booking từ `PENDING_PAYMENT` sang `CONFIRMED`.\n- Sinh mã token check"
+    },
+    {
+      "id": "6ae17754a82075fab9b88e09",
+      "name": "[SP-DON-09] [BE] Xây dựng API Check-in / Check-out QR Code & Tính phí Overtime-(8 stp)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "6a6b571e2274ff581eb61742",
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/8FOjaowz/35-sp-don-09-be-x%C3%A2y-d%E1%BB%B1ng-api-check-in-check-out-qr-code-t%C3%ADnh-ph%C3%AD-overtime-8-stp",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Nghiệp vụ xác nhận xe ra/vào bãi bằng mã QR và tự động tính toán tổng tiền đỗ xe thực tế kèm phụ phí ngoài giờ.\n\n- API Check-in `POST /api/v1/bookings/{code}/check-in`: Kiểm tra khung giờ xe đến, đổi status thành `CHECKED_IN`, cập nhật slot thành `OCCUPIED`.\n- API Check-out `POST /api/v1/bookings/{c"
+    },
+    {
+      "id": "6ae17783d4faf1ef3abe46e3",
+      "name": "[SP-DON-10] [FE] Xây dựng Trang Chi tiết Vé Đặt Chỗ & Mã QR Check-in-(2 STP)",
+      "idList": "6adecb85c3978f5d53c9fdba",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8"
+      ],
+      "url": "https://trello.com/c/ZBRBWTZl/36-sp-don-10-fe-x%C3%A2y-d%E1%BB%B1ng-trang-chi-ti%E1%BA%BFt-v%C3%A9-%C4%91%E1%BA%B7t-ch%E1%BB%97-m%C3%A3-qr-check-in-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Giao diện hiển thị vé điện tử thông minh cho tài xế với mã QR Check-in sắc nét dùng để quét tại barrier bãi xe.\n\n- Trang chi tiết vé `/bookings/:id`: Hiển thị thông tin bãi xe, địa chỉ, tên ô đỗ (Slot A-12), biển số xe, thời gian dự kiến.\n- Render mã QR bằng thư viện `qrcode.react`.\n- Trang Lịch sử "
+    },
+    {
+      "id": "6ae16f5547a511806f013393",
+      "name": "[SP-PB-01] [Epic] Nhận diện biển số xe tự động qua Camera AI tại cổng bãi xe (ANPR)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/CUMPBW6Y/3-sp-pb-01-epic-nh%E1%BA%ADn-di%E1%BB%87n-bi%E1%BB%83n-s%E1%BB%91-xe-t%E1%BB%B1-%C4%91%E1%BB%99ng-qua-camera-ai-t%E1%BA%A1i-c%E1%BB%95ng-b%C3%A3i-xe-anpr",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        }
+      ],
+      "desc": "Nghiên cứu và tích hợp camera giám sát thông minh tại cổng barrier bãi xe ứng dụng mô hình học sâu (YOLOv8 / PaddleOCR) để tự động nhận diện biển số xe vào/ra. Hệ thống đối chiếu tự động với mã đặt chỗ hợp lệ để mở thanh chắn barrier mà tài xế không cần mở điện thoại quét mã QR."
+    },
+    {
+      "id": "6ae17308cf641cacc7ea4cd7",
+      "name": "[SP-PB-02] [Epic] Phát triển Ứng dụng Di động Native (Mobile App Flutter / React Native)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/o94ojYjh/5-sp-pb-02-epic-ph%C3%A1t-tri%E1%BB%83n-%E1%BB%A9ng-d%E1%BB%A5ng-di-%C4%91%E1%BB%99ng-native-mobile-app-flutter-react-native",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "Phát triển ứng dụng di động dành riêng cho tài xế trên 2 nền tảng iOS và Android, tận dụng phần cứng thiết bị di động: Nhận thông báo đẩy (Push Notification) thời gian thực qua Firebase Cloud Messaging (FCM) khi có chỗ trống trong hàng đợi, dẫn đường GPS liên tục và hỗ trợ thanh toán 1 chạm qua Appl"
+    },
+    {
+      "id": "6ae177ad54d732fbdc51ed3c",
+      "name": "[SP-DON-11] [BE] Xây dựng Sổ cái Ví đối tác (Ledger) & Ghi nhận Doanh thu",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/CLQqfUR9/38-sp-don-11-be-x%C3%A2y-d%E1%BB%B1ng-s%E1%BB%95-c%C3%A1i-v%C3%AD-%C4%91%E1%BB%91i-t%C3%A1c-ledger-ghi-nh%E1%BA%ADn-doanh-thu",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Quản lý tiền nong và doanh thu cho đối tác chủ bãi theo nguyên lý kế toán kép (Double-Entry Bookkeeping) trong `payment-service`.\n\n- Bảng `wallets`: Quản lý số dư khả dụng (`balance`) với Optimistic Lock (`@Version`).\n- Bảng `wallet_ledger_entries`: Ghi nhận mọi giao dịch phát sinh (Doanh thu cọc, T"
+    },
+    {
+      "id": "6ae177d6189fb7a634cce35f",
+      "name": "[SP-DON-12] [BE] Xây dựng Hàng đợi Thông minh (Waitlist Queue) khi Hết chỗ",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "6a6b571e2274ff581eb61742"
+      ],
+      "url": "https://trello.com/c/fJiASwnR/39-sp-don-12-be-x%C3%A2y-d%E1%BB%B1ng-h%C3%A0ng-%C4%91%E1%BB%A3i-th%C3%B4ng-minh-waitlist-queue-khi-h%E1%BA%BFt-ch%E1%BB%97",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Hệ thống hàng đợi thông minh tự động xếp hàng tài xế khi bãi xe đầy và đôn người khi có chỗ trống.\n\n- Bảng `queues`: Lưu số thứ tự chờ của tài xế (`queue_number`, `status: WAITING, NOTIFIED, EXPIRED, CONVERTED`).\n- Khi có xe check-out: Tự động tìm tài xế có số thứ tự nhỏ nhất chuyển sang `NOTIFIED`."
+    },
+    {
+      "id": "6ae17804dc355f18332a7bc5",
+      "name": "[SP-DON-13] [BE] Tích hợp AI Service: Trợ lý Đỗ xe qua Google Gemini Tool Calling",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/nMIXfSHS/40-sp-don-13-be-t%C3%ADch-h%E1%BB%A3p-ai-service-tr%E1%BB%A3-l%C3%BD-%C4%91%E1%BB%97-xe-qua-google-gemini-tool-calling",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng trợ lý đỗ xe thông minh (`ai-service`, Port 8086) sử dụng mô hình Google Gemini 1.5 Pro và Function Calling.\n\n- Khai báo Tool Calling: `searchParkingLots(vehicleType, latitude, longitude, maxDistanceKm)`.\n- Tiếp nhận câu hỏi tự nhiên từ tài xế (Ví dụ: \"Tìm bãi xe ô tô gần Bitexco giá dưới 2"
+    },
+    {
+      "id": "6ae17833ba2c46a13e0757a4",
+      "name": "[SP-DON-14] [FE] Xây dựng Giao diện AI Copilot Chatbot Widget Tương tác",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/ZyuS6Nhw/41-sp-don-14-fe-x%C3%A2y-d%E1%BB%B1ng-giao-di%E1%BB%87n-ai-copilot-chatbot-widget-t%C6%B0%C6%A1ng-t%C3%A1c",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Giao diện Widget Chatbot AI nổi ở góc màn hình, cho phép tài xế trò chuyện tìm kiếm chỗ đỗ trực quan.\n\n- Nút bấm tròn Floating Action Button ở góc phải dưới màn hình.\n- Cửa sổ chat có hiệu ứng tin nhắn gõ chữ (Typing animation).\n- Tự động render thẻ bãi đỗ xe tương tác (`InteractiveCard`) khi AI trả"
+    },
+    {
+      "id": "6ae17895c95aeae231640848",
+      "name": "[SP-DON-15] [FE] Xây dựng Cổng Quản lý Đối tác Chủ Bãi (Merchant Portal)",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a",
+        "69016d7a8c58ffe25753e224",
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/c3p6bJdL/42-sp-don-15-fe-x%C3%A2y-d%E1%BB%B1ng-c%E1%BB%95ng-qu%E1%BA%A3n-l%C3%BD-%C4%91%E1%BB%91i-t%C3%A1c-ch%E1%BB%A7-b%C3%A3i-merchant-portal",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Giao diện quản lý toàn diện cho đối tác chủ bãi xe theo dõi hoạt động kinh doanh.\n\n- Dashboard tổng quan: Doanh thu trong ngày, số chỗ đang đỗ, tỷ lệ lấp đầy bãi xe.\n- Trình quản lý sơ đồ bãi xe trực quan (Visual Slot Grid): Hiển thị màu sắc từng ô đỗ và cho phép click đổi trạng thái bảo trì.\n- Tran"
+    },
+    {
+      "id": "6ae178bd088be404929697d9",
+      "name": "[SP-DON-16] [BE] Xây dựng Notification Service Gửi Email Xác nhận Đặt chỗ",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/A80D5o67/43-sp-don-16-be-x%C3%A2y-d%E1%BB%B1ng-notification-service-g%E1%BB%ADi-email-x%C3%A1c-nh%E1%BA%ADn-%C4%91%E1%BA%B7t-ch%E1%BB%97",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Dịch vụ thông báo gửi email tự động cho người dùng thông qua giao thức SMTP (`notification-service`, Port 8085).\n\n- Kafka Listener tiêu thụ các sự kiện đặt chỗ và thanh toán thành công.\n- Tích hợp Spring Mail (JavaMailSender) gửi email HTML có đính kèm mã vé và thông tin bãi xe.\n- Bảng `processed_ev"
+    },
+    {
+      "id": "6ae17520c4a1877738224948",
+      "name": "[SP-REV-01] [BE] Fix Flyway Migration V3 Bổ sung Cột Ngân hàng cho Rút tiền",
+      "idList": "6adecc33f1b35f096a0e9871",
+      "idMembers": [
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/XgdMcM6C/18-sp-rev-01-be-fix-flyway-migration-v3-b%E1%BB%95-sung-c%E1%BB%99t-ng%C3%A2n-h%C3%A0ng-cho-r%C3%BAt-ti%E1%BB%81n",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Khắc phục lỗi sập container `smart-parking-payment` do Hibernate validate thiếu các cột tài khoản ngân hàng trong bảng `withdrawal_requests`.\n\n- Tạo file migration `V3__add_bank_info_to_withdrawal_requests.sql` thêm 3 cột: `bank_name`, `bank_account_num`, `account_holder_name`.\n- Rebuild JAR và kiểm"
+    },
+    {
+      "id": "6ae1778bfff86d8702ffc3ce",
+      "name": "[SP-BLK-01] [BE] Tích hợp gửi mã OTP xác thực qua SMS Brandname Viễn Thông",
+      "idList": "6adecc372498509fdc5e6c55",
+      "idMembers": [
+        "6930e5b55d3528613be81a82"
+      ],
+      "url": "https://trello.com/c/rSfGJmYn/37-sp-blk-01-be-t%C3%ADch-h%E1%BB%A3p-g%E1%BB%ADi-m%C3%A3-otp-x%C3%A1c-th%E1%BB%B1c-qua-sms-brandname-vi%E1%BB%85n-th%C3%B4ng",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Blocked",
+          "color": "lime_dark"
+        }
+      ],
+      "desc": "Nghiệp vụ gửi SMS OTP xác thực số điện thoại tài xế khi đăng ký tài khoản mới qua nhà mạng viễn thông.\n\nLý do Blocked: Đang chờ duyệt thủ tục đăng ký tên định danh Brandname với nhà mạng viễn thông.\nGiải pháp thay thế (Workaround): Đã kích hoạt fallback gửi mã OTP qua Email SMTP của notification-ser"
+    },
+    {
+      "id": "6ae173d8a3528a7fa48cc1f6",
+      "name": "[SP-S2-02] [Chore] Thiết kế Slide Báo Cáo & Quay Video Demo Đồ Án",
+      "idList": "6adecc372498509fdc5e6c55",
+      "idMembers": [
+        "692e4f13a054491cdb09b6f8"
+      ],
+      "url": "https://trello.com/c/wVTQ7inB/9-sp-s2-02-chore-thi%E1%BA%BFt-k%E1%BA%BF-slide-b%C3%A1o-c%C3%A1o-quay-video-demo-%C4%91%E1%BB%93-%C3%A1n",
+      "labels": [
+        {
+          "name": "Documentation",
+          "color": "green_light"
+        }
+      ],
+      "desc": "Soạn thảo bộ Slide thuyết trình giải pháp kiến trúc và quay video clip 3-5 phút minh họa quy trình đặt chỗ thực tế trên điện thoại."
+    },
+    {
+      "id": "6ae36ef13f050d7c5931d1e2",
+      "name": "[SP-ID-01-T03] [BE] Hoàn thiện lưu trữ đường dẫn tài liệu KYC Merchant, quy trình xét duyệt PENDING_REVIEW và đồng bộ số dư ví",
+      "idList": "6adecc372498509fdc5e6c55",
+      "idMembers": [
+        "5b14b950955ce26052d2fa7d"
+      ],
+      "url": "https://trello.com/c/cGaXZ0h3/45-sp-id-01-t03-be-ho%C3%A0n-thi%E1%BB%87n-l%C6%B0u-tr%E1%BB%AF-%C4%91%C6%B0%E1%BB%9Dng-d%E1%BA%ABn-t%C3%A0i-li%E1%BB%87u-kyc-merchant-quy-tr%C3%ACnh-x%C3%A9t-duy%E1%BB%87t-pendingreview-v%C3%A0-%C4%91%E1%BB%93ng-b%E1%BB%99-s%E1%BB%91-d%C6%B0-v%C3%AD",
+      "labels": [
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-ID-01` → Story `SP-ID-01-US02` → Task `SP-ID-01-T03`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nĐảm bảo quy trình xác minh pháp lý (KYC) của Chủ bãi xe lưu trữ đúng đường dẫn"
+    },
+    {
+      "id": "6ae17430e9d42742c0082d2d",
+      "name": "[SP-S2-03] [QA] Kiểm thử Tải Đồng thời (Stress Testing) với Apache JMeter",
+      "idList": "6adecc372498509fdc5e6c55",
+      "idMembers": [
+        "6a6b571e2274ff581eb61742",
+        "68f0354b7e270498cfc5666a"
+      ],
+      "url": "https://trello.com/c/Fs6HxQ5T/11-sp-s2-03-qa-ki%E1%BB%83m-th%E1%BB%AD-t%E1%BA%A3i-%C4%91%E1%BB%93ng-th%E1%BB%9Di-stress-testing-v%E1%BB%9Bi-apache-jmeter",
+      "labels": [
+        {
+          "name": "Testing / QA",
+          "color": "yellow"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Kiểm tra khả năng chịu tải và tính toàn vẹn dữ liệu khi có nhiều người dùng cùng tranh chấp giữ chỗ một slot đỗ xe duy nhất.\n\n- Kịch bản: Mô phỏng 200 người dùng đồng thời gửi request đặt cùng 1 slot trong vòng 5 giây.\n- Đánh giá: Chỉ có duy nhất 1 request nhận kết quả 201 Created thành công, 199 re"
+    }
+  ],
+  "generatedAt": "2026-11-03T03:58:27.460Z"
+}
+</script>
+</body>
+</html>
