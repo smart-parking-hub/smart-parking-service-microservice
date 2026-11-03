@@ -29,6 +29,11 @@ echo      4.2 - Xem phan bo task tung thanh vien (CLI)
 echo      4.3 - Xem trang thai cac cot va the (CLI)
 echo      4.4 - Xem cac task dang bi Blocked (CLI)
 echo.
+echo  [5] QUAN TRI GIT VA KIEM TRA NHANH - scripts/git
+echo      5.1 - Kiem tra dong bo tat ca cac nhanh (Branch Sync Audit)
+echo      5.2 - Kiem tra chuyen sau Commit va Suc khoe nhanh (Commit Audit)
+echo      5.3 - Chuyen nhanh thong minh va an toan (Smart Checkout)
+echo.
 echo  [0] Thoat
 echo.
 echo ================================================================
@@ -48,6 +53,9 @@ if "%opt%"=="4.1" goto TR_DASHBOARD
 if "%opt%"=="4.2" goto TR_MEMBERS
 if "%opt%"=="4.3" goto TR_STATUS
 if "%opt%"=="4.4" goto TR_BLOCKED
+if "%opt%"=="5.1" goto GIT_SYNC
+if "%opt%"=="5.2" goto GIT_COMMIT
+if "%opt%"=="5.3" goto GIT_CHECKOUT
 if "%opt%"=="0" goto EXIT_PROG
 
 echo Lua chon khong hop le!
@@ -110,6 +118,21 @@ goto MENU
 
 :TR_BLOCKED
 call "%~dp0scripts\trello\trello.bat" blocked
+pause
+goto MENU
+
+:GIT_SYNC
+node "%~dp0scripts\git\branch-sync-audit.js"
+pause
+goto MENU
+
+:GIT_COMMIT
+node "%~dp0scripts\git\commit-deep-audit.js"
+pause
+goto MENU
+
+:GIT_CHECKOUT
+node "%~dp0scripts\git\checkout-helper.js"
 pause
 goto MENU
 
