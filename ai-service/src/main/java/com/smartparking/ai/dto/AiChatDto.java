@@ -18,6 +18,7 @@ public class AiChatDto {
         @NotBlank(message = "Nội dung câu hỏi không được để trống")
         private String message;
         private String conversationId;
+        private Long parkingLotId;
         private Double userLat;
         private Double userLon;
     }
@@ -28,7 +29,7 @@ public class AiChatDto {
     @Builder
     public static class Response {
         private String reply;
-        private String source; // REALTIME_SLOTS, POLICY_FAQ, GENERAL
+        private String source; // REALTIME_SLOTS, POLICY_FAQ, DYNAMIC_LOT_RAG, GENERAL
         private List<SuggestedParkingLot> suggestedLots;
     }
 
