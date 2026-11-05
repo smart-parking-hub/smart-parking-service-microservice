@@ -95,7 +95,7 @@ class AiParkingAssistantServiceTest {
                 .id(lotId)
                 .name("Bãi Đỗ Xe Landmark 81")
                 .address("720A Điện Biên Phủ, P. 22, Bình Thạnh")
-                .status(ParkingLotStatusEnum.ACTIVE)
+                .status(ParkingLotStatusEnum.APPROVED)
                 .ratingAverage(BigDecimal.valueOf(4.8))
                 .slots(List.of(slot))
                 .pricingRules(List.of(pricingRule))

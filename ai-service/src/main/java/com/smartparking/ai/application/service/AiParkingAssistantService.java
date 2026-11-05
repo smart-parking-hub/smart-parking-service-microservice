@@ -321,12 +321,12 @@ public class AiParkingAssistantService {
 
         // Pattern 1: Hỏi xem có biết bãi xe X không: "bạn biết bãi xe 2imBenn không", "có biết bãi 2imBenn ko"
         Pattern p1 = Pattern.compile(
-                "(?i)(?:bạn\\s+)?(?:có\\s+)?biết\\s+bãi\\s+(?:đỗ\\s+)?(?:xe\\s+)?([\\p{L}0-9_.-]+(?:\\s+[\\p{L}0-9_.-]+){0,3})\\s*(?:không|ko|k|chưa|nhỉ|\\?|$)",
+                "(?i)(?:bạn\\s+)?(?:có\\s+)?biết\\s+bãi\\s+(?:đỗ\\s+)?(?:xe\\s+)?([\\p{L}0-9_.-]+(?:\\s+[\\p{L}0-9_.-]+){0,3}?)(?:\\s+(?:không|ko|k|chưa|nhỉ|ạ|hả)|[?]|$)",
                 Pattern.UNICODE_CHARACTER_CLASS
         );
         Matcher m1 = p1.matcher(trimmed);
         if (m1.find()) {
-            String candidate = m1.group(1).trim();
+            String candidate = cleanCandidateName(m1.group(1));
             if (!isGenericWord(candidate.toLowerCase()) && candidate.length() >= 2) {
                 return Optional.of(candidate);
             }
@@ -339,13 +339,21 @@ public class AiParkingAssistantService {
         );
         Matcher m2 = p2.matcher(trimmed);
         if (m2.find()) {
-            String candidate = m2.group(1).trim();
+            String candidate = cleanCandidateName(m2.group(1));
             if (!isGenericWord(candidate.toLowerCase()) && candidate.length() >= 2) {
                 return Optional.of(candidate);
             }
         }
 
         return Optional.empty();
+    }
+
+    private String cleanCandidateName(String name) {
+        if (name == null) return "";
+        String cleaned = name.trim();
+        cleaned = cleaned.replaceAll("(?i)\\s+(không|ko|k|chưa|nhỉ|ạ|hả|vậy)$", "").trim();
+        cleaned = cleaned.replaceAll("^[\\p{Punct}]+|[\\p{Punct}]+$", "").trim();
+        return cleaned;
     }
 
     private boolean isGenericWord(String word) {
