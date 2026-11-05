@@ -5135,7 +5135,67 @@
             }
           ]
         },
-        {
+{
+          "name": "1.7. Dynamic Lot RAG - Hỏi giá vé và quy định theo parkingLotId",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{user_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Bãi này có nhận xe SUV không và phí gửi theo giờ tính thế nào?\",\n  \"parkingLotId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ai/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "chat"
+              ]
+            },
+            "description": "Kiểm tra Dynamic Context RAG khi truyền parkingLotId, AI sẽ truy xuất trực tiếp bảng giá của bãi xe",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{driver_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Source is DYNAMIC_LOT_RAG or POLICY_FAQ\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect([\"DYNAMIC_LOT_RAG\", \"POLICY_FAQ\"]).to.include(json.data.source);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+                {
           "name": "2.1. Sinh mô tả bãi xe chuẩn SEO (Happy Path)",
           "request": {
             "method": "POST",
@@ -5151,7 +5211,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"lotName\": \"Bãi Đỗ Xe An Khánh Thủ Đức\",\n  \"address\": \"120 Song Hành, P. An Phú, TP. Thủ Đức, TP.HCM\",\n  \"totalCapacity\": 75,\n  \"supportedVehicleTypes\": [\"SEDAN_SUV\", \"LIGHT_TRUCK\"],\n  \"amenities\": [\"Camera 24/7\", \"Có mái che\", \"Trạm sạc EV\"],\n  \"nearbyLandmarks\": \"Đối diện Mega Market An Phú, cách cầu Sài Gòn 1km\"\n}"
+              "raw": "{\n  \"lotName\": \"Bãi Đỗ Xe An Khánh Thủ Đức\",\n  \"address\": \"120 Song Hành, P. An Phú, TP. Thủ Đức, TP.HCM\",\n  \"totalCapacity\": 75,\n  \"supportedVehicleTypes\": [\"SEDAN_SUV\", \"LIGHT_TRUCK\"],\n  \"amenities\": [\"Camera 24/7\", \"Có mái che\", \"Trạm sạc EV\"],\n  \"nearbyLandmarks\": \"Đối diện Mega Market An Phú, cách cầu Sài Gòn 1km\",\n  \"customHighlights\": \"Miễn phí 1 giờ đầu cho khách, có trạm sạc nhanh EV\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/ai/generate-description",

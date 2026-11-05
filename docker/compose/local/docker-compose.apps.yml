@@ -117,10 +117,13 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-ai
     restart: always
+    ports:
+      - "8086:8086"
     environment:
+      PORT: 8086
       PARKING_LOT_SERVICE_URL: http://parking-lot-service:8082
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
     networks:
       - smart-parking-net
 

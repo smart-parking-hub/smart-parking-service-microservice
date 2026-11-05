@@ -36,11 +36,12 @@ class AiContentGenerationServiceTest {
                 .totalCapacity(60)
                 .supportedVehicleTypes(List.of("SEDAN_SUV"))
                 .amenities(List.of("Có mái che", "Camera 24/7"))
+                .customHighlights("Miễn phí 1 giờ đầu, có trạm sạc điện")
                 .build();
 
         String mockAiJson = """
             {
-              "marketingDescription": "Bãi xe hiện đại bậc nhất khu vực An Khánh.",
+              "marketingDescription": "Bãi xe hiện đại bậc nhất khu vực An Khánh, miễn phí 1 giờ đầu.",
               "operatingRegulations": "Giữ vé cẩn thận, không hút thuốc.",
               "wayfindingGuide": "Đi thẳng từ cầu Sài Gòn, rẽ phải tại ngã tư."
             }
@@ -52,19 +53,20 @@ class AiContentGenerationServiceTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals("Bãi xe hiện đại bậc nhất khu vực An Khánh.", response.getMarketingDescription());
+        assertEquals("Bãi xe hiện đại bậc nhất khu vực An Khánh, miễn phí 1 giờ đầu.", response.getMarketingDescription());
         assertEquals("Giữ vé cẩn thận, không hút thuốc.", response.getOperatingRegulations());
         assertEquals("Đi thẳng từ cầu Sài Gòn, rẽ phải tại ngã tư.", response.getWayfindingGuide());
     }
 
     @Test
-    @DisplayName("AAA - generateParkingContent: Should fallback gracefully when Gemini returns empty")
-    void generateParkingContent_withEmptyGemini_shouldFallbackGracefully() {
+    @DisplayName("AAA - generateParkingContent: Should fallback gracefully and embed customHighlights when Gemini returns empty")
+    void generateParkingContent_withEmptyGemini_shouldFallbackGracefullyWithHighlights() {
         // Arrange
         ParkingDescriptionDto.Request request = ParkingDescriptionDto.Request.builder()
                 .lotName("Bãi Đỗ Xe Thủ Thiêm")
                 .address("Khu Đô Thị Mới Thủ Thiêm, Quận 2")
                 .totalCapacity(100)
+                .customHighlights("Ưu đãi xe điện 20%, có bảo vệ 24/7")
                 .build();
 
         when(geminiClient.generateContent(anyString(), anyString())).thenReturn(Optional.empty());
@@ -75,6 +77,7 @@ class AiContentGenerationServiceTest {
         // Assert
         assertNotNull(response);
         assertTrue(response.getMarketingDescription().contains("Bãi Đỗ Xe Thủ Thiêm"));
+        assertTrue(response.getMarketingDescription().contains("Ưu đãi xe điện 20%"));
         assertTrue(response.getOperatingRegulations().contains("10 phút"));
         assertTrue(response.getWayfindingGuide().contains("Khu Đô Thị Mới Thủ Thiêm"));
     }

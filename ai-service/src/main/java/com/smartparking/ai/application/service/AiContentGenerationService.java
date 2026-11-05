@@ -20,14 +20,17 @@ public class AiContentGenerationService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ParkingDescriptionDto.Response generateParkingContent(ParkingDescriptionDto.Request request) {
+        String sanitizedHighlights = sanitizeCustomHighlights(request.getCustomHighlights());
+
         String systemInstruction = """
             Bạn là Chuyên gia Vận hành và Truyền thông Bãi đỗ xe Đô thị tại Việt Nam.
             Hãy sinh nội dung bãi xe theo đúng format JSON:
             {
-              "marketingDescription": "Đoạn giới thiệu hấp dẫn 2-3 câu làm nổi bật tiện ích",
-              "operatingRegulations": "Nội quy ngắn gọn về PCCC, giữ vé QR, biểu phí phạt đỗ quá giờ",
+              "marketingDescription": "Đoạn giới thiệu hấp dẫn 2-3 câu làm nổi bật tiện ích và các điểm nhấn đặc biệt của bãi xe",
+              "operatingRegulations": "Nội quy ngắn gọn về PCCC, giữ vé QR, biểu phí phạt đỗ quá giờ và các lưu ý an toàn",
               "wayfindingGuide": "Hướng dẫn di chuyển rõ ràng từ các trục đường chính xung quanh bãi"
             }
+            Nếu chủ bãi có cung cấp từ khóa/điểm nhấn đặc biệt, hãy ưu tiên lồng ghép tự nhiên vào marketingDescription và operatingRegulations.
             Chỉ trả về JSON thuần túy, không dùng markdown ```json.
             """;
 
@@ -38,13 +41,15 @@ public class AiContentGenerationService {
             Loại xe hỗ trợ: %s
             Tiện ích: %s
             Mốc địa danh gần đó: %s
+            Điểm nhấn / Từ khóa đặc biệt từ chủ bãi: %s
             """,
                 request.getLotName(),
                 request.getAddress(),
                 request.getTotalCapacity() != null ? request.getTotalCapacity() : 50,
                 request.getSupportedVehicleTypes() != null ? String.join(", ", request.getSupportedVehicleTypes()) : "SEDAN_SUV",
                 request.getAmenities() != null ? String.join(", ", request.getAmenities()) : "Camera 24/7, có mái che",
-                request.getNearbyLandmarks() != null ? request.getNearbyLandmarks() : "Trung tâm"
+                request.getNearbyLandmarks() != null ? request.getNearbyLandmarks() : "Trung tâm",
+                !sanitizedHighlights.isBlank() ? sanitizedHighlights : "Tiêu chuẩn an toàn hiện đại"
         );
 
         Optional<String> aiOutput = geminiClient.generateContent(systemInstruction, userPrompt);
@@ -98,25 +103,29 @@ public class AiContentGenerationService {
                     List<MockDataDto.MockParkingLot> results = new ArrayList<>();
                     for (JsonNode item : node) {
                         List<String> slots = new ArrayList<>();
-                        item.path("slotDistribution").forEach(s -> slots.add(s.asText()));
+                        if (item.has("slotDistribution") && item.get("slotDistribution").isArray()) {
+                            item.get("slotDistribution").forEach(s -> slots.add(s.asText()));
+                        }
                         List<String> reviews = new ArrayList<>();
-                        item.path("sampleReviews").forEach(r -> reviews.add(r.asText()));
+                        if (item.has("sampleReviews") && item.get("sampleReviews").isArray()) {
+                            item.get("sampleReviews").forEach(r -> reviews.add(r.asText()));
+                        }
 
                         results.add(MockDataDto.MockParkingLot.builder()
-                                .name(item.path("name").asText())
-                                .address(item.path("address").asText())
-                                .latitude(item.path("latitude").asDouble())
-                                .longitude(item.path("longitude").asDouble())
+                                .name(item.path("name").asText("Bãi đỗ xe thông minh"))
+                                .address(item.path("address").asText("Khu vực " + request.getTargetArea()))
+                                .latitude(item.path("latitude").asDouble(10.776889))
+                                .longitude(item.path("longitude").asDouble(106.700806))
                                 .totalCapacity(item.path("totalCapacity").asInt(50))
                                 .basePricePerHour(item.path("basePricePerHour").asDouble(20000.0))
                                 .slotDistribution(slots)
                                 .sampleReviews(reviews)
                                 .build());
                     }
-                    if (!results.isEmpty()) return results;
+                    return results;
                 }
             } catch (Exception e) {
-                log.warn("Failed to parse Gemini Mock Data JSON: {}", e.getMessage());
+                log.warn("Failed to parse Mock Lots JSON, falling back to smart mock template: {}", e.getMessage());
             }
         }
 
@@ -129,11 +138,17 @@ public class AiContentGenerationService {
                 ? String.join(", ", request.getAmenities())
                 : "hệ thống giám sát camera 24/7, phòng cháy chữa cháy đạt chuẩn";
 
+        String highlightsSuffix = "";
+        if (request.getCustomHighlights() != null && !request.getCustomHighlights().isBlank()) {
+            highlightsSuffix = String.format(" Điểm nổi bật: %s.", sanitizeCustomHighlights(request.getCustomHighlights()));
+        }
+
         String marketing = String.format(
-                "%s tọa lạc tại vị trí đắc địa trên trục đường %s. Bãi xe sở hữu không gian rộng rãi với sức chứa %d vị trí đỗ, trang bị %s, đảm bảo an toàn tuyệt đối cho phương tiện của quý khách.",
+                "%s tọa lạc tại vị trí đắc địa trên trục đường %s. Bãi xe sở hữu không gian rộng rãi với sức chứa %d vị trí đỗ, trang bị %s.%s Đảm bảo an toàn tuyệt đối và tiện lợi tối đa cho phương tiện của quý khách.",
                 request.getLotName(), request.getAddress(),
                 request.getTotalCapacity() != null ? request.getTotalCapacity() : 50,
-                amenitiesStr
+                amenitiesStr,
+                highlightsSuffix
         );
 
         String regulations = "1. Quý khách vui lòng xuất trình mã QR trên ứng dụng khi check-in/check-out.\n" +
@@ -170,6 +185,16 @@ public class AiContentGenerationService {
                     .build());
         }
         return list;
+    }
+
+    private String sanitizeCustomHighlights(String input) {
+        if (input == null) return "";
+        String trimmed = input.trim();
+        if (trimmed.length() > 500) {
+            trimmed = trimmed.substring(0, 500);
+        }
+        // Lọc bỏ các từ khóa prompt injection tiềm ẩn
+        return trimmed.replaceAll("(?i)(ignore previous instructions|system instruction|bypass)", "").trim();
     }
 
     private String cleanJsonString(String raw) {

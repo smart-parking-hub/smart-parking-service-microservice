@@ -25,6 +25,7 @@ public class ParkingDescriptionDto {
         private List<String> supportedVehicleTypes;
         private List<String> amenities;
         private String nearbyLandmarks;
+        private String customHighlights;
     }
 
     @Data
