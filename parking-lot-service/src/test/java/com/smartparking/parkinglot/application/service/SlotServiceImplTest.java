@@ -39,6 +39,9 @@ class SlotServiceImplTest {
     @Mock
     private ParkingLotRepository parkingLotRepository;
 
+    @Mock
+    private com.smartparking.parkinglot.domain.repository.SlotHoldRepository slotHoldRepository;
+
     @InjectMocks
     private SlotServiceImpl slotService;
 
@@ -139,7 +142,7 @@ class SlotServiceImplTest {
     void testHoldSlotFull() {
         Slot fullSlot = Slot.builder()
                 .id(1L)
-                .parkingLot(ParkingLot.builder().id(parkingLotId).build())
+                .parkingLot(ParkingLot.builder().id(parkingLotId).merchantId(merchantUserId).status(ParkingLotStatusEnum.APPROVED).build())
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .totalCapacity(5)
                 .availableCapacity(0)
@@ -147,6 +150,8 @@ class SlotServiceImplTest {
         when(slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, VehicleTypeEnum.CONTAINER))
                 .thenReturn(Optional.of(fullSlot));
 
+        when(pricingRuleRepository.findByParkingLotIdAndVehicleType(parkingLotId, VehicleTypeEnum.CONTAINER))
+            .thenReturn(Optional.of(PricingRule.builder().basePricePerHour(new BigDecimal("25000")).build()));
         SlotHoldResponse response = slotService.holdSlot(parkingLotId, VehicleTypeEnum.CONTAINER, 999L);
 
         assertNotNull(response);
@@ -161,7 +166,7 @@ class SlotServiceImplTest {
     void testHoldSlotSuccess() {
         Slot availableSlot = Slot.builder()
                 .id(1L)
-                .parkingLot(ParkingLot.builder().id(parkingLotId).build())
+                .parkingLot(ParkingLot.builder().id(parkingLotId).merchantId(merchantUserId).status(ParkingLotStatusEnum.APPROVED).build())
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .totalCapacity(5)
                 .availableCapacity(2)
@@ -190,7 +195,7 @@ class SlotServiceImplTest {
     void testReleaseSlotSuccess() {
         Slot slot = Slot.builder()
                 .id(1L)
-                .parkingLot(ParkingLot.builder().id(parkingLotId).build())
+                .parkingLot(ParkingLot.builder().id(parkingLotId).merchantId(merchantUserId).status(ParkingLotStatusEnum.APPROVED).build())
                 .vehicleType(VehicleTypeEnum.SEDAN_SUV)
                 .totalCapacity(10)
                 .availableCapacity(4)
@@ -198,6 +203,7 @@ class SlotServiceImplTest {
         when(slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, VehicleTypeEnum.SEDAN_SUV))
                 .thenReturn(Optional.of(slot));
 
+        when(slotHoldRepository.findById(123L)).thenReturn(Optional.of(com.smartparking.parkinglot.domain.model.SlotHold.builder().bookingId(123L).slotId(1L).released(false).build()));
         slotService.releaseSlot(parkingLotId, VehicleTypeEnum.SEDAN_SUV, 123L);
 
         assertEquals(5, slot.getAvailableCapacity());

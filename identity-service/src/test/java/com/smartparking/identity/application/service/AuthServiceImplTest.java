@@ -60,6 +60,9 @@ class AuthServiceImplTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private com.smartparking.identity.application.service.OtpMailSender otpMailSender;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -131,6 +134,7 @@ class AuthServiceImplTest {
     @DisplayName("Send register OTP fails when phone already exists")
     void testSendRegisterOtpConflict() {
         SendOtpRequest request = new SendOtpRequest();
+        request.setEmail("driver@example.com");
         request.setPhone("0988888888");
 
         when(userRepository.existsByPhone("0988888888")).thenReturn(true);
@@ -143,6 +147,7 @@ class AuthServiceImplTest {
     @DisplayName("Send register OTP successfully creates challenge")
     void testSendRegisterOtpSuccess() {
         SendOtpRequest request = new SendOtpRequest();
+        request.setEmail("driver@example.com");
         request.setPhone("0988888888");
 
         when(userRepository.existsByPhone("0988888888")).thenReturn(false);
@@ -152,7 +157,8 @@ class AuthServiceImplTest {
 
         assertNotNull(response);
         assertEquals(300, response.getExpiresInSeconds());
-        verify(otpChallengeRepository, times(1)).save(any(OtpChallenge.class));
+        verify(otpChallengeRepository, times(1)).saveAndFlush(any(OtpChallenge.class));
+        verify(otpMailSender).send(eq("driver@example.com"), matches("[0-9]{6}"), eq(OtpPurposeEnum.REGISTER));
     }
 
     @Test
@@ -196,13 +202,13 @@ class AuthServiceImplTest {
         when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(user));
 
         OtpChallenge expired = OtpChallenge.builder()
-                .phone("test@example.com")
+                .recipient("test@example.com")
                 .purpose(OtpPurposeEnum.RESET_PASSWORD)
                 .codeHash("hashed")
                 .expiresAt(LocalDateTime.now().minusMinutes(5))
                 .attemptCount(0)
                 .build();
-        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc("test@example.com", OtpPurposeEnum.RESET_PASSWORD))
+        when(otpChallengeRepository.findByRecipientAndPurpose("test@example.com", OtpPurposeEnum.RESET_PASSWORD))
                 .thenReturn(Optional.of(expired));
 
         AppException ex = assertThrows(AppException.class, () -> authService.resetPasswordWithOtp(request));
@@ -222,16 +228,16 @@ class AuthServiceImplTest {
         req.setOtpCode("654321");
 
         when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
-        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase(req.getEmail())).thenReturn(false);
 
         OtpChallenge challenge = OtpChallenge.builder()
-                .phone(req.getPhone())
+                .recipient(req.getPhone())
                 .purpose(OtpPurposeEnum.REGISTER)
                 .codeHash("hashedOtp")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .attemptCount(0)
                 .build();
-        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(req.getPhone(), OtpPurposeEnum.REGISTER))
+        when(otpChallengeRepository.findByRecipientAndPurpose(req.getEmail(), OtpPurposeEnum.REGISTER))
                 .thenReturn(Optional.of(challenge));
         when(passwordEncoder.matches("654321", "hashedOtp")).thenReturn(true);
         when(passwordEncoder.encode("Pass1234")).thenReturn("hashedPassword");
@@ -265,16 +271,16 @@ class AuthServiceImplTest {
         req.setOtpCode("112233");
 
         when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
-        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase(req.getEmail())).thenReturn(false);
 
         OtpChallenge challenge = OtpChallenge.builder()
-                .phone(req.getPhone())
+                .recipient(req.getPhone())
                 .purpose(OtpPurposeEnum.REGISTER)
                 .codeHash("hashedOtp")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .attemptCount(0)
                 .build();
-        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(req.getPhone(), OtpPurposeEnum.REGISTER))
+        when(otpChallengeRepository.findByRecipientAndPurpose(req.getEmail(), OtpPurposeEnum.REGISTER))
                 .thenReturn(Optional.of(challenge));
         when(passwordEncoder.matches("112233", "hashedOtp")).thenReturn(true);
 
@@ -302,16 +308,16 @@ class AuthServiceImplTest {
         req.setOtpCode("654321");
 
         when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
-        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase(req.getEmail())).thenReturn(false);
 
         OtpChallenge challenge = OtpChallenge.builder()
-                .phone(req.getPhone())
+                .recipient(req.getPhone())
                 .purpose(OtpPurposeEnum.REGISTER)
                 .codeHash("hashedOtp")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .attemptCount(0)
                 .build();
-        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(req.getPhone(), OtpPurposeEnum.REGISTER))
+        when(otpChallengeRepository.findByRecipientAndPurpose(req.getEmail(), OtpPurposeEnum.REGISTER))
                 .thenReturn(Optional.of(challenge));
         when(passwordEncoder.matches("654321", "hashedOtp")).thenReturn(true);
 
@@ -336,16 +342,16 @@ class AuthServiceImplTest {
         req.setOtpCode("112233");
 
         when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
-        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase(req.getEmail())).thenReturn(false);
 
         OtpChallenge challenge = OtpChallenge.builder()
-                .phone(req.getPhone())
+                .recipient(req.getPhone())
                 .purpose(OtpPurposeEnum.REGISTER)
                 .codeHash("hashedOtp")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .attemptCount(0)
                 .build();
-        when(otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(req.getPhone(), OtpPurposeEnum.REGISTER))
+        when(otpChallengeRepository.findByRecipientAndPurpose(req.getEmail(), OtpPurposeEnum.REGISTER))
                 .thenReturn(Optional.of(challenge));
         when(passwordEncoder.matches("112233", "hashedOtp")).thenReturn(true);
 

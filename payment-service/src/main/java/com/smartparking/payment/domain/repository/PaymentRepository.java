@@ -18,6 +18,10 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
+    Optional<Payment> findByIdempotencyKey(String idempotencyKey);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Payment p WHERE p.id = :id")
+    Optional<Payment> findByIdForUpdate(@Param("id") Long id);
     List<Payment> findByBookingId(Long bookingId);
 
     Optional<Payment> findByTransactionCode(String transactionCode);

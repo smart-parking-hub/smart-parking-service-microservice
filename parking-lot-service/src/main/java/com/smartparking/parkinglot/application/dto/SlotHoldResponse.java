@@ -19,5 +19,12 @@ public class SlotHoldResponse {
     private VehicleTypeEnum vehicleType;
     private Integer remainingCapacity;
     private BigDecimal baseHourlyPrice;
+    private Long merchantId;
+    private String parkingLotName;
+    private String parkingLotAddress;
+    private BigDecimal surgeMultiplier;
+    private java.time.LocalTime surgeStartTime;
+    private java.time.LocalTime surgeEndTime;
+    private BigDecimal overtimePenaltyMultiplier;
     private String message;
 }

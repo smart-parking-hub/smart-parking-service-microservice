@@ -29,6 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 public class PaymentServiceTest {
 
+    @MockBean
+    private com.smartparking.payment.infrastructure.client.BookingPaymentVerifier bookingPaymentVerifier;
+
     @Autowired
     private PaymentService paymentService;
 
@@ -53,6 +56,13 @@ public class PaymentServiceTest {
     private final Long driverUserId = 200L;
     private final Long merchantUserId = 300L;
     private final Long bookingId = 500L;
+
+    @org.junit.jupiter.api.BeforeEach
+    void verifiedBooking() {
+        org.mockito.Mockito.lenient().when(bookingPaymentVerifier.require(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong()))
+            .thenAnswer(inv -> new com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote(inv.getArgument(0), inv.getArgument(1), merchantUserId, 10L, "PENDING_PAYMENT", new BigDecimal("50000"), new BigDecimal("250000"), java.time.LocalDateTime.now().plusMinutes(15)));
+        org.mockito.Mockito.lenient().when(bookingPaymentVerifier.confirm(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+    }
 
     @Test
     @DisplayName("Confirm demo payment creates SUCCESS payment and outbox event")

@@ -56,4 +56,10 @@ public class Payment extends BaseEntity {
 
     @Column(name = "idempotency_key", unique = true, length = 100)
     private String idempotencyKey;
+    @Column(name = "checkout_url", length = 2048)
+    private String checkoutUrl;
+    @Column(name = "booking_expires_at")
+    private java.time.LocalDateTime bookingExpiresAt;
+    @Column(name = "review_reason", length = 255)
+    private String reviewReason;
 }

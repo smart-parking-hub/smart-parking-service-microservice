@@ -20,6 +20,8 @@ public class Booking extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "request_key", unique = true, length = 100)
+    private String requestKey;
 
     @Column(name = "booking_code", nullable = false, unique = true, length = 50)
     private String bookingCode;
@@ -61,6 +63,16 @@ public class Booking extends BaseEntity {
 
     @Column(name = "hourly_rate", precision = 10, scale = 2)
     private BigDecimal hourlyRate;
+
+    @Column(name = "surge_multiplier", precision = 3, scale = 2)
+    private BigDecimal surgeMultiplier;
+    @Column(name = "surge_start_time")
+    private java.time.LocalTime surgeStartTime;
+    @Column(name = "surge_end_time")
+    private java.time.LocalTime surgeEndTime;
+    @Column(name = "overtime_penalty_multiplier", precision = 3, scale = 2)
+    private BigDecimal overtimePenaltyMultiplier;
+
 
     @Column(name = "expected_check_in_time")
     private LocalDateTime expectedCheckInTime;

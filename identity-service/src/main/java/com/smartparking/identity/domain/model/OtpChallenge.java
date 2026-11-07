@@ -7,7 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "otp_challenges")
+@Table(name = "email_otp_challenges", uniqueConstraints = @UniqueConstraint(columnNames = {"recipient", "purpose"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,8 +19,8 @@ public class OtpChallenge extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 20)
-    private String phone;
+    @Column(name = "recipient", nullable = false, length = 100)
+    private String recipient;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -34,6 +34,9 @@ public class OtpChallenge extends BaseEntity {
 
     @Column(name = "consumed_at")
     private LocalDateTime consumedAt;
+
+    @Column(name = "sent_at", nullable = false)
+    private LocalDateTime sentAt;
 
     @Column(name = "attempt_count", nullable = false)
     @Builder.Default

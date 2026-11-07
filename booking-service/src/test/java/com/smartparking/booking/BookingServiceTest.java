@@ -35,6 +35,9 @@ import static org.mockito.ArgumentMatchers.eq;
 @Transactional
 public class BookingServiceTest {
 
+    @MockBean
+    private com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
+
     @Autowired
     private BookingService bookingService;
 
@@ -66,7 +69,8 @@ public class BookingServiceTest {
 
     @BeforeEach
     void setupMocks() {
-        SlotHoldResponse successHold = SlotHoldResponse.builder()
+        Mockito.lenient().when(ownedVehicleClient.require(any(Long.class))).thenAnswer(inv -> new com.smartparking.booking.infrastructure.client.OwnedVehicleClient.Vehicle(inv.getArgument(0), "51C-TEST", VehicleTypeEnum.CONTAINER, "ACTIVE"));
+        SlotHoldResponse successHold = SlotHoldResponse.builder().merchantId(merchantUserId).baseHourlyPrice(new BigDecimal("25000")).surgeMultiplier(BigDecimal.ONE).overtimePenaltyMultiplier(new BigDecimal("1.5"))
                 .slotId(1L)
                 .parkingLotId(parkingLotId)
                 .success(true)
@@ -82,12 +86,13 @@ public class BookingServiceTest {
     @Test
     @DisplayName("Create booking successfully with slot hold and outbox event")
     void testCreateBooking() {
+        LocalDateTime checkInTime = LocalDateTime.now().plusHours(1);
         CreateBookingRequest req = CreateBookingRequest.builder()
                 .parkingLotId(parkingLotId)
                 .vehicleId(vehicleId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
-                .expectedCheckInTime(LocalDateTime.now().plusHours(1))
-                .expectedCheckOutTime(LocalDateTime.now().plusHours(3))
+                .expectedCheckInTime(checkInTime)
+                .expectedCheckOutTime(checkInTime.plusHours(2))
                 .build();
 
         BookingDto dto = bookingService.createBooking(driverUserId, req);
@@ -96,7 +101,7 @@ public class BookingServiceTest {
         assertNotNull(dto.getId());
         assertNotNull(dto.getBookingCode());
         assertEquals(BookingStatusEnum.PENDING_PAYMENT, dto.getStatus());
-        assertEquals(new BigDecimal("8000"), dto.getAdvanceDeposit());
+        assertEquals(0, new BigDecimal("10000").compareTo(dto.getAdvanceDeposit()));
 
         assertTrue(bookingRepository.findById(dto.getId()).isPresent());
         assertFalse(outboxEventRepository.findAll().isEmpty());

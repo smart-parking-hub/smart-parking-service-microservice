@@ -41,7 +41,7 @@ class OutboxPublisherServiceImplTest {
     @Test
     @DisplayName("publishPaymentCompleted saves outbox and publishes to Kafka successfully")
     void testPublishPaymentCompletedSuccess() throws Exception {
-        Payment payment = Payment.builder()
+        Payment payment = Payment.builder().paymentType(com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT)
                 .id(100L)
                 .bookingId(1L)
                 .driverId(10L)
@@ -63,7 +63,7 @@ class OutboxPublisherServiceImplTest {
     @Test
     @DisplayName("publishPaymentFailed handles Kafka failure callback safely")
     void testPublishPaymentFailedKafkaError() throws Exception {
-        Payment payment = Payment.builder()
+        Payment payment = Payment.builder().paymentType(com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT)
                 .id(101L)
                 .bookingId(2L)
                 .driverId(11L)
@@ -83,7 +83,7 @@ class OutboxPublisherServiceImplTest {
     @Test
     @DisplayName("saveAndPublish catches JSON serialization exception gracefully")
     void testSaveAndPublishSerializationException() throws Exception {
-        Payment payment = Payment.builder()
+        Payment payment = Payment.builder().paymentType(com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT)
                 .id(102L)
                 .bookingId(3L)
                 .driverId(12L)

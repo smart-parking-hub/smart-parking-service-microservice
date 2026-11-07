@@ -48,10 +48,18 @@ public class PaymentEventListener {
                 return;
             }
 
-            bookingRepository.findById(event.getBookingId()).ifPresent(booking -> {
-                if (booking.getStatus() == BookingStatusEnum.PENDING_PAYMENT) {
+            bookingRepository.findByIdForUpdate(event.getBookingId()).ifPresent(booking -> {
+                if (booking.getStatus() == BookingStatusEnum.PENDING_PAYMENT && "DEPOSIT".equals(event.getPaymentType())) {
+                    if (booking.getExpiresAt() == null || !booking.getExpiresAt().isAfter(LocalDateTime.now())) {
+                        log.error("Paid event arrived after hold expiry; reconciliation required: booking={}", booking.getId());
+                        return;
+                    }
+                    if (event.getAmount() == null || booking.getAdvanceDeposit() == null || event.getAmount().compareTo(booking.getAdvanceDeposit()) != 0) {
+                        log.error("Payment amount does not match booking deposit: booking={}", booking.getId());
+                        return;
+                    }
                     booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
-                    booking.setAdvanceDeposit(event.getAmount());
+
                     // QR code is valid until expectedCheckInTime + 60 minutes (or at least 2 hours from now)
                     LocalDateTime deadline = booking.getExpectedCheckInTime() != null
                             ? booking.getExpectedCheckInTime().plusMinutes(60)
@@ -59,7 +67,8 @@ public class PaymentEventListener {
                     booking.setExpiresAt(deadline);
                     bookingRepository.save(booking);
                     log.info("Booking {} transitioned to PENDING_CHECKIN after deposit payment, expiresAt={}", booking.getBookingCode(), deadline);
-                } else if (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT) {
+                } else if (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT && "FINAL_PAYMENT".equals(event.getPaymentType())) {
+                    if (event.getAmount() == null || booking.getTotalAmount() == null || booking.getAdvanceDeposit() == null || event.getAmount().compareTo(booking.getTotalAmount().subtract(booking.getAdvanceDeposit()).max(java.math.BigDecimal.ZERO)) != 0) return;
                     booking.setStatus(BookingStatusEnum.COMPLETED);
                     bookingRepository.save(booking);
 
@@ -71,14 +80,14 @@ public class PaymentEventListener {
                         parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
                         queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
                     } catch (Exception ex) {
-                        log.warn("Failed to notify parking-lot-service to release slot: {}", ex.getMessage());
+                        throw new IllegalStateException("Final settlement slot release failed", ex);
                     }
 
                     log.info("Booking {} transitioned to COMPLETED after final payment", booking.getBookingCode());
                 }
             });
         } catch (Exception e) {
-            log.error("Error processing payment event in booking-service: {}", e.getMessage());
+            throw new IllegalStateException("Payment event must be retried", e);
         }
     }
 }

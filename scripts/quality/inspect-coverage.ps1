@@ -1,4 +1,6 @@
-$headers = @{ Authorization = "Basic c3F1Xzg0MDIzYjAyNmQzZGUyNDkyNjYwZjI1MzY0NTE2MGZhMjdjYThmOTA6" }
+if ([string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) { throw 'Set SONAR_TOKEN before running this script.' }
+$sonarCredentials = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${env:SONAR_TOKEN}:"))
+$headers = @{ Authorization = "Basic $sonarCredentials" }
 $url = "http://localhost:9000/api/measures/component_tree?component=SmartParkingHub&qualifiers=FIL&metricKeys=coverage,uncovered_lines,uncovered_conditions&ps=500"
 $res = Invoke-RestMethod -Uri $url -Headers $headers
 

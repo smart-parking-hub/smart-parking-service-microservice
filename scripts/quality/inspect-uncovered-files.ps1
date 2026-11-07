@@ -1,8 +1,9 @@
+if ([string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) { throw 'Set SONAR_TOKEN before running this script.' }
 $services = @('booking-service', 'identity-service', 'notification-service', 'parking-lot-service', 'payment-service')
 foreach ($svc in $services) {
     Write-Host "`n>>> $svc Files with Uncovered Lines:" -ForegroundColor Cyan
     $url = "http://localhost:9000/api/measures/component_tree?component=SmartParkingHub:$svc/src&metricKeys=coverage,line_coverage,lines_to_cover,uncovered_lines,conditions_to_cover,uncovered_conditions&qualifiers=FIL&s=metric&metricSort=uncovered_lines&asc=false&ps=15"
-    $json = curl.exe -s -u squ_84023b026d3de2492660f253645160fa27ca8f90: $url | ConvertFrom-Json
+    $json = curl.exe -s -u "${env:SONAR_TOKEN}:" $url | ConvertFrom-Json
     foreach ($c in $json.components) {
         $name = $c.name
         $cov = ($c.measures | Where-Object { $_.metric -eq 'coverage' }).value

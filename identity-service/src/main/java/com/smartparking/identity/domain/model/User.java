@@ -24,6 +24,14 @@ public class User extends BaseEntity {
     @Column(unique = true, length = 100)
     private String email;
 
+    @Column(name = "email_verified_at")
+    private java.time.LocalDateTime emailVerifiedAt;
+
+    public void setEmail(String email) {
+        if (!java.util.Objects.equals(this.email, email)) this.emailVerifiedAt = null;
+        this.email = email;
+    }
+
     @Column(name = "full_name", length = 100)
     private String fullName;
 

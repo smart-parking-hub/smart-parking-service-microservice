@@ -18,7 +18,9 @@ import com.smartparking.identity.domain.repository.UserRepository;
 import com.smartparking.identity.infrastructure.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import com.smartparking.identity.application.service.OtpMailSender;
+import com.smartparking.identity.application.service.OtpRejectedException;
+import java.util.Locale;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -52,8 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Value("${app.otp.expose-in-response:false}")
-    private boolean exposeOtpInResponse;
+    private final OtpMailSender otpMailSender;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -89,78 +90,73 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public SendOtpResponse sendRegisterOtp(SendOtpRequest request) {
-        String phone = request.getPhone();
-        if (userRepository.existsByPhone(phone)) {
+        String email = normalizeEmail(request.getEmail());
+        if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã tồn tại trong hệ thống!");
         }
-
-        String rawOtp = generateNumericOtp(OTP_LENGTH);
-        String codeHash = passwordEncoder.encode(rawOtp);
-
-        OtpChallenge challenge = OtpChallenge.builder()
-                .phone(phone)
-                .purpose(OtpPurposeEnum.REGISTER)
-                .codeHash(codeHash)
-                .expiresAt(LocalDateTime.now().plusSeconds(OTP_TTL_SECONDS))
-                .attemptCount(0)
-                .build();
-        otpChallengeRepository.save(challenge);
-
-        log.info("[OTP SIMULATION] Registered OTP for phone {}: {}", phone, rawOtp);
-
-        return SendOtpResponse.builder()
-                .expiresInSeconds(OTP_TTL_SECONDS)
-                .otpCode(exposeOtpInResponse ? rawOtp : null)
-                .build();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new AppException(ErrorCode.CONFLICT, "Email đã tồn tại trong hệ thống!");
+        }
+        return sendEmailOtp(email, OtpPurposeEnum.REGISTER);
     }
 
     @Override
     @Transactional
     public SendOtpResponse sendForgotPasswordOtp(ForgotPasswordSendOtpRequest request) {
-        String email = request.getEmail().trim();
-        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+        String email = normalizeEmail(request.getEmail());
+        // Never disclose whether an account exists in this public response.
+        if (userRepository.findByEmailIgnoreCase(email).isEmpty()) return otpResponse();
+        return sendEmailOtp(email, OtpPurposeEnum.RESET_PASSWORD);
+    }
 
-        if (user == null) {
-            log.info("Forgot-password OTP requested for non-existing email: {}", email);
-            return SendOtpResponse.builder().expiresInSeconds(OTP_TTL_SECONDS).build();
+    private SendOtpResponse sendEmailOtp(String email, OtpPurposeEnum purpose) {
+        LocalDateTime now = LocalDateTime.now();
+        OtpChallenge challenge = otpChallengeRepository.findByRecipientAndPurpose(email, purpose)
+                .orElseGet(() -> OtpChallenge.builder().recipient(email).purpose(purpose).build());
+        if (challenge.getSentAt() != null && now.isBefore(challenge.getSentAt().plusSeconds(60))) {
+            if (purpose == OtpPurposeEnum.RESET_PASSWORD) return otpResponse();
+            throw new AppException(ErrorCode.CONFLICT, "Vui lòng chờ 60 giây trước khi gửi lại mã.");
         }
-
         String rawOtp = generateNumericOtp(OTP_LENGTH);
-        String codeHash = passwordEncoder.encode(rawOtp);
+        challenge.setCodeHash(passwordEncoder.encode(rawOtp));
+        challenge.setExpiresAt(now.plusSeconds(OTP_TTL_SECONDS));
+        challenge.setSentAt(now);
+        challenge.setConsumedAt(null);
+        challenge.setAttemptCount(0);
+        // Flush unique recipient/purpose before delivery: concurrent first requests cannot both send.
+        otpChallengeRepository.saveAndFlush(challenge);
+        otpMailSender.send(email, rawOtp, purpose);
+        return otpResponse();
+    }
 
-        OtpChallenge challenge = OtpChallenge.builder()
-                .phone(email)
-                .purpose(OtpPurposeEnum.RESET_PASSWORD)
-                .codeHash(codeHash)
-                .expiresAt(LocalDateTime.now().plusSeconds(OTP_TTL_SECONDS))
-                .attemptCount(0)
-                .build();
-        otpChallengeRepository.save(challenge);
+    private SendOtpResponse otpResponse() {
+        return SendOtpResponse.builder().expiresInSeconds(OTP_TTL_SECONDS).resendAfterSeconds(60).build();
+    }
 
-        log.info("[OTP SIMULATION] Reset password OTP for email {}: {}", email, rawOtp);
-
-        return SendOtpResponse.builder()
-                .expiresInSeconds(OTP_TTL_SECONDS)
-                .otpCode(exposeOtpInResponse ? rawOtp : null)
-                .build();
+    private String normalizeEmail(String email) {
+        if (email == null || email.isBlank() || email.trim().length() > 100) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Email nhận mã không hợp lệ.");
+        }
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = OtpRejectedException.class)
     public void resetPasswordWithOtp(ForgotPasswordResetRequest request) {
-        String email = request.getEmail().trim();
+        String email = normalizeEmail(request.getEmail());
         User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Email không hợp lệ hoặc không tồn tại!"));
 
         verifyAndConsumeOtp(email, request.getOtpCode(), OtpPurposeEnum.RESET_PASSWORD);
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setEmailVerifiedAt(LocalDateTime.now());
         userRepository.save(user);
         log.info("User {} reset password successfully via OTP", email);
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = OtpRejectedException.class)
     public void register(RegisterRequest request) {
         if (request.getRole() == RoleEnum.ADMIN) {
             throw new AppException(ErrorCode.FORBIDDEN, "Không được phép tự đăng ký tài khoản Quản trị viên (ADMIN)!");
@@ -169,15 +165,16 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã tồn tại trong hệ thống!");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(normalizeEmail(request.getEmail()))) {
             throw new AppException(ErrorCode.CONFLICT, "Email đã tồn tại trong hệ thống!");
         }
 
-        verifyAndConsumeOtp(request.getPhone(), request.getOtpCode(), OtpPurposeEnum.REGISTER);
+        verifyAndConsumeOtp(normalizeEmail(request.getEmail()), request.getOtpCode(), OtpPurposeEnum.REGISTER);
 
         User user = User.builder()
                 .phone(request.getPhone())
-                .email(request.getEmail())
+                .email(normalizeEmail(request.getEmail()))
+                .emailVerifiedAt(LocalDateTime.now())
                 .fullName(request.getFullName())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
@@ -217,14 +214,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void verifyAndConsumeOtp(String identifier, String rawOtp, OtpPurposeEnum purpose) {
-        OtpChallenge challenge = otpChallengeRepository.findTopByPhoneAndPurposeOrderByCreatedAtDesc(identifier, purpose)
+        OtpChallenge challenge = otpChallengeRepository.findByRecipientAndPurpose(identifier, purpose)
                 .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Mã OTP không tồn tại hoặc đã hết hạn!"));
 
         if (challenge.getConsumedAt() != null) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Mã OTP đã được sử dụng!");
         }
 
-        if (LocalDateTime.now().isAfter(challenge.getExpiresAt())) {
+        if (!LocalDateTime.now().isBefore(challenge.getExpiresAt())) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Mã OTP đã hết hạn!");
         }
 
@@ -235,7 +232,7 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(rawOtp, challenge.getCodeHash())) {
             challenge.setAttemptCount(challenge.getAttemptCount() + 1);
             otpChallengeRepository.save(challenge);
-            throw new AppException(ErrorCode.BAD_REQUEST, "Mã OTP không chính xác!");
+            throw new OtpRejectedException();
         }
 
         challenge.setConsumedAt(LocalDateTime.now());

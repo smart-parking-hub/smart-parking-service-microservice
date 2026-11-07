@@ -177,3 +177,6 @@ temp/
 *.rar
 *.7z
 *.iso
+
+# Local email OTP verification output
+.email-otp-*.log

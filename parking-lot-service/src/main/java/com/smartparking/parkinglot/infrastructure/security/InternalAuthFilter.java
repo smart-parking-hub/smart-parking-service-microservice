@@ -23,6 +23,9 @@ import java.io.IOException;
 public class InternalAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenValidator jwtTokenValidator;
+    @org.springframework.beans.factory.annotation.Value("${app.internal-service-token:}")
+    private String serviceToken;
+
 
     @org.springframework.beans.factory.annotation.Value("${internal.secret:" + SecurityConstants.DEFAULT_INTERNAL_SECRET + "}")
     private String internalSecret = SecurityConstants.DEFAULT_INTERNAL_SECRET;
@@ -31,6 +34,14 @@ public class InternalAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        if (request.getRequestURI().startsWith("/api/v1/internal/")) {
+            String token = request.getHeader("X-Internal-Service-Token");
+            if (serviceToken == null || serviceToken.isBlank() || token == null || !java.security.MessageDigest.isEqual(
+                    serviceToken.getBytes(java.nio.charset.StandardCharsets.UTF_8), token.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Internal service authentication required");
+                return;
+            }
+        }
         try {
             String headerUserId = request.getHeader(SecurityConstants.HEADER_USER_ID);
             String headerRole = request.getHeader(SecurityConstants.HEADER_USER_ROLE);

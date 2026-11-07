@@ -1,4 +1,7 @@
 spring:
+  mail:
+    host: localhost
+    port: 1025
   application:
     name: notification-service-test
   datasource:

@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SendOtpResponse {
     private int expiresInSeconds;
-    private String otpCode;
+    private int resendAfterSeconds;
 }
