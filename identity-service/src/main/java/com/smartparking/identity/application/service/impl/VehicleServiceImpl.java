@@ -27,6 +27,16 @@ public class VehicleServiceImpl implements VehicleService {
     private final DriverRepository driverRepository;
 
     @Override
+    @Transactional(readOnly = true)
+    public VehicleDto getOwnedVehicle(Long userId, Long vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Phương tiện không tồn tại"));
+        if (!vehicle.getDriver().getUser().getId().equals(userId) || vehicle.getStatus() != VehicleStatusEnum.ACTIVE)
+            throw new AppException(ErrorCode.FORBIDDEN, "Phương tiện không thuộc tài khoản hoặc đã ngừng hoạt động");
+        return VehicleDto.fromEntity(vehicle);
+    }
+
+    @Override
     @Transactional
     public VehicleDto addVehicle(Long driverUserId, AddVehicleRequest request) {
         Driver driver = driverRepository.findByUserId(driverUserId)

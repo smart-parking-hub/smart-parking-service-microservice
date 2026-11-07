@@ -7,9 +7,7 @@ import com.smartparking.parkinglot.application.dto.*;
 import com.smartparking.parkinglot.application.service.ParkingLotService;
 import com.smartparking.parkinglot.application.service.SlotService;
 import com.smartparking.parkinglot.domain.model.ParkingLot;
-import com.smartparking.parkinglot.domain.model.PricingRule;
 import com.smartparking.parkinglot.domain.repository.ParkingLotRepository;
-import com.smartparking.parkinglot.domain.repository.PricingRuleRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +30,6 @@ public class ParkingLotServiceTest {
 
     @Autowired
     private ParkingLotRepository parkingLotRepository;
-
-    @Autowired
-    private PricingRuleRepository pricingRuleRepository;
 
     private final Long merchantUserId = 100L;
 
@@ -85,18 +80,17 @@ public class ParkingLotServiceTest {
         SlotDto slot = slotService.configureSlot(merchantUserId, created.getId(), slotReq);
         assertEquals(2, slot.getAvailableCapacity());
 
-        // Configure pricing rule for SEDAN_SUV
-        pricingRuleRepository.save(PricingRule.builder()
-                .parkingLot(lot)
-                .vehicleType(VehicleTypeEnum.SEDAN_SUV)
-                .basePricePerHour(BigDecimal.valueOf(15000))
-                .build());
-
+        slotService.configurePricing(merchantUserId, created.getId(), PricingRuleRequest.builder()
+                .vehicleType(VehicleTypeEnum.SEDAN_SUV).basePricePerHour(new BigDecimal("20000")).build());
         // Hold slot 1
         SlotHoldResponse hold1 = slotService.holdSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 1L);
         assertTrue(hold1.isSuccess());
         assertEquals(1, hold1.getRemainingCapacity());
+        assertEquals(0, new BigDecimal("20000").compareTo(hold1.getBaseHourlyPrice()));
+        assertEquals(merchantUserId, hold1.getMerchantId());
 
+        SlotHoldResponse replay = slotService.holdSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 1L);
+        assertEquals(1, replay.getRemainingCapacity());
         // Hold slot 2
         SlotHoldResponse hold2 = slotService.holdSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 2L);
         assertTrue(hold2.isSuccess());
@@ -109,6 +103,8 @@ public class ParkingLotServiceTest {
         // Release slot 1
         slotService.releaseSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 1L);
 
+        slotService.releaseSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 1L);
+        assertEquals(1, slotService.getSlots(created.getId()).get(0).getAvailableCapacity());
         // Hold slot 3 should now succeed
         SlotHoldResponse holdAfterRelease = slotService.holdSlot(created.getId(), VehicleTypeEnum.SEDAN_SUV, 3L);
         assertTrue(holdAfterRelease.isSuccess());

@@ -31,6 +31,12 @@ public class BookingDto {
     private BigDecimal advanceDeposit;
     private BigDecimal totalAmount;
     private BigDecimal hourlyRate;
+
+    private BigDecimal surgeMultiplier;
+    private java.time.LocalTime surgeStartTime;
+    private java.time.LocalTime surgeEndTime;
+    private BigDecimal overtimePenaltyMultiplier;
+
     private LocalDateTime expectedCheckInTime;
     private LocalDateTime expectedCheckOutTime;
     private LocalDateTime expiresAt;
@@ -55,6 +61,10 @@ public class BookingDto {
                 .advanceDeposit(entity.getAdvanceDeposit())
                 .totalAmount(entity.getTotalAmount())
                 .hourlyRate(entity.getHourlyRate())
+                .surgeMultiplier(entity.getSurgeMultiplier())
+                .surgeStartTime(entity.getSurgeStartTime())
+                .surgeEndTime(entity.getSurgeEndTime())
+                .overtimePenaltyMultiplier(entity.getOvertimePenaltyMultiplier())
                 .expectedCheckInTime(entity.getExpectedCheckInTime())
                 .expectedCheckOutTime(entity.getExpectedCheckOutTime())
                 .expiresAt(entity.getExpiresAt())

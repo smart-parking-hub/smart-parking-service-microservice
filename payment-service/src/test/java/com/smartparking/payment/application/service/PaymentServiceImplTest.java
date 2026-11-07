@@ -63,6 +63,9 @@ class PaymentServiceImplTest {
     @Mock
     private WalletLedgerEntryRepository walletLedgerEntryRepository;
 
+    @Mock
+    private com.smartparking.payment.infrastructure.client.BookingPaymentVerifier bookingPaymentVerifier;
+
     @InjectMocks
     private PaymentServiceImpl paymentService;
 
@@ -72,11 +75,15 @@ class PaymentServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(bookingPaymentVerifier.require(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong()))
+            .thenAnswer(inv -> new com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote(inv.getArgument(0), inv.getArgument(1), merchantUserId, 10L, "PENDING_PAYMENT", new BigDecimal("50000"), new BigDecimal("250000"), java.time.LocalDateTime.now().plusMinutes(15)));
+        org.mockito.Mockito.lenient().when(bookingPaymentVerifier.confirm(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+
         ReflectionTestUtils.setField(paymentService, "demoPaymentEnabled", true);
     }
 
     @Test
-    @DisplayName("Create payment link falls back to simulated URL if PayOS is offline")
+    @DisplayName("PayOS failure never becomes simulated success")
     void testCreatePaymentLinkFallback() {
         when(payOSConfig.getReturnUrl()).thenReturn("http://localhost:3000/payment-result");
         when(payOSConfig.getCancelUrl()).thenReturn("http://localhost:3000/payment-cancel");
@@ -84,19 +91,16 @@ class PaymentServiceImplTest {
         when(payOS.paymentRequests()).thenThrow(new RuntimeException("PayOS network timeout"));
 
         CreatePaymentRequest request = CreatePaymentRequest.builder()
-                .bookingId(bookingId)
+                .bookingId(bookingId).merchantId(merchantUserId)
                 .merchantId(merchantUserId)
                 .parkingLotId(10L)
                 .amount(new BigDecimal("50000"))
                 .paymentType("DEPOSIT")
                 .build();
 
-        String url = paymentService.createPaymentLink(driverUserId, request);
-
-        assertNotNull(url);
-        assertTrue(url.contains("simulated=true"));
-        assertTrue(url.contains("bookingId=" + bookingId));
-        verify(paymentRepository, times(1)).save(any(Payment.class));
+        AppException failure = assertThrows(AppException.class, () -> paymentService.createPaymentLink(driverUserId, request));
+        assertEquals(ErrorCode.PAYMENT_FAILED, failure.getErrorCode());
+        verify(paymentRepository).saveAndFlush(any(Payment.class));
     }
 
     @Test
@@ -112,19 +116,18 @@ class PaymentServiceImplTest {
     @Test
     @DisplayName("Confirm demo deposit successfully saves payment and publishes outbox event")
     void testConfirmDemoDepositSuccess() {
-        when(paymentRepository.existsByBookingIdAndPaymentTypeAndStatus(
-                bookingId, PaymentTypeEnum.DEPOSIT, PaymentStatusEnum.SUCCESS)).thenReturn(false);
 
         Payment saved = Payment.builder()
                 .id(1L)
-                .bookingId(bookingId)
+                .bookingId(bookingId).driverId(driverUserId).merchantId(merchantUserId)
                 .driverId(driverUserId)
                 .gateway(PaymentGatewayEnum.DEMO)
                 .amount(new BigDecimal("50000"))
                 .paymentType(PaymentTypeEnum.DEPOSIT)
-                .status(PaymentStatusEnum.SUCCESS)
+                .status(PaymentStatusEnum.PENDING)
                 .build();
-        when(paymentRepository.save(any(Payment.class))).thenReturn(saved);
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenReturn(saved);
+        when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(saved));
 
         PaymentDto dto = paymentService.confirmDemoDeposit(driverUserId, bookingId);
 
@@ -155,16 +158,14 @@ class PaymentServiceImplTest {
     @Test
     @DisplayName("Confirm demo deposit returns existing payment if already paid")
     void testConfirmDemoDepositAlreadyPaid() {
-        when(paymentRepository.existsByBookingIdAndPaymentTypeAndStatus(
-                bookingId, PaymentTypeEnum.DEPOSIT, PaymentStatusEnum.SUCCESS)).thenReturn(true);
 
         Payment existing = Payment.builder()
                 .id(1L)
-                .bookingId(bookingId)
+                .bookingId(bookingId).driverId(driverUserId).merchantId(merchantUserId)
                 .paymentType(PaymentTypeEnum.DEPOSIT)
                 .status(PaymentStatusEnum.SUCCESS)
                 .build();
-        when(paymentRepository.findByBookingId(bookingId)).thenReturn(List.of(existing));
+        when(paymentRepository.findByIdempotencyKey("booking:" + bookingId + ":DEPOSIT")).thenReturn(Optional.of(existing));
 
         PaymentDto dto = paymentService.confirmDemoDeposit(driverUserId, bookingId);
 
@@ -178,10 +179,12 @@ class PaymentServiceImplTest {
     void testSyncPayOSPaymentAlreadySuccess() {
         Payment paid = Payment.builder()
                 .id(1L)
-                .orderCode(111L)
+                .orderCode(111L).driverId(driverUserId).driverId(driverUserId)
                 .status(PaymentStatusEnum.SUCCESS)
                 .build();
         when(paymentRepository.findByOrderCode(111L)).thenReturn(Optional.of(paid));
+        when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(paid));
+        when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(paid));
 
         PaymentDto dto = paymentService.syncPayOSPayment(driverUserId, 111L, null, null);
 
@@ -195,11 +198,13 @@ class PaymentServiceImplTest {
     void testSyncPayOSPaymentWithBookingId() {
         Payment pending = Payment.builder()
                 .id(1L)
-                .bookingId(bookingId)
+                .bookingId(bookingId).driverId(driverUserId).merchantId(merchantUserId)
                 .status(PaymentStatusEnum.PENDING)
                 .orderCode(222L)
                 .build();
         when(paymentRepository.findByBookingId(bookingId)).thenReturn(List.of(pending));
+        when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pending));
+        when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pending));
 
         PaymentDto dto = paymentService.syncPayOSPayment(driverUserId, null, bookingId, null);
 
@@ -274,5 +279,51 @@ class PaymentServiceImplTest {
         assertEquals(5L, stats.getPendingWithdrawals());
         assertEquals(2L, stats.getOpenDisputes());
         assertEquals(1500000.0, stats.getPlatformRevenue());
+    }
+    @Test void latePaymentRequiresReviewWithoutCreditingMerchant() {
+        Payment pending = Payment.builder().id(81L).bookingId(bookingId).driverId(driverUserId).merchantId(merchantUserId)
+                .gateway(PaymentGatewayEnum.DEMO).paymentType(PaymentTypeEnum.DEPOSIT)
+                .amount(new BigDecimal("50000")).status(PaymentStatusEnum.PENDING).build();
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenReturn(pending);
+        when(paymentRepository.findByIdForUpdate(81L)).thenReturn(Optional.of(pending));
+        when(bookingPaymentVerifier.confirm(pending)).thenReturn(false);
+        assertEquals(PaymentStatusEnum.REQUIRES_REVIEW,paymentService.confirmDemoDeposit(driverUserId,bookingId).getStatus());
+        verifyNoInteractions(merchantWalletService,outboxPublisherService);
+    }
+    @Test void paymentReplayFromAnotherDriverIsForbidden() {
+        Payment other = Payment.builder().driverId(999L).status(PaymentStatusEnum.SUCCESS).build();
+        when(paymentRepository.findByIdempotencyKey("booking:"+bookingId+":DEPOSIT")).thenReturn(Optional.of(other));
+        var failure = assertThrows(AppException.class,()->paymentService.confirmDemoDeposit(driverUserId,bookingId));
+        assertEquals(ErrorCode.FORBIDDEN,failure.getErrorCode());
+        verifyNoInteractions(merchantWalletService,outboxPublisherService);
+    }
+    @Test void expiredQuoteCannotCreatePaymentLink() {
+        when(bookingPaymentVerifier.require(bookingId,driverUserId)).thenReturn(
+            new com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote(bookingId,driverUserId,merchantUserId,10L,"PENDING_PAYMENT",new BigDecimal("50000"),new BigDecimal("250000"),java.time.LocalDateTime.now().minusSeconds(1)));
+        var request=CreatePaymentRequest.builder().bookingId(bookingId).paymentType("DEPOSIT").amount(BigDecimal.ONE).build();
+        assertThrows(AppException.class,()->paymentService.createPaymentLink(driverUserId,request));
+        verifyNoInteractions(payOS); verify(paymentRepository,never()).saveAndFlush(any());
+    }
+    @Test void signedWebhookWithWrongAmountRequiresReviewWithoutSettlement() throws Exception {
+        var webhook = mock(vn.payos.model.webhooks.Webhook.class);
+        var data = mock(vn.payos.model.webhooks.WebhookData.class);
+        var webhooks = mock(vn.payos.service.blocking.webhooks.WebhooksService.class);
+        when(objectMapper.readValue("{}",vn.payos.model.webhooks.Webhook.class)).thenReturn(webhook);
+        when(payOS.webhooks()).thenReturn(webhooks); when(webhooks.verify(webhook)).thenReturn(data);
+        when(data.getOrderCode()).thenReturn(123L); when(data.getCode()).thenReturn("00"); when(data.getAmount()).thenReturn(1L);
+        Payment pending=Payment.builder().id(81L).amount(new BigDecimal("50000")).status(PaymentStatusEnum.PENDING).build();
+        when(paymentRepository.findByOrderCode(123L)).thenReturn(Optional.of(pending));
+        when(paymentRepository.findByIdForUpdate(81L)).thenReturn(Optional.of(pending));
+        paymentService.handleWebhook("{}");
+        assertEquals(PaymentStatusEnum.REQUIRES_REVIEW,pending.getStatus());
+        verifyNoInteractions(merchantWalletService,outboxPublisherService); verify(bookingPaymentVerifier,never()).confirm(any());
+    }
+    @Test void invalidWebhookSignatureNeverChangesPaymentOrCreditsWallet() throws Exception {
+        var webhook=mock(vn.payos.model.webhooks.Webhook.class);
+        var webhooks=mock(vn.payos.service.blocking.webhooks.WebhooksService.class);
+        when(objectMapper.readValue("{}",vn.payos.model.webhooks.Webhook.class)).thenReturn(webhook);
+        when(payOS.webhooks()).thenReturn(webhooks); when(webhooks.verify(webhook)).thenThrow(new SecurityException("invalid signature"));
+        assertThrows(AppException.class,()->paymentService.handleWebhook("{}"));
+        verifyNoInteractions(paymentRepository,merchantWalletService,outboxPublisherService);
     }
 }

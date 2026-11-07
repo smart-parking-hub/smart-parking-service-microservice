@@ -19,6 +19,10 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
+    Optional<Booking> findByRequestKey(String requestKey);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT b FROM Booking b WHERE b.id = :id")
+    Optional<Booking> findByIdForUpdate(@Param("id") Long id);
     Optional<Booking> findByBookingCode(String bookingCode);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

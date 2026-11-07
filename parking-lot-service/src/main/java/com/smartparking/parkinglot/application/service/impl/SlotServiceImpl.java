@@ -32,6 +32,7 @@ public class SlotServiceImpl implements SlotService {
     private static final BigDecimal DEFAULT_OVERTIME_PENALTY_MULTIPLIER = new BigDecimal("1.50");
 
     private final SlotRepository slotRepository;
+    private final com.smartparking.parkinglot.domain.repository.SlotHoldRepository slotHoldRepository;
     private final PricingRuleRepository pricingRuleRepository;
     private final ParkingLotRepository parkingLotRepository;
 
@@ -156,24 +157,25 @@ public class SlotServiceImpl implements SlotService {
         Slot slot = slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, vehicleType)
                 .orElseThrow(() -> new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Không tìm thấy cấu hình chỗ đỗ cho loại xe này"));
 
-        if (slot.getAvailableCapacity() <= 0) {
-            log.warn("Slot full for parkingLotId={} vehicleType={}", parkingLotId, vehicleType);
-            return SlotHoldResponse.builder()
-                    .success(false)
-                    .slotId(slot.getId())
-                    .parkingLotId(parkingLotId)
-                    .vehicleType(vehicleType)
-                    .remainingCapacity(0)
-                    .message("Hết chỗ trống cho loại xe này")
-                    .build();
+        ParkingLot lot = slot.getParkingLot();
+        if (lot.getStatus() != ParkingLotStatusEnum.APPROVED)
+            throw new AppException(ErrorCode.BAD_REQUEST, "Bãi đỗ chưa được duyệt hoặc đã ngừng nhận xe");
+        PricingRule price = pricingRuleRepository.findByParkingLotIdAndVehicleType(parkingLotId, vehicleType)
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Bãi chưa có bảng giá cho loại xe này"));
+        if (price.getBasePricePerHour() == null || price.getBasePricePerHour().signum() <= 0)
+            throw new AppException(ErrorCode.BAD_REQUEST, "Bảng giá không hợp lệ");
+        var previous = slotHoldRepository.findById(bookingId);
+        if (previous.isPresent() && (!previous.get().getSlotId().equals(slot.getId()) || previous.get().isReleased()))
+            throw new AppException(ErrorCode.CONFLICT, "Mã giữ chỗ đã được sử dụng hoặc hết hiệu lực");
+        if (previous.isEmpty()) {
+            if (slot.getAvailableCapacity() <= 0)
+                return SlotHoldResponse.builder().success(false).remainingCapacity(0).message("Hết chỗ trống cho loại xe này").build();
+            slot.setAvailableCapacity(slot.getAvailableCapacity() - 1);
+            slotRepository.save(slot);
+            slotHoldRepository.save(com.smartparking.parkinglot.domain.model.SlotHold.builder()
+                    .bookingId(bookingId).slotId(slot.getId()).released(false).build());
         }
-
-        slot.setAvailableCapacity(slot.getAvailableCapacity() - 1);
-        slotRepository.save(slot);
-
-        BigDecimal basePrice = pricingRuleRepository.findByParkingLotIdAndVehicleType(parkingLotId, vehicleType)
-                .map(PricingRule::getBasePricePerHour)
-                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Loại xe này chưa có bảng giá khả dụng tại bãi đỗ!"));
+        BigDecimal basePrice = price.getBasePricePerHour();
 
         log.info("Held slot {} in lot {} for booking {}. Remaining capacity: {}",
                 slot.getId(), parkingLotId, bookingId, slot.getAvailableCapacity());
@@ -185,6 +187,9 @@ public class SlotServiceImpl implements SlotService {
                 .vehicleType(vehicleType)
                 .remainingCapacity(slot.getAvailableCapacity())
                 .baseHourlyPrice(basePrice)
+                .merchantId(lot.getMerchantId()).parkingLotName(lot.getName()).parkingLotAddress(lot.getAddress())
+                .surgeMultiplier(price.getSurgeMultiplier()).surgeStartTime(price.getSurgeStartTime())
+                .surgeEndTime(price.getSurgeEndTime()).overtimePenaltyMultiplier(price.getOvertimePenaltyMultiplier())
                 .message("Giữ chỗ thành công")
                 .build();
     }
@@ -192,15 +197,22 @@ public class SlotServiceImpl implements SlotService {
     @Override
     @Transactional
     public void releaseSlot(Long parkingLotId, VehicleTypeEnum vehicleType, Long bookingId) {
-        slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, vehicleType)
-                .ifPresent(slot -> {
-                    if (slot.getAvailableCapacity() < slot.getTotalCapacity()) {
-                        slot.setAvailableCapacity(slot.getAvailableCapacity() + 1);
-                        slotRepository.save(slot);
-                        log.info("Released slot {} in lot {} for booking {}. Available capacity: {}",
-                                slot.getId(), parkingLotId, bookingId, slot.getAvailableCapacity());
-                    }
-                });
+        Slot slot = slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, vehicleType)
+                .orElseThrow(() -> new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Không tìm thấy chỗ đỗ"));
+        var hold = slotHoldRepository.findById(bookingId);
+        if (hold.isEmpty()) {
+            log.warn("No slot hold ledger found for booking {}: reconciliation required", bookingId);
+            throw new AppException(ErrorCode.CONFLICT, "Booking cũ thiếu sổ giữ chỗ; cần đối soát trước khi nhả slot");
+        }
+        if (!hold.get().getSlotId().equals(slot.getId()))
+            throw new AppException(ErrorCode.CONFLICT, "Mã giữ chỗ không thuộc bãi hoặc loại xe này");
+        if (hold.get().isReleased()) return;
+        if (slot.getAvailableCapacity() >= slot.getTotalCapacity())
+            throw new AppException(ErrorCode.CONFLICT, "Sức chứa không khớp sổ giữ chỗ; cần đối soát");
+        slot.setAvailableCapacity(slot.getAvailableCapacity() + 1);
+        hold.get().setReleased(true);
+        slotRepository.save(slot);
+        slotHoldRepository.save(hold.get());
     }
 
     private ParkingLot getOwnedParkingLot(Long merchantUserId, Long parkingLotId) {

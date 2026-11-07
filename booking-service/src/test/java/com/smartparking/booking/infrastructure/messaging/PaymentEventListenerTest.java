@@ -35,6 +35,10 @@ class PaymentEventListenerTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock private com.smartparking.booking.application.service.QueueService queueService;
+
+
+
     @InjectMocks
     private PaymentEventListener listener;
 
@@ -43,7 +47,7 @@ class PaymentEventListenerTest {
     void testDepositPaymentCompleted() throws Exception {
         String payload = "{\"bookingId\":10,\"amount\":50000}";
         PaymentEvent.PaymentCompletedEvent event = PaymentEvent.PaymentCompletedEvent.builder()
-                .bookingId(10L)
+                .bookingId(10L).paymentType("DEPOSIT")
                 .amount(new BigDecimal("50000"))
                 .build();
         when(objectMapper.readValue(payload, PaymentEvent.PaymentCompletedEvent.class)).thenReturn(event);
@@ -51,9 +55,9 @@ class PaymentEventListenerTest {
         Booking booking = Booking.builder()
                 .id(10L)
                 .bookingCode("BK10")
-                .status(BookingStatusEnum.PENDING_PAYMENT)
+                .advanceDeposit(new BigDecimal("50000")).expiresAt(java.time.LocalDateTime.now().plusMinutes(10)).status(BookingStatusEnum.PENDING_PAYMENT)
                 .build();
-        when(bookingRepository.findById(10L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(booking));
 
         listener.handlePaymentEvent(payload);
 
@@ -67,7 +71,7 @@ class PaymentEventListenerTest {
     void testFinalPaymentCompleted() throws Exception {
         String payload = "{\"bookingId\":20,\"amount\":30000}";
         PaymentEvent.PaymentCompletedEvent event = PaymentEvent.PaymentCompletedEvent.builder()
-                .bookingId(20L)
+                .bookingId(20L).paymentType("FINAL_PAYMENT")
                 .amount(new BigDecimal("30000"))
                 .build();
         when(objectMapper.readValue(payload, PaymentEvent.PaymentCompletedEvent.class)).thenReturn(event);
@@ -77,14 +81,23 @@ class PaymentEventListenerTest {
                 .parkingLotId(99L)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .bookingCode("BK20")
-                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .totalAmount(new BigDecimal("80000")).advanceDeposit(new BigDecimal("50000")).status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
                 .build();
-        when(bookingRepository.findById(20L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(booking));
 
         listener.handlePaymentEvent(payload);
 
         assertEquals(BookingStatusEnum.COMPLETED, booking.getStatus());
         verify(bookingRepository, times(1)).save(booking);
         verify(parkingLotClient, times(1)).releaseSlot(eq(99L), any(SlotHoldRequest.class));
+    }
+    @Test void replayedDepositCannotSettleFinalBill() {
+        Booking b = Booking.builder().id(20L).status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .advanceDeposit(new BigDecimal("50000")).totalAmount(new BigDecimal("100000")).build();
+        when(bookingRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(b));
+        listener.handlePaymentEvent(PaymentEvent.PaymentCompletedEvent.builder().bookingId(20L)
+                .paymentType("DEPOSIT").amount(new BigDecimal("50000")).build());
+        assertEquals(BookingStatusEnum.AWAITING_FINAL_PAYMENT,b.getStatus());
+        verifyNoInteractions(parkingLotClient);
     }
 }

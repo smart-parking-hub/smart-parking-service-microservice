@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SlotHoldRequest {
+    // The lot ID comes from the URL; retained as optional for older callers.
     private Long parkingLotId;
     @NotNull
     private VehicleTypeEnum vehicleType;

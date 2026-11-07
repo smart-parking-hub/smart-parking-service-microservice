@@ -17,9 +17,6 @@ jwt:
   secret: averylongsecretkeyforidentityservicetestingpurposesonly2026
   expiration-ms: 3600000
 
-app:
-  otp:
-    expose-in-response: true
 
 eureka:
   client:

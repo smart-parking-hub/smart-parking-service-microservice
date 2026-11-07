@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateBookingRequest {
+    @jakarta.validation.constraints.Pattern(regexp = "[a-zA-Z0-9-]{1,64}")
+    private String requestId;
     @NotNull(message = "Thiếu vehicleId")
     private Long vehicleId;
 

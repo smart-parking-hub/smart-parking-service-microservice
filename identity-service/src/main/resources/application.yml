@@ -36,6 +36,15 @@ jwt:
   expiration-ms: 86400000 # 24h
   refresh-expiration-ms: 604800000 # 7 days
 
+app:
+  internal-service-token: ${APP_INTERNAL_SERVICE_TOKEN:}
+
+resilience4j:
+  timelimiter:
+    instances:
+      otp-mail:
+        timeout-duration: 6s
+
 management:
   endpoints:
     web:

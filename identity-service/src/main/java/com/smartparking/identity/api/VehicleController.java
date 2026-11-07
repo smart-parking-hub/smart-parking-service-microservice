@@ -32,6 +32,13 @@ public class VehicleController {
         return ResponseEntity.ok(ApiResponse.ok(vehicleService.getMyVehicles(user.getId(), pageable)));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DRIVER')")
+    public ResponseEntity<ApiResponse<VehicleDto>> getOwnedVehicle(
+            @AuthenticationPrincipal CustomUserDetails user, @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(vehicleService.getOwnedVehicle(user.getId(), id)));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<ApiResponse<VehicleDto>> addVehicle(

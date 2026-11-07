@@ -1,0 +1,2 @@
+ALTER TABLE payments ADD COLUMN checkout_url VARCHAR(2048) NULL,
+ ADD COLUMN booking_expires_at TIMESTAMP NULL, ADD COLUMN review_reason VARCHAR(255) NULL;

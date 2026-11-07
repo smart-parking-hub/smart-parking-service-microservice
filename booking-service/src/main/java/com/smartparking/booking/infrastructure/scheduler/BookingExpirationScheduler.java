@@ -42,26 +42,34 @@ public class BookingExpirationScheduler {
 
         log.info("Found {} expired unpaid bookings to process", expiredBookings.size());
 
-        for (Booking booking : expiredBookings) {
+        for (Booking candidate : expiredBookings) {
             try {
+                Booking booking = bookingRepository.findByIdForUpdate(candidate.getId()).orElse(null);
+                if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_PAYMENT || !booking.getExpiresAt().isBefore(threshold)) continue;
                 booking.setStatus(BookingStatusEnum.EXPIRED);
                 bookingRepository.save(booking);
 
-                // Release held slot back to parking lot
-                SlotHoldRequest releaseReq = SlotHoldRequest.builder()
-                        .vehicleType(booking.getVehicleType())
-                        .bookingId(booking.getId())
-                        .build();
-                parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+                try {
+                    // Release held slot back to parking lot
+                    SlotHoldRequest releaseReq = SlotHoldRequest.builder()
+                            .vehicleType(booking.getVehicleType())
+                            .bookingId(booking.getId())
+                            .build();
+                    parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+
+                    // Promote next waiting driver in queue if any
+                    queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+                } catch (Exception ex) {
+                    booking.setStatus(BookingStatusEnum.PENDING_PAYMENT); bookingRepository.save(booking);
+                    log.warn("Failed to release slot or promote queue for expired booking {}: {}",
+                            booking.getBookingCode(), ex.getMessage());
+                }
 
                 log.info("Booking {} expired and slot released for lot {}",
                         booking.getBookingCode(), booking.getParkingLotId());
 
-                // Promote next waiting driver in queue if any
-                queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
-
             } catch (Exception e) {
-                log.error("Failed to expire booking {}: {}", booking.getBookingCode(), e.getMessage());
+                log.error("Failed to expire booking {}: {}", candidate.getBookingCode(), e.getMessage());
             }
         }
     }
@@ -82,28 +90,37 @@ public class BookingExpirationScheduler {
 
         log.info("Found {} no-show bookings to process", noShowBookings.size());
 
-        for (Booking booking : noShowBookings) {
+        for (Booking candidate : noShowBookings) {
             try {
+                Booking booking = bookingRepository.findByIdForUpdate(candidate.getId()).orElse(null);
+                if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_CHECKIN || !booking.getExpiresAt().isBefore(now)) continue;
                 booking.setStatus(BookingStatusEnum.CANCELLED);
                 bookingRepository.save(booking);
 
-                // Release held slot back to parking lot
-                SlotHoldRequest releaseReq = SlotHoldRequest.builder()
-                        .vehicleType(booking.getVehicleType())
-                        .bookingId(booking.getId())
-                        .build();
-                parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
-
                 // Publish cancelled event (with reason no-show)
-                outboxPublisherService.publishBookingCancelled(booking, "Tài xế không đến bãi đỗ (No-show)");
 
+
+                try {
+                    // Release held slot back to parking lot
+                    SlotHoldRequest releaseReq = SlotHoldRequest.builder()
+                            .vehicleType(booking.getVehicleType())
+                            .bookingId(booking.getId())
+                            .build();
+                    parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+
+                    queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+                } catch (Exception ex) {
+                    booking.setStatus(BookingStatusEnum.PENDING_CHECKIN); bookingRepository.save(booking);
+                    log.warn("Failed to release slot or promote queue for no-show booking {}: {}",
+                            booking.getBookingCode(), ex.getMessage());
+                }
+
+                if (booking.getStatus() == BookingStatusEnum.CANCELLED) outboxPublisherService.publishBookingCancelled(booking, "Tài xế không đến bãi đỗ (No-show)");
                 log.info("No-show booking {} cancelled and slot released for lot {}",
                         booking.getBookingCode(), booking.getParkingLotId());
 
-                queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
-
             } catch (Exception e) {
-                log.error("Failed to process no-show booking {}: {}", booking.getBookingCode(), e.getMessage());
+                log.error("Failed to process no-show booking {}: {}", candidate.getBookingCode(), e.getMessage());
             }
         }
     }

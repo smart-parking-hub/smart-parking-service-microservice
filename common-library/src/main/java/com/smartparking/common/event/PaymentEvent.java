@@ -21,6 +21,7 @@ public class PaymentEvent {
         private Long userId;
         private BigDecimal amount;
         private String paymentMethod;
+        private String paymentType;
         private String transactionRef;
     }
 

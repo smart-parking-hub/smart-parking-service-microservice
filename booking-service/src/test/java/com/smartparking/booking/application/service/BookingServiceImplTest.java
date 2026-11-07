@@ -40,9 +40,18 @@ class BookingServiceImplTest {
     @Mock
     private OutboxPublisherService outboxPublisherService;
 
+    @Mock private QueueService queueService;
+
+    @Mock
+    private com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
+
     @InjectMocks
     private BookingServiceImpl bookingService;
 
+    @org.junit.jupiter.api.BeforeEach
+    void verifiedVehicle() {
+        lenient().when(ownedVehicleClient.require(any(Long.class))).thenAnswer(inv -> new com.smartparking.booking.infrastructure.client.OwnedVehicleClient.Vehicle(inv.getArgument(0), "51C-TEST", VehicleTypeEnum.CONTAINER, "ACTIVE"));
+    }
     private final Long driverUserId = 500L;
     private final Long merchantUserId = 800L;
     private final Long bookingId = 1L;
@@ -61,7 +70,7 @@ class BookingServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> bookingService.createBooking(driverUserId, req));
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
-        assertTrue(ex.getMessage().contains("Giờ vào bãi phải trước giờ ra bãi"));
+        assertTrue(ex.getMessage().contains("Giờ vào phải ở tương lai"));
     }
 
     @Test
@@ -82,9 +91,10 @@ class BookingServiceImplTest {
                 .parkingLotId(parkingLotId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .build();
-        when(bookingRepository.save(any(Booking.class))).thenReturn(saved);
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenAnswer(inv -> { Booking b = inv.getArgument(0); b.setId(bookingId); b.setBookingCode(saved.getBookingCode()); return b; });
+        lenient().when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SlotHoldResponse fullHold = SlotHoldResponse.builder().success(false).message("Full").build();
+        SlotHoldResponse fullHold = SlotHoldResponse.builder().merchantId(merchantUserId).baseHourlyPrice(new BigDecimal("25000")).surgeMultiplier(BigDecimal.ONE).overtimePenaltyMultiplier(new BigDecimal("1.5")).success(false).message("Full").build();
         when(parkingLotClient.holdSlot(eq(parkingLotId), any(SlotHoldRequest.class)))
                 .thenReturn(ApiResponse.success(fullHold));
 
@@ -112,9 +122,10 @@ class BookingServiceImplTest {
                 .status(BookingStatusEnum.PENDING_PAYMENT)
                 .advanceDeposit(new BigDecimal("50000"))
                 .build();
-        when(bookingRepository.save(any(Booking.class))).thenReturn(saved);
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenAnswer(inv -> { Booking b = inv.getArgument(0); b.setId(bookingId); b.setBookingCode(saved.getBookingCode()); return b; });
+        lenient().when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SlotHoldResponse successHold = SlotHoldResponse.builder().success(true).build();
+        SlotHoldResponse successHold = SlotHoldResponse.builder().merchantId(merchantUserId).baseHourlyPrice(new BigDecimal("25000")).surgeMultiplier(BigDecimal.ONE).overtimePenaltyMultiplier(new BigDecimal("1.5")).success(true).build();
         when(parkingLotClient.holdSlot(eq(parkingLotId), any(SlotHoldRequest.class)))
                 .thenReturn(ApiResponse.success(successHold));
 
@@ -123,7 +134,7 @@ class BookingServiceImplTest {
         assertNotNull(result);
         assertEquals("BK999999", result.getBookingCode());
         assertEquals(BookingStatusEnum.PENDING_PAYMENT, result.getStatus());
-        verify(outboxPublisherService, times(1)).publishBookingCreated(saved);
+        verify(outboxPublisherService, times(1)).publishBookingCreated(argThat(b -> b.getId().equals(bookingId) && b.getMerchantId().equals(merchantUserId) && b.getAdvanceDeposit().signum() > 0));
     }
 
     @Test
@@ -147,7 +158,7 @@ class BookingServiceImplTest {
                 .id(bookingId)
                 .driverId(driverUserId)
                 .build();
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(bookingId)).thenReturn(Optional.of(booking));
 
         CancelBookingRequest req = CancelBookingRequest.builder().reason("Change plan").build();
 
@@ -163,7 +174,7 @@ class BookingServiceImplTest {
                 .driverId(driverUserId)
                 .status(BookingStatusEnum.PARKING)
                 .build();
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(bookingId)).thenReturn(Optional.of(booking));
 
         CancelBookingRequest req = CancelBookingRequest.builder().reason("Change plan").build();
 
@@ -183,7 +194,7 @@ class BookingServiceImplTest {
                 .status(BookingStatusEnum.PENDING_CHECKIN)
                 .advanceDeposit(new BigDecimal("50000"))
                 .build();
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(bookingId)).thenReturn(Optional.of(booking));
 
         CancelBookingRequest req = CancelBookingRequest.builder().reason("Khách hủy chuyến").build();
 

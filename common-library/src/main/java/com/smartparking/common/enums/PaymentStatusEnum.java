@@ -1,5 +1,5 @@
 package com.smartparking.common.enums;
 
 public enum PaymentStatusEnum {
-    PENDING, SUCCESS, FAILED, REFUNDED
+    REQUIRES_REVIEW, PENDING, SUCCESS, FAILED, REFUNDED
 }

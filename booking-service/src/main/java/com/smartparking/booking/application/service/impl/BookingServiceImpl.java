@@ -33,6 +33,7 @@ import java.util.UUID;
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
+    private final com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
     private final ParkingLotClient parkingLotClient;
     private final OutboxPublisherService outboxPublisherService;
     private final com.smartparking.booking.application.service.QueueService queueService;
@@ -40,20 +41,27 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDto createBooking(Long driverUserId, CreateBookingRequest request) {
-        if (request.getExpectedCheckInTime().isAfter(request.getExpectedCheckOutTime())) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào bãi phải trước giờ ra bãi!");
+        String requestKey = request.getRequestId() == null ? null : driverUserId + ":" + request.getRequestId();
+        if (requestKey != null) {
+            var previous = bookingRepository.findByRequestKey(requestKey);
+            if (previous.isPresent()) return BookingDto.fromEntity(previous.get());
         }
+        LocalDateTime now = LocalDateTime.now();
+        if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
+            throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào phải ở tương lai và giờ ra phải sau giờ vào");
+        var vehicle = ownedVehicleClient.require(request.getVehicleId());
+        if (vehicle.vehicleType() != request.getVehicleType())
+            throw new AppException(ErrorCode.BAD_REQUEST, "Loại xe không khớp phương tiện đã đăng ký");
+        String bookingCode = "BK" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
-        String bookingCode = "BK" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
-        
         Booking booking = Booking.builder()
-                .bookingCode(bookingCode)
+                .bookingCode(bookingCode).requestKey(requestKey)
                 .driverId(driverUserId)
                 .vehicleId(request.getVehicleId())
                 .parkingLotId(request.getParkingLotId())
-                .merchantId(request.getMerchantId())
+                .merchantId(null)
                 .vehicleType(request.getVehicleType())
-                .vehiclePlate(request.getVehiclePlate())
+                .vehiclePlate(vehicle.licensePlate())
                 .parkingLotName(request.getParkingLotName())
                 .parkingLotAddress(request.getParkingLotAddress())
                 .status(BookingStatusEnum.PENDING_PAYMENT)
@@ -62,7 +70,7 @@ public class BookingServiceImpl implements BookingService {
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
                 .build();
 
-        Booking saved = bookingRepository.save(booking);
+        Booking saved = bookingRepository.saveAndFlush(booking);
 
         // Call parking-lot-service to hold slot & lấy đơn giá giờ chính thức từ backend
         try {
@@ -76,34 +84,30 @@ public class BookingServiceImpl implements BookingService {
             if (holdRes == null || holdRes.getData() == null || !holdRes.getData().isSuccess()) {
                 throw new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Hết chỗ đỗ cho loại xe này tại bãi đỗ đã chọn!");
             }
-
-            BigDecimal basePrice = holdRes.getData().getBaseHourlyPrice();
-            if (basePrice == null || basePrice.compareTo(BigDecimal.ZERO) <= 0) {
-                basePrice = BigDecimal.valueOf(20000);
-            }
-
-            // Tính toán lại tổng tiền và tiền cọc tại Backend dựa trên thời lượng thực tế
-            long durationMinutes = java.time.Duration.between(
-                    request.getExpectedCheckInTime(),
-                    request.getExpectedCheckOutTime()
-            ).toMinutes();
-            long hours = Math.max(1, (durationMinutes + 59) / 60);
-            BigDecimal calculatedTotal = basePrice.multiply(BigDecimal.valueOf(hours));
-            BigDecimal calculatedDeposit = calculatedTotal.multiply(new BigDecimal("0.20")).setScale(0, java.math.RoundingMode.HALF_UP);
-
-            saved.setHourlyRate(basePrice);
-            saved.setTotalAmount(calculatedTotal);
-            saved.setAdvanceDeposit(calculatedDeposit);
+            var quote = holdRes.getData();
+            if (quote.getMerchantId() == null || quote.getBaseHourlyPrice() == null || quote.getBaseHourlyPrice().signum() <= 0)
+                throw new AppException(ErrorCode.BAD_REQUEST, "Không xác minh được chủ bãi hoặc bảng giá");
+            saved.setMerchantId(quote.getMerchantId()); saved.setParkingLotName(quote.getParkingLotName());
+            saved.setParkingLotAddress(quote.getParkingLotAddress()); saved.setHourlyRate(quote.getBaseHourlyPrice());
+            saved.setSurgeMultiplier(quote.getSurgeMultiplier()); saved.setSurgeStartTime(quote.getSurgeStartTime());
+            saved.setSurgeEndTime(quote.getSurgeEndTime()); saved.setOvertimePenaltyMultiplier(quote.getOvertimePenaltyMultiplier());
+            BigDecimal estimate = com.smartparking.booking.domain.ParkingCharge.charge(request.getExpectedCheckInTime(),
+                    request.getExpectedCheckOutTime(), saved.getHourlyRate(), saved.getSurgeMultiplier(), saved.getSurgeStartTime(), saved.getSurgeEndTime());
+            saved.setTotalAmount(estimate); saved.setAdvanceDeposit(com.smartparking.booking.domain.ParkingCharge.deposit(estimate));
             saved = bookingRepository.save(saved);
         } catch (AppException e) {
+            releaseFailedHold(request, saved.getId());
             throw e;
         } catch (feign.FeignException.BadRequest | feign.FeignException.Conflict e) {
+            releaseFailedHold(request, saved.getId());
             log.error("Slot hold rejected by parking-lot-service: {}", e.getMessage());
             throw new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Hết chỗ đỗ cho loại xe này tại bãi đỗ đã chọn!");
         } catch (feign.FeignException.NotFound e) {
+            releaseFailedHold(request, saved.getId());
             log.error("Parking lot not found: {}", e.getMessage());
             throw new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Bãi đỗ xe không tồn tại hoặc đã ngừng hoạt động!");
         } catch (feign.FeignException e) {
+            releaseFailedHold(request, saved.getId());
             log.error("Feign call to parking-lot-service failed with HTTP {}: {}", e.status(), e.getMessage());
             String detail = "Không thể kết nối đến hệ thống bãi đỗ xe (cổng 8082), vui lòng đảm bảo parking-lot-service đang chạy!";
             if (e.contentUTF8() != null && !e.contentUTF8().isBlank()) {
@@ -111,6 +115,7 @@ public class BookingServiceImpl implements BookingService {
             }
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, detail);
         } catch (Exception e) {
+            releaseFailedHold(request, saved.getId());
             log.error("Unexpected error while holding slot: {}", e.getMessage());
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Lỗi hệ thống khi giữ chỗ đỗ xe!");
         }
@@ -119,6 +124,12 @@ public class BookingServiceImpl implements BookingService {
         log.info("Booking created: code={} driver={} lot={}", saved.getBookingCode(), driverUserId, request.getParkingLotId());
 
         return BookingDto.fromEntity(saved);
+    }
+
+    private void releaseFailedHold(CreateBookingRequest request, Long bookingId) {
+        try { parkingLotClient.releaseSlot(request.getParkingLotId(), SlotHoldRequest.builder()
+                .bookingId(bookingId).vehicleType(request.getVehicleType()).build()); }
+        catch (Exception failure) { log.error("Slot hold compensation requires reconciliation: booking={} lot={}", bookingId, request.getParkingLotId(), failure); }
     }
 
     @Override
@@ -157,7 +168,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public CancelBookingResponse cancelBooking(Long driverUserId, Long bookingId, CancelBookingRequest request) {
-        Booking booking = bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy booking"));
 
         if (!booking.getDriverId().equals(driverUserId)) {
@@ -181,7 +192,7 @@ public class BookingServiceImpl implements BookingService {
             parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
             queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
         } catch (Exception ex) {
-            log.warn("Failed to release slot in parking-lot-service: {}", ex.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa hủy được chỗ đỗ. Vui lòng thử lại.");
         }
 
         outboxPublisherService.publishBookingCancelled(booking, request.getReason());

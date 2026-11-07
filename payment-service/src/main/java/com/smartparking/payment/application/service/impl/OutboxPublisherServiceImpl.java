@@ -42,6 +42,7 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .userId(payment.getDriverId())
                 .amount(payment.getAmount())
                 .paymentMethod(payment.getGateway().name())
+                .paymentType(payment.getPaymentType().name())
                 .transactionRef(payment.getTransactionCode())
                 .build();
 

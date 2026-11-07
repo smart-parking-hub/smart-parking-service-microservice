@@ -38,6 +38,9 @@ class CheckInOutServiceImplTest {
     @Mock
     private OutboxPublisherService outboxPublisherService;
 
+    @Mock
+    private QueueService queueService;
+
     @InjectMocks
     private CheckInOutServiceImpl checkInOutService;
 
@@ -59,7 +62,7 @@ class CheckInOutServiceImplTest {
     @DisplayName("Check-in fails when status is not PENDING_CHECKIN")
     void testCheckInInvalidStatus() {
         Booking booking = Booking.builder()
-                .bookingCode(bookingCode)
+                .bookingCode(bookingCode).merchantId(merchantUserId).parkingLotId(parkingLotId)
                 .status(BookingStatusEnum.PENDING_PAYMENT)
                 .build();
         when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
@@ -73,8 +76,8 @@ class CheckInOutServiceImplTest {
     @DisplayName("Check-in fails when reservation QR code has expired")
     void testCheckInExpired() {
         Booking booking = Booking.builder()
-                .bookingCode(bookingCode)
-                .status(BookingStatusEnum.PENDING_CHECKIN)
+                .bookingCode(bookingCode).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .expectedCheckInTime(LocalDateTime.now().minusMinutes(5)).status(BookingStatusEnum.PENDING_CHECKIN)
                 .expiresAt(LocalDateTime.now().minusMinutes(10))
                 .build();
         when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
@@ -88,8 +91,8 @@ class CheckInOutServiceImplTest {
     @DisplayName("Check-in successfully updates status to PARKING and publishes event")
     void testCheckInSuccess() {
         Booking booking = Booking.builder()
-                .bookingCode(bookingCode)
-                .status(BookingStatusEnum.PENDING_CHECKIN)
+                .bookingCode(bookingCode).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .expectedCheckInTime(LocalDateTime.now().minusMinutes(5)).status(BookingStatusEnum.PENDING_CHECKIN)
                 .expiresAt(LocalDateTime.now().plusHours(1))
                 .build();
         when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
@@ -108,11 +111,11 @@ class CheckInOutServiceImplTest {
         // Checked in 3 hours ago: 3 hours * 20,000 = 60,000 VND. Deposit = 50,000 -> amountDue = 10,000
         Booking booking = Booking.builder()
                 .id(1L)
-                .bookingCode(bookingCode)
+                .bookingCode(bookingCode).merchantId(merchantUserId).parkingLotId(parkingLotId)
                 .parkingLotId(parkingLotId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .status(BookingStatusEnum.PARKING)
-                .checkInTime(LocalDateTime.now().minusHours(3))
+                .hourlyRate(new BigDecimal("20000")).checkInTime(LocalDateTime.now().minusMinutes(170))
                 .advanceDeposit(new BigDecimal("50000"))
                 .build();
         when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
@@ -134,11 +137,11 @@ class CheckInOutServiceImplTest {
         // Checked in 1 hour ago: 1 hour * 20,000 = 20,000 VND. Deposit = 50,000 -> amountDue = 0
         Booking booking = Booking.builder()
                 .id(1L)
-                .bookingCode(bookingCode)
+                .bookingCode(bookingCode).merchantId(merchantUserId).parkingLotId(parkingLotId)
                 .parkingLotId(parkingLotId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .status(BookingStatusEnum.PARKING)
-                .checkInTime(LocalDateTime.now().minusMinutes(50))
+                .hourlyRate(new BigDecimal("20000")).checkInTime(LocalDateTime.now().minusMinutes(50))
                 .advanceDeposit(new BigDecimal("50000"))
                 .build();
         when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
