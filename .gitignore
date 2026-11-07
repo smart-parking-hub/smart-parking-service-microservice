@@ -168,6 +168,7 @@ temp/
 **/tmp/
 **/temp/
 .agents/scratch/
+/docs/trello-snapshot.json
 
 # Archives (prevent accidental multi-megabyte / gigabyte pushes)
 *.zip

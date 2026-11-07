@@ -69,85 +69,21 @@
     {
       "id": "6adecc372498509fdc5e6c55",
       "name": "Blocked"
+    },
+    {
+      "id": "6aead71b0ab742cbe38b37a4",
+      "name": "Ready for Sprint"
+    },
+    {
+      "id": "6aead71c6db51c5823bc383b",
+      "name": "Project Risks"
+    },
+    {
+      "id": "6aead71c7baf6188b6548a95",
+      "name": "Project Improvements"
     }
   ],
   "cards": [
-    {
-      "id": "6ae173553703ad4d4ab825e1",
-      "name": "[SP-PB-03] [Epic] Thuật toán Điều chỉnh Biểu phí Đỗ xe Động (Dynamic Surge Pricing)",
-      "idList": "6adecb83c59ce2c7fc21ec4f",
-      "idMembers": [],
-      "url": "https://trello.com/c/KF6HRupo/6-sp-pb-03-epic-thu%E1%BA%ADt-to%C3%A1n-%C4%91i%E1%BB%81u-ch%E1%BB%89nh-bi%E1%BB%83u-ph%C3%AD-%C4%91%E1%BB%97-xe-%C4%91%E1%BB%99ng-dynamic-surge-pricing",
-      "labels": [
-        {
-          "name": "BE",
-          "color": "green"
-        },
-        {
-          "name": "AI & Algorithm",
-          "color": "orange"
-        },
-        {
-          "name": "Bug / Urgent",
-          "color": "red"
-        }
-      ],
-      "desc": "Xây dựng thuật toán định giá thông minh theo cơ chế cung - cầu thị trường. Tự động tăng giá vé theo tỷ lệ phần trăm khi bãi xe đạt tỷ lệ lấp đầy trên 85% hoặc vào khung giờ cao điểm (18h - 22h cuối tuần), đồng thời giảm giá giờ thấp điểm để kích cầu, tối ưu hóa doanh thu cho chủ bãi.\n\n---\n## 🔍 [AUD"
-    },
-    {
-      "id": "6ae36ef66e84b9b36e0318c7",
-      "name": "[SP-ID-01-T05] [BE] Lọc phương tiện ACTIVE trong VehicleServiceImpl và chặn xóa phương tiện đang có Booking hoạt động",
-      "idList": "6adecb83c59ce2c7fc21ec4f",
-      "idMembers": [],
-      "url": "https://trello.com/c/wS6lmMFg/46-sp-id-01-t05-be-l%E1%BB%8Dc-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-active-trong-vehicleserviceimpl-v%C3%A0-ch%E1%BA%B7n-x%C3%B3a-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-%C4%91ang-c%C3%B3-booking-ho%E1%BA%A1t-%C4%91%E1%BB%99ng",
-      "labels": [
-        {
-          "name": "Bug / Urgent",
-          "color": "red"
-        },
-        {
-          "name": "BE",
-          "color": "green"
-        }
-      ],
-      "desc": "> **Hierarchy:** Epic `SP-ID-01` → Story `SP-ID-01-US03` → Task `SP-ID-01-T05`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `6h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nSửa lỗi các phương tiện đã bị Tài xế xóa (`INACTIVE`) vẫn tiếp tục hiển thị "
-    },
-    {
-      "id": "6ae36f00451aeeb73c38a0aa",
-      "name": "[SP-PK-01-T04] [BE] Tích hợp đồng bộ điểm đánh giá trung bình (ratingAverage) và doanh thu từng bãi đỗ cho parking-lot-service",
-      "idList": "6adecb83c59ce2c7fc21ec4f",
-      "idMembers": [],
-      "url": "https://trello.com/c/H7pjQxdK/48-sp-pk-01-t04-be-t%C3%ADch-h%E1%BB%A3p-%C4%91%E1%BB%93ng-b%E1%BB%99-%C4%91i%E1%BB%83m-%C4%91%C3%A1nh-gi%C3%A1-trung-b%C3%ACnh-ratingaverage-v%C3%A0-doanh-thu-t%E1%BB%ABng-b%C3%A3i-%C4%91%E1%BB%97-cho-parking-lot-service",
-      "labels": [
-        {
-          "name": "Bug / Urgent",
-          "color": "red"
-        },
-        {
-          "name": "BE",
-          "color": "green"
-        }
-      ],
-      "desc": "> **Hierarchy:** Epic `SP-PK-01` → Story `SP-PK-01-US02` → Task `SP-PK-01-T04`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `8h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nCập nhật tự động điểm đánh giá trung bình (`ratingAverage`) của bãi đỗ khi T"
-    },
-    {
-      "id": "6ae36f0455004faa2680233f",
-      "name": "[SP-AI-01-T02] [AI] Xây dựng API POST /api/v1/ai/extract-layout sử dụng Gemini Multimodal Vision để trích xuất cấu trúc ô đỗ 2D từ hình ảnh",
-      "idList": "6adecb83c59ce2c7fc21ec4f",
-      "idMembers": [],
-      "url": "https://trello.com/c/kFIChlua/49-sp-ai-01-t02-ai-x%C3%A2y-d%E1%BB%B1ng-api-post-api-v1-ai-extract-layout-s%E1%BB%AD-d%E1%BB%A5ng-gemini-multimodal-vision-%C4%91%E1%BB%83-tr%C3%ADch-xu%E1%BA%A5t-c%E1%BA%A5u-tr%C3%BAc-%C3%B4-%C4%91%E1%BB%97-2d-t%E1%BB%AB-h%C3%AC",
-      "labels": [
-        {
-          "name": "BE",
-          "color": "green"
-        },
-        {
-          "name": "AI & Algorithm",
-          "color": "orange"
-        }
-      ],
-      "desc": "> **Hierarchy:** Epic `SP-AI-01` → Story `SP-AI-01-US02` → Task `SP-AI-01-T02`\n> **Priority:** `Medium` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nTriển khai tính năng AI trích xuất sơ đồ bãi đỗ xe 2D từ ảnh chụp thực tế h"
-    },
     {
       "id": "6ae36f095d1ef73e58738bc8",
       "name": "[SP-AI-01-T03] [BE] Xây dựng Schema và REST API lưu trữ/truy xuất Sơ đồ Bãi đỗ 2D (Layout JSON & Slot Cells) trong parking-lot-service",
@@ -755,6 +691,112 @@
       "desc": "Giao diện hiển thị vé điện tử thông minh cho tài xế với mã QR Check-in sắc nét dùng để quét tại barrier bãi xe.\n\n- Trang chi tiết vé `/bookings/:id`: Hiển thị thông tin bãi xe, địa chỉ, tên ô đỗ (Slot A-12), biển số xe, thời gian dự kiến.\n- Render mã QR bằng thư viện `qrcode.react`.\n- Trang Lịch sử "
     },
     {
+      "id": "6aed2a4cdafad74fb9d5735f",
+      "name": "[FE] [PERF & SEO] Tối ưu hóa Hiệu năng Web Vitals (LCP, INP, CLS) & Chuẩn hóa SEO On-page Toàn diện (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/hgH9lBJE/112-fe-perf-seo-t%E1%BB%91i-%C6%B0u-h%C3%B3a-hi%E1%BB%87u-n%C4%83ng-web-vitals-lcp-inp-cls-chu%E1%BA%A9n-h%C3%B3a-seo-on-page-to%C3%A0n-di%E1%BB%87n-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        },
+        {
+          "name": "TYPE-IMPROVEMENT",
+          "color": "lime"
+        },
+        {
+          "name": "PRIORITY-P1-HIGH",
+          "color": "orange_dark"
+        },
+        {
+          "name": "SPRINT-02",
+          "color": "purple_dark"
+        }
+      ],
+      "desc": "### 📋 BUSINESS & TECHNICAL SPECIFICATION\n- **Task ID:** `SP-S2-FE-PERF-SEO`\n- **Phân hệ (Module):** `smart-parking-app-v2` (Vite + React + TypeScript + Tailwind CSS v4)\n- **Độ ưu tiên:** `P1 - High` | **Story Points:** `5 STP`\n- **Loại tác vụ:** `Performance Optimization & SEO Standardize`\n- **Spri"
+    },
+    {
+      "id": "6aeaad1c5ce521b96b03f9df",
+      "name": "MÌNH KO XÀI LARK THÌ ĐÁNH POINT TRÊN TASK NÀY LUÔN ĐI",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/nhwMrtKw/52-m%C3%ACnh-ko-x%C3%A0i-lark-th%C3%AC-%C4%91%C3%A1nh-point-tr%C3%AAn-task-n%C3%A0y-lu%C3%B4n-%C4%91i",
+      "labels": [],
+      "desc": ""
+    },
+    {
+      "id": "6ae173553703ad4d4ab825e1",
+      "name": "[SP-PB-03] [Epic] Thuật toán Điều chỉnh Biểu phí Đỗ xe Động (Dynamic Surge Pricing)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/KF6HRupo/6-sp-pb-03-epic-thu%E1%BA%ADt-to%C3%A1n-%C4%91i%E1%BB%81u-ch%E1%BB%89nh-bi%E1%BB%83u-ph%C3%AD-%C4%91%E1%BB%97-xe-%C4%91%E1%BB%99ng-dynamic-surge-pricing",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        },
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        }
+      ],
+      "desc": "Xây dựng thuật toán định giá thông minh theo cơ chế cung - cầu thị trường. Tự động tăng giá vé theo tỷ lệ phần trăm khi bãi xe đạt tỷ lệ lấp đầy trên 85% hoặc vào khung giờ cao điểm (18h - 22h cuối tuần), đồng thời giảm giá giờ thấp điểm để kích cầu, tối ưu hóa doanh thu cho chủ bãi.\n\n---\n## 🔍 [AUD"
+    },
+    {
+      "id": "6ae9686ce863c94bd076a982",
+      "name": "Sprint Goal 2  Hoàn thiện các tính năng nâng cao cho hệ thống Smart Parking, tập trung vào AI, ứng dụng mobile, quản lý doanh thu–ví Merchant, hàng đợi thông minh, chatbot AI, thông báo và kiểm thử độ ổn định hệ thống; đồng thời chuẩn bị dữ liệu và tài liệu demo nghiệm thu.  Các phần làm thêm trong Sprint 2: - ANPR nhận diện biển số xe bằng Camera AI - Ứng dụng mobile Native Flutter/React Native - Sổ cái ví Merchant và ghi nhận doanh thu - Hàng đợi thông minh khi bãi hết chỗ - AI Copilot/Chatbot Gemini - Giao diện chatbot AI - Merchant Portal - Notification gửi email xác nhận đặt chỗ - Chuẩn bị dữ liệu seed và kịch bản demo - Thiết kế slide và quay video demo - Stress Testing bằng Apache JMeter - Tích hợp OTP SMS Brandname, hiện đang bị Blocked. - Hoàn thiện KYC Merchant và quy trình Admin duyệt hồ sơ, hiện đang bị Blocked.",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [
+        "69016d7a8c58ffe25753e224"
+      ],
+      "url": "https://trello.com/c/ZjG26dvK/51-sprint-goal-2-ho%C3%A0n-thi%E1%BB%87n-c%C3%A1c-t%C3%ADnh-n%C4%83ng-n%C3%A2ng-cao-cho-h%E1%BB%87-th%E1%BB%91ng-smart-parking-t%E1%BA%ADp-trung-v%C3%A0o-ai-%E1%BB%A9ng-d%E1%BB%A5ng-mobile-qu%E1%BA%A3n-l%C3%BD-doanh-thu-v%C3%AD",
+      "labels": [],
+      "desc": ""
+    },
+    {
+      "id": "6ae36ef66e84b9b36e0318c7",
+      "name": "[SP-ID-01-T05] [BE] Lọc phương tiện ACTIVE trong VehicleServiceImpl và chặn xóa phương tiện đang có Booking hoạt động",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/wS6lmMFg/46-sp-id-01-t05-be-l%E1%BB%8Dc-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-active-trong-vehicleserviceimpl-v%C3%A0-ch%E1%BA%B7n-x%C3%B3a-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-%C4%91ang-c%C3%B3-booking-ho%E1%BA%A1t-%C4%91%E1%BB%99ng",
+      "labels": [
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-ID-01` → Story `SP-ID-01-US03` → Task `SP-ID-01-T05`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `6h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nSửa lỗi các phương tiện đã bị Tài xế xóa (`INACTIVE`) vẫn tiếp tục hiển thị "
+    },
+    {
+      "id": "6ae36f00451aeeb73c38a0aa",
+      "name": "[SP-PK-01-T04] [BE] Tích hợp đồng bộ điểm đánh giá trung bình (ratingAverage) và doanh thu từng bãi đỗ cho parking-lot-service",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/H7pjQxdK/48-sp-pk-01-t04-be-t%C3%ADch-h%E1%BB%A3p-%C4%91%E1%BB%93ng-b%E1%BB%99-%C4%91i%E1%BB%83m-%C4%91%C3%A1nh-gi%C3%A1-trung-b%C3%ACnh-ratingaverage-v%C3%A0-doanh-thu-t%E1%BB%ABng-b%C3%A3i-%C4%91%E1%BB%97-cho-parking-lot-service",
+      "labels": [
+        {
+          "name": "Bug / Urgent",
+          "color": "red"
+        },
+        {
+          "name": "BE",
+          "color": "green"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-PK-01` → Story `SP-PK-01-US02` → Task `SP-PK-01-T04`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `8h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nCập nhật tự động điểm đánh giá trung bình (`ratingAverage`) của bãi đỗ khi T"
+    },
+    {
       "id": "6ae16f5547a511806f013393",
       "name": "[SP-PB-01] [Epic] Nhận diện biển số xe tự động qua Camera AI tại cổng bãi xe (ANPR)",
       "idList": "6ae1717ab0d54f6059bc253e",
@@ -773,6 +815,24 @@
       "desc": "Nghiên cứu và tích hợp camera giám sát thông minh tại cổng barrier bãi xe ứng dụng mô hình học sâu (YOLOv8 / PaddleOCR) để tự động nhận diện biển số xe vào/ra. Hệ thống đối chiếu tự động với mã đặt chỗ hợp lệ để mở thanh chắn barrier mà tài xế không cần mở điện thoại quét mã QR."
     },
     {
+      "id": "6ae36f0455004faa2680233f",
+      "name": "[SP-AI-01-T02] [AI] Xây dựng API POST /api/v1/ai/extract-layout sử dụng Gemini Multimodal Vision để trích xuất cấu trúc ô đỗ 2D từ hình ảnh",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/kFIChlua/49-sp-ai-01-t02-ai-x%C3%A2y-d%E1%BB%B1ng-api-post-api-v1-ai-extract-layout-s%E1%BB%AD-d%E1%BB%A5ng-gemini-multimodal-vision-%C4%91%E1%BB%83-tr%C3%ADch-xu%E1%BA%A5t-c%E1%BA%A5u-tr%C3%BAc-%C3%B4-%C4%91%E1%BB%97-2d-t%E1%BB%AB-h%C3%AC",
+      "labels": [
+        {
+          "name": "BE",
+          "color": "green"
+        },
+        {
+          "name": "AI & Algorithm",
+          "color": "orange"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-AI-01` → Story `SP-AI-01-US02` → Task `SP-AI-01-T02`\n> **Priority:** `Medium` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Status:** `To Do` (`Product Backlog`)\n\n### 1. Business Objective\nTriển khai tính năng AI trích xuất sơ đồ bãi đỗ xe 2D từ ảnh chụp thực tế h"
+    },
+    {
       "id": "6ae17308cf641cacc7ea4cd7",
       "name": "[SP-PB-02] [Epic] Phát triển Ứng dụng Di động Native (Mobile App Flutter / React Native)",
       "idList": "6ae1717ab0d54f6059bc253e",
@@ -785,6 +845,748 @@
         }
       ],
       "desc": "Phát triển ứng dụng di động dành riêng cho tài xế trên 2 nền tảng iOS và Android, tận dụng phần cứng thiết bị di động: Nhận thông báo đẩy (Push Notification) thời gian thực qua Firebase Cloud Messaging (FCM) khi có chỗ trống trong hàng đợi, dẫn đường GPS liên tục và hỗ trợ thanh toán 1 chạm qua Appl"
+    },
+    {
+      "id": "6aeaafbc8378fe44bb6b96f8",
+      "name": "[SP-S2-FE-001] [FE] Trang chủ Marketing & Live Hero Map (LandingPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/QtNqrs1d/53-sp-s2-fe-001-fe-trang-ch%E1%BB%A7-marketing-live-hero-map-landingpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US01` → Task `SP-S2-FE-001`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nG"
+    },
+    {
+      "id": "6aeaafbda972ecd50ff3e42a",
+      "name": "[SP-S2-FE-002] [FE] Giải pháp Dành cho Tài xế Xe tải (DriverSolutionsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/hWZGa9m8/54-sp-s2-fe-002-fe-gi%E1%BA%A3i-ph%C3%A1p-d%C3%A0nh-cho-t%C3%A0i-x%E1%BA%BF-xe-t%E1%BA%A3i-driversolutionspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US02` → Task `SP-S2-FE-002`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafbe470c4f1804b081b5",
+      "name": "[SP-S2-FE-003] [FE] Giải pháp Dành cho Chủ bãi Đỗ (OwnerSolutionsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/gPydaWl0/55-sp-s2-fe-003-fe-gi%E1%BA%A3i-ph%C3%A1p-d%C3%A0nh-cho-ch%E1%BB%A7-b%C3%A3i-%C4%91%E1%BB%97-ownersolutionspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-003`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc0a5b185351fb37597",
+      "name": "[SP-S2-FE-004] [FE] Bảng giá Dịch vụ & Gói Bãi xe (PricingPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/YtC51WOZ/56-sp-s2-fe-004-fe-b%E1%BA%A3ng-gi%C3%A1-d%E1%BB%8Bch-v%E1%BB%A5-g%C3%B3i-b%C3%A3i-xe-pricingpage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-004`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc1d2703a114dc0ae5a",
+      "name": "[SP-S2-FE-005] [FE] Tài liệu Tích hợp API & Webhooks (ApiIntegrationPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/Q7UDb0cR/57-sp-s2-fe-005-fe-t%C3%A0i-li%E1%BB%87u-t%C3%ADch-h%E1%BB%A3p-api-webhooks-apiintegrationpage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-005`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc3af9baf24e51ec6be",
+      "name": "[SP-S2-FE-006] [FE] Giới thiệu Doanh nghiệp & Đội ngũ (AboutUsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/XekTN9LZ/58-sp-s2-fe-006-fe-gi%E1%BB%9Bi-thi%E1%BB%87u-doanh-nghi%E1%BB%87p-%C4%91%E1%BB%99i-ng%C5%A9-aboutuspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-006`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc4f113771b626efc73",
+      "name": "[SP-S2-FE-007] [FE] Cơ hội Nghề nghiệp & Tuyển dụng (CareersPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/R7f6HpZT/59-sp-s2-fe-007-fe-c%C6%A1-h%E1%BB%99i-ngh%E1%BB%81-nghi%E1%BB%87p-tuy%E1%BB%83n-d%E1%BB%A5ng-careerspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-007`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc579a050a737141631",
+      "name": "[SP-S2-FE-008] [FE] Tin tức, Kiến thức Logistics & Báo cáo (BlogPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/YlzXZfXZ/60-sp-s2-fe-008-fe-tin-t%E1%BB%A9c-ki%E1%BA%BFn-th%E1%BB%A9c-logistics-b%C3%A1o-c%C3%A1o-blogpage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-008`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc7c86ed35727bb9e9b",
+      "name": "[SP-S2-FE-009] [FE] Liên hệ Hợp tác & Hỗ trợ Kỹ thuật 24/7 (ContactPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/OLY7JBOy/61-sp-s2-fe-009-fe-li%C3%AAn-h%E1%BB%87-h%E1%BB%A3p-t%C3%A1c-h%E1%BB%97-tr%E1%BB%A3-k%E1%BB%B9-thu%E1%BA%ADt-24-7-contactpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-01` (Public Landing & Marketing) → Story `SP-FE-MOD-01-US03` → Task `SP-S2-FE-009`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)"
+    },
+    {
+      "id": "6aeaafc8255cda4f8a1032ea",
+      "name": "[SP-S2-FE-010] [FE] Đăng nhập Tài khoản Đa vai trò (LoginPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/0VFmpQV9/62-sp-s2-fe-010-fe-%C4%91%C4%83ng-nh%E1%BA%ADp-t%C3%A0i-kho%E1%BA%A3n-%C4%91a-vai-tr%C3%B2-loginpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-02` (Authentication & Authorization) → Story `SP-FE-MOD-02-US01` → Task `SP-S2-FE-010`\n> **Priority:** `Critical` | **Complexity:** `S` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghi"
+    },
+    {
+      "id": "6aeaafc9e24d61481b61950f",
+      "name": "[SP-S2-FE-011] [FE] Đăng ký Tài khoản Tài xế / Chủ bãi (RegisterPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/tNguptKF/63-sp-s2-fe-011-fe-%C4%91%C4%83ng-k%C3%BD-t%C3%A0i-kho%E1%BA%A3n-t%C3%A0i-x%E1%BA%BF-ch%E1%BB%A7-b%C3%A3i-registerpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-02` (Authentication & Authorization) → Story `SP-FE-MOD-02-US02` → Task `SP-S2-FE-011`\n> **Priority:** `Critical` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghi"
+    },
+    {
+      "id": "6aeaafca0e2bccb6651f4642",
+      "name": "[SP-S2-FE-012] [FE] Khôi phục Mật khẩu qua Mã xác thực OTP (ForgotPasswordPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/K4yUL0d5/64-sp-s2-fe-012-fe-kh%C3%B4i-ph%E1%BB%A5c-m%E1%BA%ADt-kh%E1%BA%A9u-qua-m%C3%A3-x%C3%A1c-th%E1%BB%B1c-otp-forgotpasswordpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-02` (Authentication & Authorization) → Story `SP-FE-MOD-02-US03` → Task `SP-S2-FE-012`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafcb23407ac349c6bfa7",
+      "name": "[SP-S2-FE-013] [FE] Thông báo Lỗi Truy cập 403 Forbidden (ForbiddenPage) - (1 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/mXZwXC3p/65-sp-s2-fe-013-fe-th%C3%B4ng-b%C3%A1o-l%E1%BB%97i-truy-c%E1%BA%ADp-403-forbidden-forbiddenpage-1-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-02` (Authentication & Authorization) → Story `SP-FE-MOD-02-US04` → Task `SP-S2-FE-013`\n> **Priority:** `High` | **Complexity:** `S` | **Estimated Effort:** `2h` | **Story Points:** `1 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafcc502e9b31d27d9aec",
+      "name": "[SP-S2-FE-014] [FE] Bảng điều khiển Tổng quan Tài xế (DriverDashboardPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/Y4ZtgN7c/66-sp-s2-fe-014-fe-b%E1%BA%A3ng-%C4%91i%E1%BB%81u-khi%E1%BB%83n-t%E1%BB%95ng-quan-t%C3%A0i-x%E1%BA%BF-driverdashboardpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US01` → Task `SP-S2-FE-014`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafcdbb721a57a4f1bd57",
+      "name": "[SP-S2-FE-015] [FE] Bản đồ Tương tác & Tìm kiếm Bãi đỗ Xe tải (SearchParkingPage) - (8 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/ifPIWnEF/67-sp-s2-fe-015-fe-b%E1%BA%A3n-%C4%91%E1%BB%93-t%C6%B0%C6%A1ng-t%C3%A1c-t%C3%ACm-ki%E1%BA%BFm-b%C3%A3i-%C4%91%E1%BB%97-xe-t%E1%BA%A3i-searchparkingpage-8-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US02` → Task `SP-S2-FE-015`\n> **Priority:** `Critical` | **Complexity:** `XL` | **Estimated Effort:** `16h` | **Story Points:** `8 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Ng"
+    },
+    {
+      "id": "6aeaafce57318f228ad6d033",
+      "name": "[SP-S2-FE-016] [FE] Chi tiết Bãi đỗ & Modal Đặt giữ chỗ 10p (ParkingDetailPage) - (8 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/RKIyKILi/68-sp-s2-fe-016-fe-chi-ti%E1%BA%BFt-b%C3%A3i-%C4%91%E1%BB%97-modal-%C4%91%E1%BA%B7t-gi%E1%BB%AF-ch%E1%BB%97-10p-parkingdetailpage-8-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US03` → Task `SP-S2-FE-016`\n> **Priority:** `Critical` | **Complexity:** `XL` | **Estimated Effort:** `16h` | **Story Points:** `8 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Ng"
+    },
+    {
+      "id": "6aeaafcf26bf54d12504866c",
+      "name": "[SP-S2-FE-017] [FE] Quản lý Danh sách Đơn Đặt chỗ của tôi (MyBookingsPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/I4cPn00v/69-sp-s2-fe-017-fe-qu%E1%BA%A3n-l%C3%BD-danh-s%C3%A1ch-%C4%91%C6%A1n-%C4%91%E1%BA%B7t-ch%E1%BB%97-c%E1%BB%A7a-t%C3%B4i-mybookingspage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US04` → Task `SP-S2-FE-017`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp "
+    },
+    {
+      "id": "6aeaafd13e50d6f69dba32ed",
+      "name": "[SP-S2-FE-018] [FE] Theo dõi Vị trí Hàng đợi Ảo Thông minh (DriverQueuesPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/bARub3xO/70-sp-s2-fe-018-fe-theo-d%C3%B5i-v%E1%BB%8B-tr%C3%AD-h%C3%A0ng-%C4%91%E1%BB%A3i-%E1%BA%A3o-th%C3%B4ng-minh-driverqueuespage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US05` → Task `SP-S2-FE-018`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp "
+    },
+    {
+      "id": "6aeaafd202db301f0265081a",
+      "name": "[SP-S2-FE-019] [FE] Sổ cái Lịch sử Thanh toán & Đối soát Cọc (DriverPaymentsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/hmEsOiCO/71-sp-s2-fe-019-fe-s%E1%BB%95-c%C3%A1i-l%E1%BB%8Bch-s%E1%BB%AD-thanh-to%C3%A1n-%C4%91%E1%BB%91i-so%C3%A1t-c%E1%BB%8Dc-driverpaymentspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-019`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp"
+    },
+    {
+      "id": "6aeaafd3e7e995bb7422a300",
+      "name": "[SP-S2-FE-020] [FE] Quản lý Đội xe & Phương tiện Tài xế (VehiclesPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/suP1GVJk/72-sp-s2-fe-020-fe-qu%E1%BA%A3n-l%C3%BD-%C4%91%E1%BB%99i-xe-ph%C6%B0%C6%A1ng-ti%E1%BB%87n-t%C3%A0i-x%E1%BA%BF-vehiclespage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-020`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafd4c9d08c60f3f6a80f",
+      "name": "[SP-S2-FE-021] [FE] Hồ sơ Cá nhân & Cài đặt Tài xế (ProfilePage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/Ka7rqN7m/73-sp-s2-fe-021-fe-h%E1%BB%93-s%C6%A1-c%C3%A1-nh%C3%A2n-c%C3%A0i-%C4%91%E1%BA%B7t-t%C3%A0i-x%E1%BA%BF-profilepage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-021`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp"
+    },
+    {
+      "id": "6aeaafd50f50bf4cc40c39ee",
+      "name": "[SP-S2-FE-022] [FE] Thay đổi Mật khẩu Bảo mật Tài khoản (ChangePasswordPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/jvAFqliR/74-sp-s2-fe-022-fe-thay-%C4%91%E1%BB%95i-m%E1%BA%ADt-kh%E1%BA%A9u-b%E1%BA%A3o-m%E1%BA%ADt-t%C3%A0i-kho%E1%BA%A3n-changepasswordpage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-022`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp"
+    },
+    {
+      "id": "6aeaafd6dc58c8b6b9e4af05",
+      "name": "[SP-S2-FE-023] [FE] Kết quả Thanh toán PayOS Thành công (PaymentSuccessPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/lDLBnsX5/75-sp-s2-fe-023-fe-k%E1%BA%BFt-qu%E1%BA%A3-thanh-to%C3%A1n-payos-th%C3%A0nh-c%C3%B4ng-paymentsuccesspage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-023`\n> **Priority:** `High` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafd7c776c2081966d961",
+      "name": "[SP-S2-FE-024] [FE] Thông báo Thanh toán Bị hủy & Hướng dẫn Thử lại (PaymentCancelPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/9HVXiTRV/76-sp-s2-fe-024-fe-th%C3%B4ng-b%C3%A1o-thanh-to%C3%A1n-b%E1%BB%8B-h%E1%BB%A7y-h%C6%B0%E1%BB%9Bng-d%E1%BA%ABn-th%E1%BB%AD-l%E1%BA%A1i-paymentcancelpage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-024`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp"
+    },
+    {
+      "id": "6aeaafd86132d3e9395bb7db",
+      "name": "[SP-S2-FE-025] [FE] Trung tâm Thông báo Vận hành Tài xế (DriverNotificationsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/KeYNlo4z/77-sp-s2-fe-025-fe-trung-t%C3%A2m-th%C3%B4ng-b%C3%A1o-v%E1%BA%ADn-h%C3%A0nh-t%C3%A0i-x%E1%BA%BF-drivernotificationspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-03` (Driver Experience & Operations) → Story `SP-FE-MOD-03-US06` → Task `SP-S2-FE-025`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp"
+    },
+    {
+      "id": "6aeaafd96e504812f7d1f0b0",
+      "name": "[SP-S2-FE-026] [FE] Bảng Điều khiển Tổng quan Vận hành Chủ bãi (MerchantDashboardPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/i2vmjmlk/78-sp-s2-fe-026-fe-b%E1%BA%A3ng-%C4%91i%E1%BB%81u-khi%E1%BB%83n-t%E1%BB%95ng-quan-v%E1%BA%ADn-h%C3%A0nh-ch%E1%BB%A7-b%C3%A3i-merchantdashboardpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US01` → Task `SP-S2-FE-026`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafdae1dc60d5297388c9",
+      "name": "[SP-S2-FE-027] [FE] Hồ sơ Chủ bãi & Thông tin Ngân hàng Rút tiền (MerchantProfilePage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/9Iimvlyg/79-sp-s2-fe-027-fe-h%E1%BB%93-s%C6%A1-ch%E1%BB%A7-b%C3%A3i-th%C3%B4ng-tin-ng%C3%A2n-h%C3%A0ng-r%C3%BAt-ti%E1%BB%81n-merchantprofilepage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US02` → Task `SP-S2-FE-027`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafdbc0d2db454d8cbcb2",
+      "name": "[SP-S2-FE-028] [FE] Danh sách & Lưới Trạng thái Bãi đỗ xe (MerchantParkingLotsPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/T2VjyW5f/80-sp-s2-fe-028-fe-danh-s%C3%A1ch-l%C6%B0%E1%BB%9Bi-tr%E1%BA%A1ng-th%C3%A1i-b%C3%A3i-%C4%91%E1%BB%97-xe-merchantparkinglotspage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US03` → Task `SP-S2-FE-028`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafdd5f16b788071b885c",
+      "name": "[SP-S2-FE-029] [FE] Đăng ký Tạo mới Bãi đỗ & Tải ảnh Mặt bằng (CreateMerchantParkingLotPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/bfCXJRxB/81-sp-s2-fe-029-fe-%C4%91%C4%83ng-k%C3%BD-t%E1%BA%A1o-m%E1%BB%9Bi-b%C3%A3i-%C4%91%E1%BB%97-t%E1%BA%A3i-%E1%BA%A3nh-m%E1%BA%B7t-b%E1%BA%B1ng-createmerchantparkinglotpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US04` → Task `SP-S2-FE-029`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafde6264a11f54576226",
+      "name": "[SP-S2-FE-030] [FE] Chi tiết Vận hành & Doanh thu Bãi đỗ (MerchantParkingLotDetailPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/kGzW8Jd3/82-sp-s2-fe-030-fe-chi-ti%E1%BA%BFt-v%E1%BA%ADn-h%C3%A0nh-doanh-thu-b%C3%A3i-%C4%91%E1%BB%97-merchantparkinglotdetailpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US05` → Task `SP-S2-FE-030`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafde97a9d7824da02b12",
+      "name": "[SP-S2-FE-031] [FE] Chỉnh sửa Thông tin & Tiện ích Bãi đỗ (EditMerchantParkingLotPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/3AaxPI2K/83-sp-s2-fe-031-fe-ch%E1%BB%89nh-s%E1%BB%ADa-th%C3%B4ng-tin-ti%E1%BB%87n-%C3%ADch-b%C3%A3i-%C4%91%E1%BB%97-editmerchantparkinglotpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US06` → Task `SP-S2-FE-031`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafe0c2dc8adb944897fb",
+      "name": "[SP-S2-FE-032] [FE] Cấu hình Sức chứa Sơ đồ 5 Loại xe (MerchantSlotsPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/56bxmYkc/84-sp-s2-fe-032-fe-c%E1%BA%A5u-h%C3%ACnh-s%E1%BB%A9c-ch%E1%BB%A9a-s%C6%A1-%C4%91%E1%BB%93-5-lo%E1%BA%A1i-xe-merchantslotspage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US07` → Task `SP-S2-FE-032`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafe1bd30fbba71a4c94e",
+      "name": "[SP-S2-FE-033] [FE] Thiết lập Biểu phí Ma trận 4 Thông số (MerchantPricingPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/mw0CUGAN/85-sp-s2-fe-033-fe-thi%E1%BA%BFt-l%E1%BA%ADp-bi%E1%BB%83u-ph%C3%AD-ma-tr%E1%BA%ADn-4-th%C3%B4ng-s%E1%BB%91-merchantpricingpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-033`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafe2c936d90390b1a367",
+      "name": "[SP-S2-FE-034] [FE] Quản lý Lịch sử & Đơn Đặt chỗ Khách hàng (MerchantBookingsPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/KY0BtxqU/86-sp-s2-fe-034-fe-qu%E1%BA%A3n-l%C3%BD-l%E1%BB%8Bch-s%E1%BB%AD-%C4%91%C6%A1n-%C4%91%E1%BA%B7t-ch%E1%BB%97-kh%C3%A1ch-h%C3%A0ng-merchantbookingspage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-034`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafe27f262b3d73f89b24",
+      "name": "[SP-S2-FE-035] [FE] Chi tiết Đơn Đặt chỗ & Nhật ký Barie (MerchantBookingDetailPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/9vYjvSb5/87-sp-s2-fe-035-fe-chi-ti%E1%BA%BFt-%C4%91%C6%A1n-%C4%91%E1%BA%B7t-ch%E1%BB%97-nh%E1%BA%ADt-k%C3%BD-barie-merchantbookingdetailpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-035`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafe3937886d1d0de6b82",
+      "name": "[SP-S2-FE-036] [FE] Camera Quét QR Barie Ra/Vào & Thu tiền mặt (MerchantQrScannerPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/pbokq5sD/88-sp-s2-fe-036-fe-camera-qu%C3%A9t-qr-barie-ra-v%C3%A0o-thu-ti%E1%BB%81n-m%E1%BA%B7t-merchantqrscannerpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-036`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafe41df74babd7cd9933",
+      "name": "[SP-S2-FE-037] [FE] Phân tích Biểu đồ Doanh thu & Sổ cái Ví (MerchantRevenuePage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/idqMcjeL/89-sp-s2-fe-037-fe-ph%C3%A2n-t%C3%ADch-bi%E1%BB%83u-%C4%91%E1%BB%93-doanh-thu-s%E1%BB%95-c%C3%A1i-v%C3%AD-merchantrevenuepage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-037`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafe56461bcfb644968ba",
+      "name": "[SP-S2-FE-038] [FE] Tạo Yêu cầu Rút tiền & Quản lý Giải ngân (MerchantWithdrawalsPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/2O8NXG58/90-sp-s2-fe-038-fe-t%E1%BA%A1o-y%C3%AAu-c%E1%BA%A7u-r%C3%BAt-ti%E1%BB%81n-qu%E1%BA%A3n-l%C3%BD-gi%E1%BA%A3i-ng%C3%A2n-merchantwithdrawalspage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-038`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ"
+    },
+    {
+      "id": "6aeaafe618f95accef6d0da0",
+      "name": "[SP-S2-FE-039] [FE] Danh sách Khiếu nại từ Tài xế (MerchantDisputesPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/1wmjv1DQ/91-sp-s2-fe-039-fe-danh-s%C3%A1ch-khi%E1%BA%BFu-n%E1%BA%A1i-t%E1%BB%AB-t%C3%A0i-x%E1%BA%BF-merchantdisputespage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-039`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafe764f3bdd9222451e3",
+      "name": "[SP-S2-FE-040] [FE] Chi tiết Khiếu nại, Lời khai & Bằng chứng (MerchantDisputeDetailPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/PVAhKkfY/92-sp-s2-fe-040-fe-chi-ti%E1%BA%BFt-khi%E1%BA%BFu-n%E1%BA%A1i-l%E1%BB%9Di-khai-b%E1%BA%B1ng-ch%E1%BB%A9ng-merchantdisputedetailpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-040`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafe8494cb5b5b52de752",
+      "name": "[SP-S2-FE-041] [FE] Trung tâm Thông báo Vận hành Bãi xe (MerchantNotificationsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/Tpu46xVk/93-sp-s2-fe-041-fe-trung-t%C3%A2m-th%C3%B4ng-b%C3%A1o-v%E1%BA%ADn-h%C3%A0nh-b%C3%A3i-xe-merchantnotificationspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-04` (Merchant Portal & Operations) → Story `SP-FE-MOD-04-US08` → Task `SP-S2-FE-041`\n> **Priority:** `Medium` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp V"
+    },
+    {
+      "id": "6aeaafe98784f137895326e1",
+      "name": "[SP-S2-FE-042] [FE] Trung tâm Điều hành Toàn sàn Super Admin (AdminDashboardPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/oehtCmBg/94-sp-s2-fe-042-fe-trung-t%C3%A2m-%C4%91i%E1%BB%81u-h%C3%A0nh-to%C3%A0n-s%C3%A0n-super-admin-admindashboardpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US01` → Task `SP-S2-FE-042`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nC"
+    },
+    {
+      "id": "6aeaafea87ea87b2f7b32b9d",
+      "name": "[SP-S2-FE-043] [FE] Danh sách Kiểm duyệt Bãi đỗ Toàn hệ thống (AdminParkingLotsPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/zcEQhxo2/95-sp-s2-fe-043-fe-danh-s%C3%A1ch-ki%E1%BB%83m-duy%E1%BB%87t-b%C3%A3i-%C4%91%E1%BB%97-to%C3%A0n-h%E1%BB%87-th%E1%BB%91ng-adminparkinglotspage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US02` → Task `SP-S2-FE-043`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\n"
+    },
+    {
+      "id": "6aeaafeb782dc3b52daf5926",
+      "name": "[SP-S2-FE-044] [FE] Thẩm định Hồ sơ Mặt bằng & Ra quyết định Duyệt (AdminParkingLotDetailPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/oanCIasZ/96-sp-s2-fe-044-fe-th%E1%BA%A9m-%C4%91%E1%BB%8Bnh-h%E1%BB%93-s%C6%A1-m%E1%BA%B7t-b%E1%BA%B1ng-ra-quy%E1%BA%BFt-%C4%91%E1%BB%8Bnh-duy%E1%BB%87t-adminparkinglotdetailpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US03` → Task `SP-S2-FE-044`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nT"
+    },
+    {
+      "id": "6aeaafec2587cd95e67884a1",
+      "name": "[SP-S2-FE-045] [FE] Danh bạ Quản lý Tài khoản & Phân quyền Toàn sàn (AdminUsersPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/HwFSQ303/97-sp-s2-fe-045-fe-danh-b%E1%BA%A1-qu%E1%BA%A3n-l%C3%BD-t%C3%A0i-kho%E1%BA%A3n-ph%C3%A2n-quy%E1%BB%81n-to%C3%A0n-s%C3%A0n-adminuserspage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US04` → Task `SP-S2-FE-045`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\n"
+    },
+    {
+      "id": "6aeaafed13d6ccf57481c5ad",
+      "name": "[SP-S2-FE-046] [FE] Hồ sơ Người dùng, Lịch sử Đỗ & Khóa tài khoản (AdminUserDetailPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/vXTCmC2G/98-sp-s2-fe-046-fe-h%E1%BB%93-s%C6%A1-ng%C6%B0%E1%BB%9Di-d%C3%B9ng-l%E1%BB%8Bch-s%E1%BB%AD-%C4%91%E1%BB%97-kh%C3%B3a-t%C3%A0i-kho%E1%BA%A3n-adminuserdetailpage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US05` → Task `SP-S2-FE-046`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\n"
+    },
+    {
+      "id": "6aeaafedc81013b098a29dc4",
+      "name": "[SP-S2-FE-047] [FE] Sổ cái Giám sát Giao dịch Dòng tiền Toàn hệ thống (AdminTransactionsPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/aDSXJE8X/99-sp-s2-fe-047-fe-s%E1%BB%95-c%C3%A1i-gi%C3%A1m-s%C3%A1t-giao-d%E1%BB%8Bch-d%C3%B2ng-ti%E1%BB%81n-to%C3%A0n-h%E1%BB%87-th%E1%BB%91ng-admintransactionspage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-047`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nG"
+    },
+    {
+      "id": "6aeaafef41982be0d5ef78d0",
+      "name": "[SP-S2-FE-048] [FE] Phê duyệt & Quyết toán Lệnh Rút tiền Ví Chủ bãi (AdminWithdrawalsPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/aTlDIQd1/100-sp-s2-fe-048-fe-ph%C3%AA-duy%E1%BB%87t-quy%E1%BA%BFt-to%C3%A1n-l%E1%BB%87nh-r%C3%BAt-ti%E1%BB%81n-v%C3%AD-ch%E1%BB%A7-b%C3%A3i-adminwithdrawalspage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-048`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nD"
+    },
+    {
+      "id": "6aeaaff0668d1412d2a122f7",
+      "name": "[SP-S2-FE-049] [FE] Bàn Trọng tài & Danh sách Tranh chấp Mở (AdminDisputesPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/qJyDsjGt/101-sp-s2-fe-049-fe-b%C3%A0n-tr%E1%BB%8Dng-t%C3%A0i-danh-s%C3%A1ch-tranh-ch%E1%BA%A5p-m%E1%BB%9F-admindisputespage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-049`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\n"
+    },
+    {
+      "id": "6aeaaff1caba7b15eee859f0",
+      "name": "[SP-S2-FE-050] [FE] Phán quyết Trọng tài & Phân bổ Tiền bồi thường (AdminDisputeDetailPage) - (5 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/c9LVAK7u/102-sp-s2-fe-050-fe-ph%C3%A1n-quy%E1%BA%BFt-tr%E1%BB%8Dng-t%C3%A0i-ph%C3%A2n-b%E1%BB%95-ti%E1%BB%81n-b%E1%BB%93i-th%C6%B0%E1%BB%9Dng-admindisputedetailpage-5-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-050`\n> **Priority:** `High` | **Complexity:** `L` | **Estimated Effort:** `10h` | **Story Points:** `5 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nH"
+    },
+    {
+      "id": "6aeaaff14b3c7c3f44c0cd81",
+      "name": "[SP-S2-FE-051] [FE] Nhật ký Kiểm toán An ninh & Vết Quản trị (AdminAuditLogsPage) - (3 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/vALL4U8c/103-sp-s2-fe-051-fe-nh%E1%BA%ADt-k%C3%BD-ki%E1%BB%83m-to%C3%A1n-an-ninh-v%E1%BA%BFt-qu%E1%BA%A3n-tr%E1%BB%8B-adminauditlogspage-3-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-051`\n> **Priority:** `Medium` | **Complexity:** `M` | **Estimated Effort:** `6h` | **Story Points:** `3 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\n"
+    },
+    {
+      "id": "6aeaaff2e2bb25f7f2aa850c",
+      "name": "[SP-S2-FE-052] [FE] Trung tâm Phát sóng & Cảnh báo Điều hành (AdminNotificationsPage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/PrG8UkeF/104-sp-s2-fe-052-fe-trung-t%C3%A2m-ph%C3%A1t-s%C3%B3ng-c%E1%BA%A3nh-b%C3%A1o-%C4%91i%E1%BB%81u-h%C3%A0nh-adminnotificationspage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-052`\n> **Priority:** `Low` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nTru"
+    },
+    {
+      "id": "6aeaaff41a0a3fc252203125",
+      "name": "[SP-S2-FE-053] [FE] Hồ sơ Quản trị viên & Phiên Đăng nhập Bảo mật (AdminProfilePage) - (2 STP)",
+      "idList": "6ae1717ab0d54f6059bc253e",
+      "idMembers": [],
+      "url": "https://trello.com/c/UWyfx9Lo/105-sp-s2-fe-053-fe-h%E1%BB%93-s%C6%A1-qu%E1%BA%A3n-tr%E1%BB%8B-vi%C3%AAn-phi%C3%AAn-%C4%91%C4%83ng-nh%E1%BA%ADp-b%E1%BA%A3o-m%E1%BA%ADt-adminprofilepage-2-stp",
+      "labels": [
+        {
+          "name": "FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "> **Hierarchy:** Epic `SP-FE-MOD-05` (Admin Portal & Governance) → Story `SP-FE-MOD-05-US06` → Task `SP-S2-FE-053`\n> **Priority:** `Low` | **Complexity:** `S` | **Estimated Effort:** `4h` | **Story Points:** `2 STP` | **Status:** `Sprint Backlog 2`\n\n### 1. Business Objective (Mục Tiêu Nghiệp Vụ)\nThô"
     },
     {
       "id": "6ae177ad54d732fbdc51ed3c",
@@ -1016,7 +1818,139 @@
         }
       ],
       "desc": "Kiểm tra khả năng chịu tải và tính toàn vẹn dữ liệu khi có nhiều người dùng cùng tranh chấp giữ chỗ một slot đỗ xe duy nhất.\n\n- Kịch bản: Mô phỏng 200 người dùng đồng thời gửi request đặt cùng 1 slot trong vòng 5 giây.\n- Đánh giá: Chỉ có duy nhất 1 request nhận kết quả 201 Created thành công, 199 re"
+    },
+    {
+      "id": "6aead76e1d953a5fd04e8860",
+      "name": "[RISK-01] Thiếu tích hợp SMS Brandname chính thức - Phụ thuộc Mock OTP",
+      "idList": "6aead71c6db51c5823bc383b",
+      "idMembers": [],
+      "url": "https://trello.com/c/iltJlhyh/106-risk-01-thi%E1%BA%BFu-t%C3%ADch-h%E1%BB%A3p-sms-brandname-ch%C3%ADnh-th%E1%BB%A9c-ph%E1%BB%A5-thu%E1%BB%99c-mock-otp",
+      "labels": [
+        {
+          "name": "DEPT-BE",
+          "color": "green"
+        },
+        {
+          "name": "TYPE-SECURITY",
+          "color": "black"
+        },
+        {
+          "name": "PRIORITY-P1-HIGH",
+          "color": "orange_dark"
+        }
+      ],
+      "desc": "## 1. Objective\nCảnh báo và kiểm soát rủi ro hệ thống xác thực khi thiếu nhà cung cấp SMS Brandname viễn thông chính thức (hiện đang dùng OTP mock/in-memory trả thẳng trong response).\n\n## 2. Business Context\n- Module: Authentication & Registration (MOD-02).\n- Vấn đề: Việc trả OTP qua API response gâ"
+    },
+    {
+      "id": "6aead770073f464f7028608f",
+      "name": "[RISK-02] Chưa có S3/MinIO Object Storage tập trung cho tài liệu KYC Merchant và ảnh bãi xe",
+      "idList": "6aead71c6db51c5823bc383b",
+      "idMembers": [],
+      "url": "https://trello.com/c/0KnJNNse/107-risk-02-ch%C6%B0a-c%C3%B3-s3-minio-object-storage-t%E1%BA%ADp-trung-cho-t%C3%A0i-li%E1%BB%87u-kyc-merchant-v%C3%A0-%E1%BA%A3nh-b%C3%A3i-xe",
+      "labels": [
+        {
+          "name": "PRIORITY-P1-HIGH",
+          "color": "orange_dark"
+        },
+        {
+          "name": "DEPT-DEVOPS",
+          "color": "purple"
+        },
+        {
+          "name": "TYPE-TECHNICAL-DEBT",
+          "color": "orange"
+        }
+      ],
+      "desc": "## 1. Objective\nQuản lý rủi ro lưu trữ tệp tin nhị phân (ảnh chụp CCCD, giấy phép kinh doanh, ảnh mặt bằng bãi đỗ) hiện đang lưu base64 hoặc đường dẫn cục bộ chưa qua dịch vụ Object Storage chuẩn.\n\n## 2. Business Context\n- Module: Merchant Onboarding & Lot Management (MOD-04).\n- Vấn đề: Thiếu hệ thố"
+    },
+    {
+      "id": "6aead771da479daab813d1ee",
+      "name": "[RISK-03] Chênh lệch tiến độ Cổng Quản Trị Viên (Admin Portal SCR-042..SCR-053) chưa chuyển giao xong sang React v2",
+      "idList": "6aead71c6db51c5823bc383b",
+      "idMembers": [],
+      "url": "https://trello.com/c/Dfm63NZ8/108-risk-03-ch%C3%AAnh-l%E1%BB%87ch-ti%E1%BA%BFn-%C4%91%E1%BB%99-c%E1%BB%95ng-qu%E1%BA%A3n-tr%E1%BB%8B-vi%C3%AAn-admin-portal-scr-042scr-053-ch%C6%B0a-chuy%E1%BB%83n-giao-xong-sang-react-v2",
+      "labels": [
+        {
+          "name": "PRIORITY-P1-HIGH",
+          "color": "orange_dark"
+        },
+        {
+          "name": "TYPE-TECHNICAL-DEBT",
+          "color": "orange"
+        },
+        {
+          "name": "DEPT-FE",
+          "color": "blue"
+        }
+      ],
+      "desc": "## 1. Objective\nTheo dõi rủi ro phân hệ Quản trị viên (Super Admin - MOD-05) gồm 12 màn hình chưa được hoàn thành trong `smart-parking-app-v2` theo chuẩn Rule 15.\n\n## 2. Business Context\n- Module: Admin Portal & System Governance (MOD-05).\n- Hiện tại phân hệ Admin đang nằm ở legacy app (`smart-parki"
+    },
+    {
+      "id": "6aead7736f1591b367c53374",
+      "name": "[IMP-01] Áp dụng Code Splitting & Dynamic Imports trong Vite để tối ưu Bundle Size",
+      "idList": "6aead71c7baf6188b6548a95",
+      "idMembers": [],
+      "url": "https://trello.com/c/5hyEEbQA/109-imp-01-%C3%A1p-d%E1%BB%A5ng-code-splitting-dynamic-imports-trong-vite-%C4%91%E1%BB%83-t%E1%BB%91i-%C6%B0u-bundle-size",
+      "labels": [
+        {
+          "name": "DEPT-FE",
+          "color": "blue"
+        },
+        {
+          "name": "TYPE-IMPROVEMENT",
+          "color": "lime"
+        },
+        {
+          "name": "PRIORITY-P2-MEDIUM",
+          "color": "yellow_dark"
+        }
+      ],
+      "desc": "## 1. Objective\nGiảm dung lượng bundle JavaScript ban đầu của `smart-parking-app-v2` từ 1.69MB xuống dưới 400KB bằng React lazy loading và Vite rollup manual chunks.\n\n## 2. Business Context\n- Tối ưu hóa trải nghiệm tải trang (First Contentful Paint, LCP) cho tài xế xe tải truy cập bằng mạng 4G/di độ"
+    },
+    {
+      "id": "6aead7757593c1885990813d",
+      "name": "[IMP-02] Bổ sung Idempotent Consumer & Dead Letter Queue (DLQ) cho Kafka Event Listeners",
+      "idList": "6aead71c7baf6188b6548a95",
+      "idMembers": [],
+      "url": "https://trello.com/c/fQDC1NSd/110-imp-02-b%E1%BB%95-sung-idempotent-consumer-dead-letter-queue-dlq-cho-kafka-event-listeners",
+      "labels": [
+        {
+          "name": "DEPT-BE",
+          "color": "green"
+        },
+        {
+          "name": "TYPE-IMPROVEMENT",
+          "color": "lime"
+        },
+        {
+          "name": "PRIORITY-P2-MEDIUM",
+          "color": "yellow_dark"
+        }
+      ],
+      "desc": "## 1. Objective\nTăng cường tính kiên cường (resilience) và tránh xử lý trùng lặp giao dịch (idempotency) khi tiêu thụ các sự kiện thanh toán PayOS và giải phóng slot trong Kafka.\n\n## 2. Business Context\n- Khi mạng gặp sự cố hoặc Kafka rebalance, listener có thể nhận trùng event thanh toán cọc (`PAYM"
+    },
+    {
+      "id": "6aead7769fdada7ffd43cd27",
+      "name": "[IMP-03] Thiết lập Pipeline GitHub Actions CI/CD kiểm tra tự động Typecheck, Test và Jacoco Report",
+      "idList": "6aead71c7baf6188b6548a95",
+      "idMembers": [],
+      "url": "https://trello.com/c/XJLjIuuT/111-imp-03-thi%E1%BA%BFt-l%E1%BA%ADp-pipeline-github-actions-ci-cd-ki%E1%BB%83m-tra-t%E1%BB%B1-%C4%91%E1%BB%99ng-typecheck-test-v%C3%A0-jacoco-report",
+      "labels": [
+        {
+          "name": "TYPE-IMPROVEMENT",
+          "color": "lime"
+        },
+        {
+          "name": "PRIORITY-P2-MEDIUM",
+          "color": "yellow_dark"
+        },
+        {
+          "name": "DEPT-DEVOPS",
+          "color": "purple"
+        }
+      ],
+      "desc": "## 1. Objective\nTự động hóa hoàn toàn quy trình kiểm tra chất lượng code (Quality Gates) cho cả Frontend và Microservices trên mỗi Pull Request.\n\n## 2. Business Context\n- Ngăn ngừa tình trạng merge code lỗi, vi phạm TypeScript hoặc làm vỡ logic nghiệp vụ giữa các thành viên trong nhóm 7 người.\n\n## 3"
     }
   ],
-  "generatedAt": "2026-11-03T03:58:27.460Z"
+  "generatedAt": "2026-11-06T01:16:08.112Z"
 }
