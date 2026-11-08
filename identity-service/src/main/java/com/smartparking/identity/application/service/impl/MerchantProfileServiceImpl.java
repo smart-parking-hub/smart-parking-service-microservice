@@ -170,7 +170,8 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
     }
 
     private void validateFile(MultipartFile file) {
-        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        String rawContentType = file.getContentType();
+        String contentType = rawContentType != null ? rawContentType.toLowerCase(Locale.ROOT) : "";
         if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ chấp nhận PDF hoặc ảnh JPEG/PNG/WEBP!");
         }

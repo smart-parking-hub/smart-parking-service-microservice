@@ -100,8 +100,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentRepository.saveAndFlush(payment);
 
-        String returnUrl = appendQueryParam(payOSConfig.getReturnUrl(), "bookingId", String.valueOf(request.getBookingId()));
-        String cancelUrl = appendQueryParam(payOSConfig.getCancelUrl(), "bookingId", String.valueOf(request.getBookingId()));
+        String baseReturn = (payOSConfig.getReturnUrl() != null && !payOSConfig.getReturnUrl().isBlank())
+                ? payOSConfig.getReturnUrl()
+                : "http://localhost:3000/payment/return";
+        String baseCancel = (payOSConfig.getCancelUrl() != null && !payOSConfig.getCancelUrl().isBlank())
+                ? payOSConfig.getCancelUrl()
+                : "http://localhost:3000/payment/cancel";
+
+        String returnUrl = appendQueryParam(baseReturn, "bookingId", String.valueOf(request.getBookingId()));
+        String cancelUrl = appendQueryParam(baseCancel, "bookingId", String.valueOf(request.getBookingId()));
 
         try {
             PaymentLinkItem item = PaymentLinkItem.builder()
@@ -115,8 +122,8 @@ public class PaymentServiceImpl implements PaymentService {
                     .amount(amount.longValueExact())
                     .description(description)
                     .items(List.of(item))
-                    .returnUrl(returnUrl)
-                    .cancelUrl(cancelUrl)
+                    .returnUrl(java.util.Objects.requireNonNull(returnUrl, "returnUrl must not be null"))
+                    .cancelUrl(java.util.Objects.requireNonNull(cancelUrl, "cancelUrl must not be null"))
                     .build();
 
             CreatePaymentLinkResponse result = payOS.paymentRequests().create(linkRequest);
@@ -293,12 +300,11 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Payment {} applied SUCCESS for booking {}", payment.getId(), payment.getBookingId());
     }
 
+    @org.springframework.lang.NonNull
     private static String appendQueryParam(String url, String key, String value) {
-        if (url == null || url.isBlank()) {
-            return url;
-        }
-        String sep = url.contains("?") ? "&" : "?";
-        return url + sep + key + "=" + value;
+        String safeUrl = (url != null && !url.isBlank()) ? url : "http://localhost:3000";
+        String sep = safeUrl.contains("?") ? "&" : "?";
+        return safeUrl + sep + key + "=" + (value != null ? value : "");
     }
 
     @Override

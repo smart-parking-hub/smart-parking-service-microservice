@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService {
                 .actorUserId(adminUserId)
                 .action("BAN_USER")
                 .targetType("User")
-                .targetId(targetUserId)
+                .targetId(user.getId())
                 .detail(reason)
                 .result("SUCCESS")
                 .build());
@@ -146,7 +146,7 @@ public class UserServiceImpl implements UserService {
                 .actorUserId(adminUserId)
                 .action("UNBAN_USER")
                 .targetType("User")
-                .targetId(targetUserId)
+                .targetId(user.getId())
                 .detail(reason)
                 .result("SUCCESS")
                 .build());
@@ -155,14 +155,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void warnUser(Long adminUserId, Long targetUserId, String reason) {
-        userRepository.findById(targetUserId)
+        User user = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng"));
 
         auditLogRepository.save(AuditLog.builder()
                 .actorUserId(adminUserId)
                 .action("WARN_USER")
                 .targetType("User")
-                .targetId(targetUserId)
+                .targetId(user.getId())
                 .detail(reason)
                 .result("SUCCESS")
                 .build());
