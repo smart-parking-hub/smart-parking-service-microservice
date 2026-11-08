@@ -1,9 +1,19 @@
 @echo off
+setlocal enabledelayedexpansion
 echo ==========================================================
 echo  [SmartParkingHub] Running Test Suite + JaCoCo + SonarQube Scan
 echo ==========================================================
 
 cd /d "%~dp0..\.."
+
+REM Doc SONAR_TOKEN tu file .env neu co
+if exist ".env" (
+    for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
+        set "KEY=%%a"
+        set "VAL=%%b"
+        if "!KEY!"=="SONAR_TOKEN" set "SONAR_TOKEN=!VAL!"
+    )
+)
 
 echo [1/2] Running automated unit tests and generating JaCoCo coverage reports...
 call gradlew.bat test jacocoTestReport --no-daemon
@@ -15,11 +25,38 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [2/2] Scanning code and sending metrics to SonarQube (http://localhost:9000)...
-call gradlew.bat sonar --no-daemon
+
+if "%SONAR_TOKEN%"=="" (
+    echo.
+    echo [CHU Y] SonarQube yeu cau Token xac thuc de gui so lieu phan tich.
+    echo Ban co 2 cach don gian:
+    echo   Cach 1: Vao http://localhost:9000 -^> Bam Avatar (goc tren phai) -^> My Account -^> Security
+    echo           Sinh token dat ten 'gradle' va copy ma token dan vao day.
+    echo   Cach 2: Neu ban da tat "Force user authentication" trong Admin Settings cua SonarQube,
+    echo           ban chi can an phim ENTER de tiep tuc quet.
+    echo.
+    set /p "USER_INPUT_TOKEN=Nhap ma Sonar Token (hoac an ENTER de tiep tuc): "
+    if not "!USER_INPUT_TOKEN!"=="" (
+        set "SONAR_TOKEN=!USER_INPUT_TOKEN!"
+        echo.>> .env
+        echo # SonarQube Analysis Token>> .env
+        echo SONAR_TOKEN=!USER_INPUT_TOKEN!>> .env
+        echo [INFO] Da tu dong luu SONAR_TOKEN vao file .env cho cac lan chay tiep theo!
+    )
+)
+
+if not "%SONAR_TOKEN%"=="" (
+    call gradlew.bat sonar -Dsonar.token=%SONAR_TOKEN% -Dsonar.login=%SONAR_TOKEN% --no-daemon
+) else (
+    call gradlew.bat sonar --no-daemon
+)
+
 if %ERRORLEVEL% NEQ 0 (
+    echo.
     echo [ERROR] SonarQube scan failed!
-    echo Ensure SonarQube is running at http://localhost:9000
-    echo If required, pass your token: gradlew sonar -Dsonar.token=your_token
+    echo Vui long kiem tra:
+    echo   1. SonarQube da khoi dong tai http://localhost:9000 chua?
+    echo   2. Token da chinh xac chua hoac da tat Force User Authentication chua?
     pause
     exit /b %ERRORLEVEL%
 )
