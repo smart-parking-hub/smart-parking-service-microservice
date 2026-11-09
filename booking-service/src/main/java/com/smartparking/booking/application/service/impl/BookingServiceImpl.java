@@ -166,6 +166,19 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public BookingDto getMerchantBookingDetail(Long merchantUserId, Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy booking"));
+
+        if (booking.getMerchantId() == null || !booking.getMerchantId().equals(merchantUserId)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền truy cập thông tin booking này");
+        }
+
+        return BookingDto.fromEntity(booking);
+    }
+
+    @Override
     @Transactional
     public CancelBookingResponse cancelBooking(Long driverUserId, Long bookingId, CancelBookingRequest request) {
         Booking booking = bookingRepository.findByIdForUpdate(bookingId)
