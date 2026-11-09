@@ -61,4 +61,13 @@ public class MerchantCheckInOutController {
         PageResponse<BookingDto> page = bookingService.getMerchantBookings(user.getId(), parkingLotId, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Lấy danh sách đặt chỗ thành công"));
     }
+
+    @GetMapping("/bookings/{id}")
+    @PreAuthorize("hasRole('MERCHANT')")
+    public ResponseEntity<ApiResponse<BookingDto>> getMerchantBookingDetail(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable Long id) {
+        BookingDto dto = bookingService.getMerchantBookingDetail(user.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success(dto, "Lấy chi tiết đơn đặt chỗ thành công"));
+    }
 }

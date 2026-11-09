@@ -208,4 +208,65 @@ class BookingServiceImplTest {
         verify(outboxPublisherService, times(1)).publishBookingCancelled(booking, "Khách hủy chuyến");
         verify(parkingLotClient, times(1)).releaseSlot(eq(parkingLotId), any(SlotHoldRequest.class));
     }
+
+    @Test
+    @DisplayName("getMerchantBookingDetail returns booking details when merchant owns the parking lot")
+    void testGetMerchantBookingDetailSuccess() {
+        // Arrange
+        Booking booking = Booking.builder()
+                .id(bookingId)
+                .bookingCode("BK-MERCHANT-01")
+                .merchantId(merchantUserId)
+                .parkingLotId(parkingLotId)
+                .parkingLotName("Bãi đỗ số 1")
+                .vehiclePlate("51C-12345")
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .status(BookingStatusEnum.PENDING_CHECKIN)
+                .advanceDeposit(new BigDecimal("100000"))
+                .build();
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+
+        // Act
+        BookingDto result = bookingService.getMerchantBookingDetail(merchantUserId, bookingId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(bookingId, result.getId());
+        assertEquals("BK-MERCHANT-01", result.getBookingCode());
+        assertEquals("51C-12345", result.getVehiclePlate());
+        assertEquals(merchantUserId, result.getMerchantId());
+        verify(bookingRepository, times(1)).findById(bookingId);
+    }
+
+    @Test
+    @DisplayName("getMerchantBookingDetail throws FORBIDDEN when merchant does not own the booking")
+    void testGetMerchantBookingDetailForbidden() {
+        // Arrange
+        Long otherMerchantId = 9999L;
+        Booking booking = Booking.builder()
+                .id(bookingId)
+                .bookingCode("BK-OTHER-01")
+                .merchantId(merchantUserId)
+                .build();
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class,
+                () -> bookingService.getMerchantBookingDetail(otherMerchantId, bookingId));
+        assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Bạn không có quyền truy cập thông tin booking này"));
+    }
+
+    @Test
+    @DisplayName("getMerchantBookingDetail throws BOOKING_NOT_FOUND when booking does not exist")
+    void testGetMerchantBookingDetailNotFound() {
+        // Arrange
+        Long nonExistentId = 8888L;
+        when(bookingRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class,
+                () -> bookingService.getMerchantBookingDetail(merchantUserId, nonExistentId));
+        assertEquals(ErrorCode.BOOKING_NOT_FOUND, ex.getErrorCode());
+    }
 }
