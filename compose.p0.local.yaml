@@ -1,0 +1,30 @@
+# Local integration only. Supply P0_INTERNAL_SERVICE_TOKEN from ignored .env.p0.local.
+services:
+  identity-service:
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_p0_20261106?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      APP_INTERNAL_SERVICE_TOKEN: ${P0_INTERNAL_SERVICE_TOKEN:?Set local internal service token}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
+  parking-lot-service:
+    environment:
+      BOOKING_SERVICE_URL: http://booking-service:8083
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_lot_p0_20261106?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      APP_INTERNAL_SERVICE_TOKEN: ${P0_INTERNAL_SERVICE_TOKEN:?Set local internal service token}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
+  booking-service:
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_booking_p0_20261106?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      IDENTITY_SERVICE_URL: http://identity-service:8081
+      APP_INTERNAL_SERVICE_TOKEN: ${P0_INTERNAL_SERVICE_TOKEN:?Set local internal service token}
+      APP_BOOKING_CHECK_IN_EARLY_MINUTES: 30
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
+  payment-service:
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_payment_p0_20261106?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      BOOKING_SERVICE_URL: http://booking-service:8083
+      APP_INTERNAL_SERVICE_TOKEN: ${P0_INTERNAL_SERVICE_TOKEN:?Set local internal service token}
+      APP_DEMO_PAYMENT_ENABLED: "true"
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
+      PAYOS_RETURN_URL: http://localhost:3000/payment/return
+      PAYOS_CANCEL_URL: http://localhost:3000/payment/cancel
