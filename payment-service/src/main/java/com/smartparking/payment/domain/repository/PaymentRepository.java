@@ -53,4 +53,17 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findSuccessfulPaymentsInWindow(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    List<Payment> findByMerchantIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
+            Long merchantId,
+            PaymentStatusEnum status,
+            LocalDateTime startDate,
+            LocalDateTime endDate);
+
+    List<Payment> findByMerchantIdAndParkingLotIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
+            Long merchantId,
+            Long parkingLotId,
+            PaymentStatusEnum status,
+            LocalDateTime startDate,
+            LocalDateTime endDate);
 }

@@ -23,11 +23,14 @@ public class MerchantRevenueController {
     @PreAuthorize("hasRole('MERCHANT')")
     public ResponseEntity<ApiResponse<MerchantRevenueResponse>> getMerchantRevenue(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(required = false) Long parkingLotId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "DAY") String granularity) {
-        log.info("Merchant {} requested revenue summary", user.getId());
-        MerchantRevenueResponse response = merchantWalletService.getRevenueSummary(user.getId());
+        log.info("Merchant {} requested revenue summary (parkingLotId={}, startDate={}, endDate={}, granularity={})",
+                user.getId(), parkingLotId, startDate, endDate, granularity);
+        MerchantRevenueResponse response = merchantWalletService.getRevenueSummary(
+                user.getId(), parkingLotId, startDate, endDate, granularity);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin doanh thu thành công"));
     }
 }

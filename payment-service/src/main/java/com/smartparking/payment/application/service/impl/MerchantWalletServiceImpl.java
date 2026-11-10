@@ -1,9 +1,11 @@
 package com.smartparking.payment.application.service.impl;
 
+import com.smartparking.common.enums.PaymentStatusEnum;
 import com.smartparking.common.enums.WalletLedgerEntryTypeEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.payment.application.dto.MerchantRevenueResponse;
+import com.smartparking.payment.application.dto.RevenueSeriesPointDto;
 import com.smartparking.payment.application.dto.SettlementSplit;
 import com.smartparking.payment.application.service.MerchantWalletService;
 import com.smartparking.payment.domain.model.LedgerAccountCode;
@@ -27,7 +29,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -459,12 +465,24 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
     @Override
     @Transactional(readOnly = true)
     public MerchantRevenueResponse getRevenueSummary(Long merchantId) {
+        return getRevenueSummary(merchantId, null, null, null, "DAY");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MerchantRevenueResponse getRevenueSummary(Long merchantId, Long parkingLotId, String startDate, String endDate, String granularity) {
         BigDecimal totalGross = paymentRepository.sumTotalRevenueByMerchantId(merchantId);
         BigDecimal totalFee = ledgerRepository.sumPlatformFeeByMerchantId(merchantId);
         BigDecimal totalNet = ledgerRepository.sumNetAmountByMerchantId(merchantId);
         BigDecimal currentBalance = getWalletBalance(merchantId);
         BigDecimal safeGross = totalGross != null ? totalGross : BigDecimal.ZERO;
         BigDecimal safeNet = totalNet != null ? totalNet : BigDecimal.ZERO;
+
+        List<RevenueSeriesPointDto> series = calculateRevenueSeries(merchantId, parkingLotId, startDate, endDate);
+
+        long completedBookings = series.stream()
+                .mapToLong(RevenueSeriesPointDto::getBookingCount)
+                .sum();
 
         return MerchantRevenueResponse.builder()
                 .merchantId(merchantId)
@@ -474,11 +492,97 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                 .currentWalletBalance(currentBalance)
                 .totalRevenue(safeGross)
                 .walletBalance(currentBalance)
-                .completedBookings(0L)
+                .completedBookings(completedBookings)
                 .platformFeePercent(platformFeePercent)
                 .minWithdrawalAmount(BigDecimal.valueOf(50000))
-                .series(java.util.Collections.emptyList())
+                .series(series)
                 .build();
+    }
+
+    private List<RevenueSeriesPointDto> calculateRevenueSeries(Long merchantId, Long parkingLotId, String startDate, String endDate) {
+        LocalDate today = LocalDate.now();
+        LocalDate startLocalDate = today.minusDays(6);
+        LocalDate endLocalDate = today;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        if (startDate != null && !startDate.isBlank()) {
+            try {
+                startLocalDate = LocalDate.parse(startDate.length() > 10 ? startDate.substring(0, 10) : startDate, formatter);
+            } catch (Exception e) {
+                log.warn("Invalid startDate format: {}, fallback to default 7 days ago", startDate);
+            }
+        }
+        if (endDate != null && !endDate.isBlank()) {
+            try {
+                endLocalDate = LocalDate.parse(endDate.length() > 10 ? endDate.substring(0, 10) : endDate, formatter);
+            } catch (Exception e) {
+                log.warn("Invalid endDate format: {}, fallback to today", endDate);
+            }
+        }
+
+        if (startLocalDate.isAfter(endLocalDate)) {
+            LocalDate temp = startLocalDate;
+            startLocalDate = endLocalDate;
+            endLocalDate = temp;
+        }
+
+        LocalDateTime rangeStart = startLocalDate.atStartOfDay();
+        LocalDateTime rangeEnd = endLocalDate.atTime(23, 59, 59, 999999999);
+
+        Map<String, RevenueSeriesPointDto> pointsMap = new LinkedHashMap<>();
+        LocalDate curr = startLocalDate;
+        while (!curr.isAfter(endLocalDate)) {
+            String periodKey = curr.format(formatter);
+            pointsMap.put(periodKey, RevenueSeriesPointDto.builder()
+                    .period(periodKey)
+                    .revenue(BigDecimal.ZERO)
+                    .bookingCount(0L)
+                    .build());
+            curr = curr.plusDays(1);
+        }
+
+        List<Payment> payments;
+        if (parkingLotId != null) {
+            payments = paymentRepository.findByMerchantIdAndParkingLotIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
+                    merchantId, parkingLotId, PaymentStatusEnum.SUCCESS, rangeStart, rangeEnd);
+        } else {
+            payments = paymentRepository.findByMerchantIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
+                    merchantId, PaymentStatusEnum.SUCCESS, rangeStart, rangeEnd);
+        }
+
+        if (payments != null && !payments.isEmpty()) {
+            Map<String, List<Payment>> paymentsByDay = payments.stream()
+                    .filter(p -> p.getCreatedAt() != null)
+                    .collect(Collectors.groupingBy(p -> p.getCreatedAt().toLocalDate().format(formatter)));
+
+            BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
+            BigDecimal feeMultiplier = BigDecimal.valueOf(100).subtract(feePercent);
+
+            paymentsByDay.forEach((dayKey, dayPayments) -> {
+                BigDecimal dayNetTotal = BigDecimal.ZERO;
+                Set<Long> uniqueBookingIds = new HashSet<>();
+
+                for (Payment p : dayPayments) {
+                    BigDecimal paymentGross = p.getAmount() != null ? p.getAmount() : BigDecimal.ZERO;
+                    BigDecimal net = paymentGross.multiply(feeMultiplier)
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                    dayNetTotal = dayNetTotal.add(net);
+                    if (p.getBookingId() != null) {
+                        uniqueBookingIds.add(p.getBookingId());
+                    }
+                }
+
+                long bookingCount = uniqueBookingIds.isEmpty() ? dayPayments.size() : uniqueBookingIds.size();
+                pointsMap.put(dayKey, RevenueSeriesPointDto.builder()
+                        .period(dayKey)
+                        .revenue(dayNetTotal)
+                        .bookingCount(bookingCount)
+                        .build());
+            });
+        }
+
+        return new ArrayList<>(pointsMap.values());
     }
 
     private String buildSettlementJournalKey(Long merchantId, Long bookingId, Long paymentId) {
