@@ -27,7 +27,11 @@ public class GeminiApiClient {
     @Value("${ai.gemini.max-tokens:2048}")
     private Integer maxTokens;
 
+    @Value("${ai.gemini.vision-read-timeout-ms:25000}")
+    private Integer visionReadTimeoutMs;
+
     private final RestTemplate restTemplate;
+    private final RestTemplate visionRestTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GeminiApiClient() {
@@ -35,6 +39,11 @@ public class GeminiApiClient {
         factory.setConnectTimeout(3000); // 3 giây kết nối
         factory.setReadTimeout(5000);    // 5 giây đọc phản hồi tối đa
         this.restTemplate = new RestTemplate(factory);
+
+        SimpleClientHttpRequestFactory visionFactory = new SimpleClientHttpRequestFactory();
+        visionFactory.setConnectTimeout(5000);
+        visionFactory.setReadTimeout(25000); // 25 giây tối đa cho Gemini Vision
+        this.visionRestTemplate = new RestTemplate(visionFactory);
     }
 
     public boolean isConfigured() {
@@ -73,6 +82,33 @@ public class GeminiApiClient {
         }
 
         log.warn("Gemini API unavailable. Seamlessly activating Smart Internal Fallback Engine.");
+        return Optional.empty();
+    }
+
+    public Optional<String> generateMultimodalContent(
+            String systemInstruction,
+            String userPrompt,
+            String mimeType,
+            byte[] imageBytes) {
+        if (!isConfigured()) {
+            log.warn("Gemini API key not configured for multimodal layout extraction");
+            return Optional.empty();
+        }
+        if (imageBytes == null || imageBytes.length == 0) {
+            return Optional.empty();
+        }
+
+        String effectiveModel = getEffectiveModel();
+        Optional<String> result = callGeminiVisionApi(effectiveModel, systemInstruction, userPrompt, mimeType, imageBytes);
+        if (result.isPresent()) {
+            return result;
+        }
+
+        if (!"gemini-2.0-flash".equalsIgnoreCase(effectiveModel)) {
+            log.info("Vision model '{}' is unavailable, attempting fallback to 'gemini-2.0-flash'", effectiveModel);
+            return callGeminiVisionApi("gemini-2.0-flash", systemInstruction, userPrompt, mimeType, imageBytes);
+        }
+
         return Optional.empty();
     }
 
@@ -124,6 +160,71 @@ public class GeminiApiClient {
             }
         } catch (Exception e) {
             log.warn("Gemini API call failed for model '{}': {}", targetModel, e.getMessage());
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<String> callGeminiVisionApi(
+            String targetModel,
+            String systemInstruction,
+            String userPrompt,
+            String mimeType,
+            byte[] imageBytes) {
+        try {
+            String url = String.format(
+                    "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
+                    targetModel, apiKey
+            );
+
+            Map<String, Object> requestBody = new HashMap<>();
+            if (systemInstruction != null && !systemInstruction.isBlank()) {
+                requestBody.put("system_instruction", Map.of(
+                        "parts", List.of(Map.of("text", systemInstruction))
+                ));
+            }
+
+            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+            Map<String, Object> inlineDataPart = Map.of(
+                    "inline_data", Map.of(
+                            "mime_type", mimeType,
+                            "data", base64Image
+                    )
+            );
+            Map<String, Object> textPart = Map.of("text", userPrompt != null ? userPrompt : "Extract parking layout JSON.");
+
+            requestBody.put("contents", List.of(
+                    Map.of(
+                            "role", "user",
+                            "parts", List.of(textPart, inlineDataPart)
+                    )
+            ));
+
+            requestBody.put("generationConfig", Map.of(
+                    "temperature", 0.1,
+                    "maxOutputTokens", 4096,
+                    "responseMimeType", "application/json"
+            ));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<String> response = visionRestTemplate.postForEntity(url, entity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode candidates = root.path("candidates");
+                if (candidates.isArray() && !candidates.isEmpty()) {
+                    JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
+                    if (!textNode.isMissingNode()) {
+                        return Optional.of(textNode.asText());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Gemini Vision API call failed for model '{}' (mime={}, bytes={})",
+                    targetModel, mimeType, imageBytes.length);
         }
 
         return Optional.empty();

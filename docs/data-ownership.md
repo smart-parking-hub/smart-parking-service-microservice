@@ -4,11 +4,12 @@ Nguyên tắc cốt lõi: **Tuyệt đối không truy cập chéo database**. M
 
 | Microservice | Tên Database | Danh sách Bảng sở hữu | Dữ liệu chia sẻ ra ngoài (qua API/Event) |
 | :--- | :--- | :--- | :--- |
-| **identity-service** | `smart_parking_identity_db` | `users`, `driver_profiles`, `merchant_profiles`, `refresh_tokens` | `userId`, `role`, `fullName`, `phoneNumber`, `email` |
-| **parking-lot-service** | `smart_parking_lot_db` | `parking_lots`, `parking_lot_images`, `slots`, `pricing_rules` | `parkingLotId`, `slotId`, `slotCode`, `status`, `hourlyRate` |
-| **booking-service** | `smart_parking_booking_db` | `bookings`, `queue_entries`, `outbox_events` | `bookingId`, `status`, `startTime`, `endTime`, `vehiclePlate` |
-| **payment-service** | `smart_parking_payment_db` | `payments`, `payment_idempotency_keys`, `wallets`, `wallet_ledger_entries`, `outbox_events` | `paymentId`, `transactionRef`, `status`, `amount` |
+| **identity-service** | `smart_parking_identity_db` | `users`, `driver_profiles`, `merchant_profiles`, `refresh_tokens`, `email_otp_challenges` | `userId`, `role`, `fullName`, `phoneNumber`, `email` |
+| **parking-lot-service** | `smart_parking_lot_db` | `parking_lots`, `parking_lot_images`, `slots`, `slot_holds`, `pricing_rules` | `parkingLotId`, `slotId`, `slotCode`, `status`, `hourlyRate` |
+| **booking-service** | `smart_parking_booking_db` | `bookings`, `queue_entries`, `outbox_events`, `processed_events` | `bookingId`, `status`, `startTime`, `endTime`, `vehiclePlate`, `refundAmount`, `refundPercentage`, `refundStatus`, `refundPolicy` |
+| **payment-service** | `smart_parking_payment_db` | `payments`, `wallets`, `wallet_ledger_entries`, `ledger_journals`, `ledger_postings`, `settlement_batches`, `refund_requests`, `withdrawal_requests`, `disputes`, `outbox_events`, `processed_events` | `paymentId`, `transactionRef`, `status`, `amount`, `refundRequestId`, `refundStatus` |
 | **notification-service** | `smart_parking_notification_db` | `notifications`, `processed_events` | `notificationId`, `status` |
+| **ai-service** | *(Stateless Vision & Copilot)* | Không lưu bảng DB riêng; xác thực ảnh PNG/JPEG và schema JSON trực tiếp trên bộ nhớ | `grid`, `cells` (`0-based`), `overallConfidence`, `needsHumanReview` |
 
 ## Quy tắc xử lý dữ liệu liên service
 
@@ -58,7 +59,7 @@ erDiagram
     }
 ```
 
-`BookingSchemaMigrationTest` exercises the V1/V3/V4 DDL upgrade and preservation
+`BookingSchemaMigrationTest` exercises the V1/V3/V4/V7 DDL upgrade and preservation
 of an existing booking using H2 MySQL mode. It excludes demo seeds and does not
 replace validation of the full Flyway chain on MySQL before deployment.
 
@@ -72,3 +73,16 @@ replace validation of the full Flyway chain on MySQL before deployment.
 - booking-service owns request_key, 20% deposit/estimated fee, tariff snapshots (surge/overtime multipliers and surge window) and precise gate timestamps. V5/V6 are additive upgrades; V1–V4 are preserved.
 - parking-lot-service owns slot_holds, keyed by booking ID for idempotent hold/release. V4 creates the journal, V5 adds creation time for orphan reconciliation. Missing legacy journals require reconciliation before capacity changes.
 - payment-service owns checkout URL, booking expiry snapshot, REQUIRES_REVIEW and reconciliation reason (V4). Booking/payment status coordination uses authenticated internal APIs and typed Kafka events, without querying another service's database.
+
+### Sprint 3 Finance Ledger, Cancellation Refund Saga & Vision Layout Extraction (2026-11-10)
+
+- **payment-service (Flyway V5)**:
+  - Owns `ledger_journals`, `ledger_postings`, `settlement_batches`, `refund_requests`, and `processed_events` on MySQL 8.4 while preserving `V1–V4` and historical `wallet_ledger_entries` (8% fee rows).
+  - Enforces a 6-account double-entry chart of accounts: `GATEWAY_CLEARING`, `CUSTOMER_DEPOSIT_ESCROW`, `MERCHANT_PAYABLE`, `MERCHANT_WITHDRAWAL_HOLD`, `PLATFORM_FEE_REVENUE`, `REFUND_PAYABLE`. Every journal balances (`total_debit == total_credit`), and `wallets.balance` is strictly the projection of `MERCHANT_PAYABLE` (`SUM(credit - debit)`).
+  - `settlement_batches` deduplicates daily settlement per `(business_date, merchant_id)` in `Asia/Ho_Chi_Minh` using the 10% platform fee from cutover.
+  - `refund_requests` tracks manual refund operations (`NONE`, `REQUESTED`, `PROCESSING`, `COMPLETED`, `FAILED`, `REQUIRES_RECONCILIATION`) with merchant transfer evidence (`transaction_reference`, `evidence_url`) and platform Admin verification (`verified_by`, `verified_at`, `verification_note`).
+- **booking-service (Flyway V7)**:
+  - Owns `bookings.cancelled_at`, `cancellation_reason`, `refund_amount`, `refund_percentage`, `refund_policy`, `refund_status`, `refund_reference`, and `processed_events`.
+  - Applies cancellation policy in `Asia/Ho_Chi_Minh` (`<= T-2h` -> `100%`, `(T-2h, T)` -> `50%` `HALF_UP` VND, `>= T` -> `0%`, `PENDING_PAYMENT` -> `0%`, `No-show` -> `0%`) and persists booking cancellation + outbox atomically.
+- **ai-service (`POST /api/v1/ai/extract-layout`)**:
+  - Validates multipart PNG/JPEG magic bytes (`<= 10MB`, `<= 4096x4096px`), calls Gemini Vision with a 25s read timeout, and returns schema-validated 0-based `(row, col)` cells (`PARKING_SLOT`, `CHARGING_PILLAR`, `EMERGENCY_EXIT`, `ENTRANCE`, `EXIT`, `DRIVEWAY`, `OBSTACLE`), nullable `dimensionsMeters`, and `needsHumanReview = true` whenever `overallConfidence < 0.75` or any cell confidence `< 0.75`.

@@ -36,4 +36,23 @@ public class PaymentEvent {
         private Long userId;
         private String reason;
     }
+
+    @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    public static class RefundStatusChangedEvent extends DomainEvent {
+        private Long refundRequestId;
+        private Long paymentId;
+        private Long bookingId;
+        private Long userId;
+        private Long merchantId;
+        private BigDecimal refundAmount;
+        private Integer refundPercentage;
+        private String refundStatus;
+        private String policyCode;
+        private String transactionReference;
+        private String reason;
+    }
 }

@@ -94,7 +94,15 @@ public class BookingExpirationScheduler {
             try {
                 Booking booking = bookingRepository.findByIdForUpdate(candidate.getId()).orElse(null);
                 if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_CHECKIN || !booking.getExpiresAt().isBefore(now)) continue;
+                var noShowDecision = com.smartparking.booking.domain.BookingRefundPolicy.evaluateNoShow(now);
+                String noShowReason = "Tài xế không đến bãi đỗ (No-show)";
                 booking.setStatus(BookingStatusEnum.CANCELLED);
+                booking.setCancelledAt(noShowDecision.cancelledAt());
+                booking.setCancellationReason(noShowReason);
+                booking.setRefundAmount(noShowDecision.refundAmount());
+                booking.setRefundPercentage(noShowDecision.refundPercentage());
+                booking.setRefundPolicy(noShowDecision.refundPolicy());
+                booking.setRefundStatus(noShowDecision.refundStatus());
                 bookingRepository.save(booking);
 
                 // Publish cancelled event (with reason no-show)
@@ -115,7 +123,7 @@ public class BookingExpirationScheduler {
                             booking.getBookingCode(), ex.getMessage());
                 }
 
-                if (booking.getStatus() == BookingStatusEnum.CANCELLED) outboxPublisherService.publishBookingCancelled(booking, "Tài xế không đến bãi đỗ (No-show)");
+                if (booking.getStatus() == BookingStatusEnum.CANCELLED) outboxPublisherService.publishBookingCancelled(booking, noShowReason);
                 log.info("No-show booking {} cancelled and slot released for lot {}",
                         booking.getBookingCode(), booking.getParkingLotId());
 

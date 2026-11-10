@@ -88,4 +88,28 @@ public class Booking extends BaseEntity {
 
     @Column(name = "check_out_time")
     private LocalDateTime checkOutTime;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
+    @Column(name = "refund_amount", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal refundAmount = BigDecimal.ZERO;
+
+    @Column(name = "refund_percentage")
+    @Builder.Default
+    private Integer refundPercentage = 0;
+
+    @Column(name = "refund_policy", length = 60)
+    private String refundPolicy;
+
+    @Column(name = "refund_status", nullable = false, length = 40)
+    @Builder.Default
+    private String refundStatus = "NONE";
+
+    @Column(name = "refund_reference", length = 120)
+    private String refundReference;
 }

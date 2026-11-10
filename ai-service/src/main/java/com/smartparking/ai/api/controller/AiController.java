@@ -1,29 +1,36 @@
 package com.smartparking.ai.api.controller;
 
 import com.smartparking.ai.application.service.AiContentGenerationService;
+import com.smartparking.ai.application.service.AiLayoutExtractionService;
 import com.smartparking.ai.application.service.AiParkingAssistantService;
 import com.smartparking.ai.dto.AiChatDto;
+import com.smartparking.ai.dto.LayoutExtractionDto;
 import com.smartparking.ai.dto.MockDataDto;
 import com.smartparking.ai.dto.ParkingDescriptionDto;
 import com.smartparking.common.dto.ApiResponse;
+import com.smartparking.common.enums.VehicleTypeEnum;
 import com.smartparking.common.security.SecurityConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
-@Tag(name = "AI Integration", description = "Các API phân hệ AI: Smart Chatbot, Sinh mô tả bãi xe & Mock Data")
+@Tag(name = "AI Integration", description = "Các API phân hệ AI: Smart Chatbot, Sinh mô tả bãi xe, Trích xuất mặt bằng & Mock Data")
 public class AiController {
 
     private final AiContentGenerationService contentGenerationService;
     private final AiParkingAssistantService assistantService;
+    private final AiLayoutExtractionService layoutExtractionService;
 
     @Operation(summary = "Tự động sinh mô tả bãi xe, nội quy an toàn PCCC và hướng dẫn đường đi cho Merchant")
     @PostMapping("/generate-description")
@@ -48,5 +55,25 @@ public class AiController {
             @Valid @RequestBody AiChatDto.Request request) {
         AiChatDto.Response response = assistantService.processDriverChat(request, userId);
         return ResponseEntity.ok(ApiResponse.success(response, "Phản hồi từ AI Copilot"));
+    }
+
+    @Operation(summary = "Trích xuất sơ đồ mặt bằng bãi xe 2D (0-based grid) từ ảnh PNG/JPEG bằng Gemini Vision")
+    @PostMapping(value = "/extract-layout", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<LayoutExtractionDto.Response>> extractParkingLayout(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "lotName", required = false) String lotName,
+            @RequestParam(value = "expectedRows", required = false) Integer expectedRows,
+            @RequestParam(value = "expectedCols", required = false) Integer expectedCols,
+            @RequestParam(value = "defaultVehicleType", required = false) VehicleTypeEnum defaultVehicleType,
+            @RequestParam(value = "scaleHintMetersPerPixel", required = false) BigDecimal scaleHintMetersPerPixel) {
+        LayoutExtractionDto.HintMetadata hints = LayoutExtractionDto.HintMetadata.builder()
+                .lotName(lotName)
+                .expectedRows(expectedRows)
+                .expectedCols(expectedCols)
+                .defaultVehicleType(defaultVehicleType)
+                .scaleHintMetersPerPixel(scaleHintMetersPerPixel)
+                .build();
+        LayoutExtractionDto.Response response = layoutExtractionService.extractLayout(file, hints);
+        return ResponseEntity.ok(ApiResponse.success(response, "Trích xuất sơ đồ mặt bằng thành công"));
     }
 }

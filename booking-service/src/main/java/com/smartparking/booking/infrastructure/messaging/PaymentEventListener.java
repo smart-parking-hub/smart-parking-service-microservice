@@ -23,6 +23,8 @@ public class PaymentEventListener {
     private final ParkingLotClient parkingLotClient;
     private final ObjectMapper objectMapper;
     private final com.smartparking.booking.application.service.QueueService queueService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.smartparking.booking.domain.repository.ProcessedEventRepository processedEventRepository;
 
     @KafkaListener(topics = "payment.events", groupId = "booking-service-group")
     @Transactional
@@ -31,6 +33,17 @@ public class PaymentEventListener {
             log.info("Received payment event: {}", payload);
             if (payload instanceof org.apache.kafka.clients.consumer.ConsumerRecord<?, ?> record) {
                 payload = record.value();
+            }
+
+            if (payload instanceof PaymentEvent.RefundStatusChangedEvent refundEvent) {
+                handleRefundStatusChanged(refundEvent);
+                return;
+            }
+            if (payload instanceof String str && str.contains("PAYMENT_REFUND_UPDATED")) {
+                PaymentEvent.RefundStatusChangedEvent refundEvent =
+                        objectMapper.readValue(str, PaymentEvent.RefundStatusChangedEvent.class);
+                handleRefundStatusChanged(refundEvent);
+                return;
             }
 
             final PaymentEvent.PaymentCompletedEvent event;
@@ -45,6 +58,11 @@ public class PaymentEventListener {
             }
 
             if (event == null || event.getBookingId() == null) {
+                return;
+            }
+
+            if (isDuplicateAndRecord(event.getEventId(), "PAYMENT_COMPLETED", String.valueOf(event.getBookingId()))) {
+                log.info("Skipping duplicate PAYMENT_COMPLETED event {}", event.getEventId());
                 return;
             }
 
@@ -89,5 +107,39 @@ public class PaymentEventListener {
         } catch (Exception e) {
             throw new IllegalStateException("Payment event must be retried", e);
         }
+    }
+
+    private void handleRefundStatusChanged(PaymentEvent.RefundStatusChangedEvent event) {
+        if (event == null || event.getBookingId() == null || event.getRefundStatus() == null) {
+            return;
+        }
+        if (isDuplicateAndRecord(event.getEventId(), "PAYMENT_REFUND_UPDATED", String.valueOf(event.getBookingId()))) {
+            log.info("Skipping duplicate PAYMENT_REFUND_UPDATED event {}", event.getEventId());
+            return;
+        }
+        bookingRepository.findByIdForUpdate(event.getBookingId()).ifPresent(booking -> {
+            booking.setRefundStatus(event.getRefundStatus());
+            if (event.getTransactionReference() != null && !event.getTransactionReference().isBlank()) {
+                booking.setRefundReference(event.getTransactionReference());
+            }
+            bookingRepository.save(booking);
+            log.info("Updated booking {} refund status to {}", booking.getBookingCode(), event.getRefundStatus());
+        });
+    }
+
+    private boolean isDuplicateAndRecord(String eventId, String eventType, String aggregateId) {
+        if (processedEventRepository == null || eventId == null || eventId.isBlank()) {
+            return false;
+        }
+        if (processedEventRepository.existsById(eventId)) {
+            return true;
+        }
+        processedEventRepository.save(com.smartparking.booking.domain.model.ProcessedEvent.builder()
+                .eventId(eventId)
+                .eventType(eventType)
+                .aggregateId(aggregateId)
+                .processedAt(LocalDateTime.now())
+                .build());
+        return false;
     }
 }

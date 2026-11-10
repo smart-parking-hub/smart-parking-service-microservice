@@ -96,14 +96,13 @@ public class DisputeServiceImpl implements DisputeService {
                         log.info("Payment {} marked REFUNDED due to dispute resolution #{}", payment.getId(), id);
 
                         if (dispute.getMerchantId() != null) {
-                            try {
-                                merchantWalletService.holdWithdrawal(
-                                        dispute.getMerchantId(),
-                                        payment.getAmount(),
-                                        "Thu hồi doanh thu do giải quyết khiếu nại #" + id + ": " + resolution);
-                            } catch (Exception ex) {
-                                log.warn("Could not debit merchant wallet on dispute refund: {}", ex.getMessage());
-                            }
+                            merchantWalletService.recordRefundLiability(
+                                    dispute.getMerchantId(),
+                                    dispute.getBookingId(),
+                                    payment.getId(),
+                                    payment.getAmount(),
+                                    "DISPUTE_REFUND:" + id + ":PAYMENT:" + payment.getId(),
+                                    "Thu hồi doanh thu do giải quyết khiếu nại #" + id + ": " + resolution);
                         }
                     });
         }

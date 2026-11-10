@@ -87,6 +87,11 @@ public class WithdrawalServiceImpl implements WithdrawalService {
 
         if (approved) {
             withdrawal.setStatus(WithdrawalStatusEnum.APPROVED);
+            merchantWalletService.settleApprovedWithdrawal(
+                    withdrawal.getMerchantId(),
+                    withdrawalId,
+                    withdrawal.getAmount(),
+                    "Phê duyệt rút tiền #" + withdrawalId + ": " + reason);
             log.info("Admin {} approved withdrawal {}", adminUserId, withdrawalId);
         } else {
             withdrawal.setStatus(WithdrawalStatusEnum.REJECTED);

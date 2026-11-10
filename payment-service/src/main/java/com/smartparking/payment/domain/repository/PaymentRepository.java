@@ -45,4 +45,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("merchantId") Long merchantId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p FROM Payment p WHERE p.status = 'SUCCESS' " +
+           "AND p.merchantId IS NOT NULL " +
+           "AND p.createdAt >= :startDate AND p.createdAt < :endDate " +
+           "ORDER BY p.id ASC")
+    List<Payment> findSuccessfulPaymentsInWindow(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 }
