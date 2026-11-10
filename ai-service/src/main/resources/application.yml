@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: ai-service
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
 
 services:
   parking-lot-service:
@@ -15,6 +19,7 @@ ai:
     model: ${GEMINI_MODEL:gemini-1.5-flash}
     temperature: 0.3
     max-tokens: 2048
+    vision-read-timeout-ms: 25000
 
 management:
   endpoints:

@@ -55,6 +55,14 @@ public class BookingEvent {
         private Long parkingLotId;
         private Long slotId;
         private String reason;
+        private BigDecimal advanceDeposit;
         private BigDecimal refundAmount;
+        private Integer refundPercentage;
+        private Boolean refundRequested;
+        private String refundStatus;
+        private String refundPolicy;
+        private String currency;
+        private Instant cancelledAt;
+        private Instant expectedCheckInTime;
     }
 }

@@ -5,12 +5,16 @@ import com.smartparking.common.dto.PageResponse;
 import com.smartparking.payment.application.dto.AdminDashboardResponse;
 import com.smartparking.payment.application.dto.AdminDecisionRequest;
 import com.smartparking.payment.application.dto.AdminTransactionResponse;
+import com.smartparking.payment.application.dto.RefundRequestDto;
+import com.smartparking.payment.application.dto.VerifyRefundEvidenceRequest;
 import com.smartparking.payment.application.dto.WithdrawalResponse;
 import com.smartparking.payment.application.service.PaymentService;
+import com.smartparking.payment.application.service.RefundService;
 import com.smartparking.payment.application.service.WithdrawalService;
 import com.smartparking.payment.infrastructure.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +29,9 @@ public class AdminFinanceController {
 
     private final PaymentService paymentService;
     private final WithdrawalService withdrawalService;
+
+    @Autowired(required = false)
+    private RefundService refundService;
 
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<AdminDashboardResponse>> getDashboard() {
@@ -72,5 +79,21 @@ public class AdminFinanceController {
         String reason = request != null ? request.getReason() : "Từ chối rút tiền";
         WithdrawalResponse res = withdrawalService.processWithdrawal(user.getId(), id, false, reason);
         return ResponseEntity.ok(ApiResponse.success(res, "Từ chối yêu cầu rút tiền thành công"));
+    }
+
+    @GetMapping("/refunds")
+    public ResponseEntity<ApiResponse<PageResponse<RefundRequestDto>>> getRefunds(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                refundService.getAllRefundsForAdmin(pageable),
+                "Lấy danh sách yêu cầu hoàn tiền thành công"));
+    }
+
+    @PutMapping("/refunds/{id}/verify")
+    public ResponseEntity<ApiResponse<RefundRequestDto>> verifyRefund(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) VerifyRefundEvidenceRequest request) {
+        RefundRequestDto res = refundService.verifyTransferEvidence(user.getId(), id, request);
+        return ResponseEntity.ok(ApiResponse.success(res, "Xử lý xác minh bằng chứng hoàn tiền thành công"));
     }
 }

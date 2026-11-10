@@ -288,12 +288,9 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
 
         if (payment.getMerchantId() != null) {
-            merchantWalletService.creditSettlement(
-                    payment.getMerchantId(),
-                    payment.getBookingId(),
+            merchantWalletService.recordPaymentEscrow(
                     payment,
-                    payment.getAmount(),
-                    "Thanh toán booking #" + payment.getBookingId());
+                    "Thu hộ tạm giữ booking #" + payment.getBookingId());
         }
 
         outboxPublisherService.publishPaymentCompleted(payment);

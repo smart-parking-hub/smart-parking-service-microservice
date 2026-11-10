@@ -17,6 +17,8 @@ public class CancelBookingResponse {
     private String status;
     private boolean refundRequested;
     private BigDecimal refundAmount;
+    private Integer refundPercentage;
+    private String refundPolicy;
     private String refundStatus;
     private String message;
 }

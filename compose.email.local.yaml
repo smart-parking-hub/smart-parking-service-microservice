@@ -1,0 +1,43 @@
+# Local-only OTP lab. Same identity database as compose.p0.local.yaml; no database reset.
+# docker compose --project-name docker --env-file .env.p0.local -f compose.email.local.yaml up -d --build
+services:
+  identity-service:
+    build: ./identity-service
+    container_name: smart-parking-identity
+    ports: ["8081:8081"]
+    environment:
+      EUREKA_CLIENT_ENABLED: "false"
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_p0_20261106?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      APP_INTERNAL_SERVICE_TOKEN: ${P0_INTERNAL_SERVICE_TOKEN:?Set local internal service token}
+      NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
+    networks: [smart-parking-net]
+  notification-service:
+    build: ./notification-service
+    container_name: smart-parking-notification
+    environment:
+      EUREKA_CLIENT_ENABLED: "false"
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      APP_INTERNAL_SERVICE_TOKEN: ${P0_INTERNAL_SERVICE_TOKEN:?Set local internal service token}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@smartparking.test}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-false}
+    networks: [smart-parking-net]
+  mailpit:
+    image: axllent/mailpit:v1.30.4
+    container_name: smart-parking-mailpit
+    ports: ["127.0.0.1:8025:8025"]
+    # SMTP only within Docker network; browser inbox is local to this machine.
+    networks: [smart-parking-net]
+networks:
+  smart-parking-net:
+    external: true

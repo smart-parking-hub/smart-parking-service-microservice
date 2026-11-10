@@ -135,6 +135,8 @@ class PaymentServiceImplTest {
         assertEquals(bookingId, dto.getBookingId());
         assertEquals(PaymentGatewayEnum.DEMO, dto.getGateway());
         assertEquals(PaymentStatusEnum.SUCCESS, dto.getStatus());
+        verify(merchantWalletService, times(1)).recordPaymentEscrow(eq(saved), anyString());
+        verify(merchantWalletService, never()).creditSettlement(any(), any(), any(), any(), any());
         verify(outboxPublisherService, times(1)).publishPaymentCompleted(saved);
     }
 

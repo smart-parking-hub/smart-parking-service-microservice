@@ -42,6 +42,13 @@ public class BookingDto {
     private LocalDateTime expiresAt;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
+    private LocalDateTime cancelledAt;
+    private String cancellationReason;
+    private BigDecimal refundAmount;
+    private Integer refundPercentage;
+    private String refundPolicy;
+    private String refundStatus;
+    private String refundReference;
     private LocalDateTime createdAt;
 
     public static BookingDto fromEntity(Booking entity) {
@@ -70,6 +77,13 @@ public class BookingDto {
                 .expiresAt(entity.getExpiresAt())
                 .checkInTime(entity.getCheckInTime())
                 .checkOutTime(entity.getCheckOutTime())
+                .cancelledAt(entity.getCancelledAt())
+                .cancellationReason(entity.getCancellationReason())
+                .refundAmount(entity.getRefundAmount())
+                .refundPercentage(entity.getRefundPercentage())
+                .refundPolicy(entity.getRefundPolicy())
+                .refundStatus(entity.getRefundStatus())
+                .refundReference(entity.getRefundReference())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

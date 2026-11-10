@@ -192,9 +192,24 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Chỉ có thể hủy booking chưa check-in");
         }
 
-        boolean refundRequested = booking.getStatus() == BookingStatusEnum.PENDING_CHECKIN;
+        com.smartparking.booking.domain.BookingRefundPolicy.RefundDecision refundDecision =
+                com.smartparking.booking.domain.BookingRefundPolicy.evaluateDriverCancel(
+                        booking.getStatus(),
+                        booking.getAdvanceDeposit(),
+                        booking.getExpectedCheckInTime(),
+                        LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE)
+                );
+
+        String reason = request != null ? request.getReason() : null;
         booking.setStatus(BookingStatusEnum.CANCELLED);
+        booking.setCancelledAt(refundDecision.cancelledAt());
+        booking.setCancellationReason(reason);
+        booking.setRefundAmount(refundDecision.refundAmount());
+        booking.setRefundPercentage(refundDecision.refundPercentage());
+        booking.setRefundPolicy(refundDecision.refundPolicy());
+        booking.setRefundStatus(refundDecision.refundStatus());
         bookingRepository.save(booking);
+        outboxPublisherService.publishBookingCancelled(booking, reason);
 
         // Notify parking-lot-service to release slot
         try {
@@ -208,15 +223,19 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa hủy được chỗ đỗ. Vui lòng thử lại.");
         }
 
-        outboxPublisherService.publishBookingCancelled(booking, request.getReason());
-        log.info("Booking {} cancelled by driver {}", booking.getBookingCode(), driverUserId);
+        log.info("Booking {} cancelled by driver {}: refundRequested={} refundAmount={} policy={}",
+                booking.getBookingCode(), driverUserId, refundDecision.refundRequested(),
+                refundDecision.refundAmount(), refundDecision.refundPolicy());
 
         return CancelBookingResponse.builder()
                 .bookingId(booking.getId())
                 .bookingCode(booking.getBookingCode())
                 .status("CANCELLED")
-                .refundRequested(refundRequested)
-                .refundAmount(refundRequested ? booking.getAdvanceDeposit() : BigDecimal.ZERO)
+                .refundRequested(refundDecision.refundRequested())
+                .refundAmount(refundDecision.refundAmount())
+                .refundPercentage(refundDecision.refundPercentage())
+                .refundPolicy(refundDecision.refundPolicy())
+                .refundStatus(refundDecision.refundStatus())
                 .message("Hủy đặt chỗ thành công")
                 .build();
     }

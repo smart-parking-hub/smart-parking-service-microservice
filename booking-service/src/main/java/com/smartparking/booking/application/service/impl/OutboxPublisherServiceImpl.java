@@ -88,8 +88,22 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
     @Override
     @Transactional
     public void publishBookingCancelled(Booking booking, String reason) {
+        java.math.BigDecimal refundAmount = booking.getRefundAmount() != null
+                ? booking.getRefundAmount()
+                : java.math.BigDecimal.ZERO;
+        Integer refundPercentage = booking.getRefundPercentage() != null ? booking.getRefundPercentage() : 0;
+        String refundStatus = booking.getRefundStatus() != null ? booking.getRefundStatus() : "NONE";
+        String refundPolicy = booking.getRefundPolicy() != null ? booking.getRefundPolicy() : "NO_REFUND_UNPAID";
+        Instant cancelledInstant = booking.getCancelledAt() != null
+                ? booking.getCancelledAt().atZone(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).toInstant()
+                : Instant.now();
+        Instant checkInInstant = booking.getExpectedCheckInTime() != null
+                ? booking.getExpectedCheckInTime().atZone(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).toInstant()
+                : null;
+        String eventId = UUID.randomUUID().toString();
+
         BookingEvent.BookingCancelledEvent event = BookingEvent.BookingCancelledEvent.builder()
-                .eventId(UUID.randomUUID().toString())
+                .eventId(eventId)
                 .eventType("BOOKING_CANCELLED")
                 .aggregateId(String.valueOf(booking.getId()))
                 .timestamp(Instant.now())
@@ -98,7 +112,15 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .merchantId(booking.getMerchantId())
                 .parkingLotId(booking.getParkingLotId())
                 .reason(reason)
-                .refundAmount(booking.getAdvanceDeposit())
+                .advanceDeposit(booking.getAdvanceDeposit())
+                .refundAmount(refundAmount)
+                .refundPercentage(refundPercentage)
+                .refundRequested(refundAmount.signum() > 0)
+                .refundStatus(refundStatus)
+                .refundPolicy(refundPolicy)
+                .currency("VND")
+                .cancelledAt(cancelledInstant)
+                .expectedCheckInTime(checkInInstant)
                 .build();
 
         saveAndPublish(event, "Booking", String.valueOf(booking.getId()), "BOOKING_CANCELLED");
@@ -107,7 +129,9 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
     private void saveAndPublish(Object event, String aggregateType, String aggregateId, String eventType) {
         try {
             String payload = objectMapper.writeValueAsString(event);
-            String eventId = UUID.randomUUID().toString();
+            String eventId = (event instanceof com.smartparking.common.event.DomainEvent de && de.getEventId() != null)
+                    ? de.getEventId()
+                    : UUID.randomUUID().toString();
 
             OutboxEvent outbox = OutboxEvent.builder()
                     .id(eventId)
@@ -118,7 +142,10 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                     .status("PENDING")
                     .build();
 
-            outboxEventRepository.save(outbox);
+            // Flush inside the caller's transaction so INSERT/constraint failures surface here,
+            // before any non-transactional side effect (e.g. HTTP releaseSlot) is attempted.
+            // Kafka dispatch stays in afterCommit; flush does not make HTTP calls transactional.
+            outboxEventRepository.saveAndFlush(outbox);
 
             Runnable dispatchTask = () -> dispatchToKafka(aggregateId, event, eventId, eventType);
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -134,7 +161,8 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 dispatchTask.run();
             }
         } catch (Exception e) {
-            log.error("Failed to save or publish outbox event {}: {}", eventType, e.getMessage());
+            log.error("Failed to save or serialize outbox event {}: {}", eventType, e.getMessage());
+            throw new IllegalStateException("Failed to persist transactional outbox event: " + eventType, e);
         }
     }
 

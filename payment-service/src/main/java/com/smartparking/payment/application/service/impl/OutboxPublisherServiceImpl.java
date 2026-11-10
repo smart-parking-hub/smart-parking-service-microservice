@@ -5,6 +5,7 @@ import com.smartparking.common.event.PaymentEvent;
 import com.smartparking.payment.application.service.OutboxPublisherService;
 import com.smartparking.payment.domain.model.OutboxEvent;
 import com.smartparking.payment.domain.model.Payment;
+import com.smartparking.payment.domain.model.RefundRequest;
 import com.smartparking.payment.domain.repository.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,10 +67,41 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
         saveAndPublish(event, "Payment", String.valueOf(payment.getId()), "PAYMENT_FAILED");
     }
 
+    @Override
+    @Transactional
+    public void publishRefundStatusChanged(RefundRequest refundRequest) {
+        if (refundRequest == null) {
+            return;
+        }
+        PaymentEvent.RefundStatusChangedEvent event = PaymentEvent.RefundStatusChangedEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("PAYMENT_REFUND_UPDATED")
+                .aggregateId(String.valueOf(refundRequest.getBookingId()))
+                .timestamp(Instant.now())
+                .refundRequestId(refundRequest.getId())
+                .paymentId(refundRequest.getPaymentId())
+                .bookingId(refundRequest.getBookingId())
+                .userId(refundRequest.getDriverId())
+                .merchantId(refundRequest.getMerchantId())
+                .refundAmount(refundRequest.getRefundAmount())
+                .refundPercentage(refundRequest.getRefundPercentage())
+                .refundStatus(refundRequest.getStatus())
+                .policyCode(refundRequest.getPolicyCode())
+                .transactionReference(refundRequest.getTransactionReference())
+                .reason(refundRequest.getVerificationNote() != null
+                        ? refundRequest.getVerificationNote()
+                        : refundRequest.getCancellationReason())
+                .build();
+
+        saveAndPublish(event, "RefundRequest", String.valueOf(refundRequest.getBookingId()), "PAYMENT_REFUND_UPDATED");
+    }
+
     private void saveAndPublish(Object event, String aggregateType, String aggregateId, String eventType) {
         try {
             String payload = objectMapper.writeValueAsString(event);
-            String eventId = UUID.randomUUID().toString();
+            String eventId = (event instanceof com.smartparking.common.event.DomainEvent de && de.getEventId() != null)
+                    ? de.getEventId()
+                    : UUID.randomUUID().toString();
 
             OutboxEvent outbox = OutboxEvent.builder()
                     .id(eventId)
@@ -98,6 +130,7 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
             }
         } catch (Exception e) {
             log.error("Failed to serialize or save outbox event {}: {}", eventType, e.getMessage());
+            throw new IllegalStateException("Failed to persist payment outbox event: " + eventType, e);
         }
     }
 

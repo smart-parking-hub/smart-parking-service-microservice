@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.common.enums.PaymentGatewayEnum;
 import com.smartparking.payment.domain.model.OutboxEvent;
 import com.smartparking.payment.domain.model.Payment;
+import com.smartparking.payment.domain.model.RefundRequest;
 import com.smartparking.payment.domain.repository.OutboxEventRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -81,7 +84,7 @@ class OutboxPublisherServiceImplTest {
     }
 
     @Test
-    @DisplayName("saveAndPublish catches JSON serialization exception gracefully")
+    @DisplayName("saveAndPublish throws IllegalStateException on JSON serialization exception for atomic rollback")
     void testSaveAndPublishSerializationException() throws Exception {
         Payment payment = Payment.builder().paymentType(com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT)
                 .id(102L)
@@ -93,9 +96,35 @@ class OutboxPublisherServiceImplTest {
 
         when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("Serialization failed") {});
 
-        outboxPublisherService.publishPaymentCompleted(payment);
+        assertThrows(IllegalStateException.class, () -> outboxPublisherService.publishPaymentCompleted(payment));
 
         verify(outboxEventRepository, never()).save(any(OutboxEvent.class));
         verify(kafkaTemplate, never()).send(anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("publishRefundStatusChanged saves outbox and sends PAYMENT_REFUND_UPDATED event")
+    void testPublishRefundStatusChanged() throws Exception {
+        RefundRequest refundRequest = RefundRequest.builder()
+                .id(55L)
+                .bookingId(10L)
+                .paymentId(100L)
+                .driverId(20L)
+                .merchantId(30L)
+                .refundAmount(new BigDecimal("25000"))
+                .refundPercentage(50)
+                .status("COMPLETED")
+                .transactionReference("FT26110999")
+                .verifiedAt(LocalDateTime.now())
+                .build();
+
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"refundRequestId\":55}");
+        CompletableFuture<SendResult<String, Object>> future = CompletableFuture.completedFuture(null);
+        when(kafkaTemplate.send(eq("payment.events"), eq("10"), any())).thenReturn(future);
+
+        outboxPublisherService.publishRefundStatusChanged(refundRequest);
+
+        verify(outboxEventRepository, atLeastOnce()).save(any(OutboxEvent.class));
+        verify(kafkaTemplate, times(1)).send(eq("payment.events"), eq("10"), any());
     }
 }

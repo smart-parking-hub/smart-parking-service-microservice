@@ -20,7 +20,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         log.warn("Application exception: [{}] {}", ex.getErrorCode().getCode(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        HttpStatus status = switch (ex.getErrorCode()) {
+            case BAD_REQUEST, PAYMENT_FAILED, WALLET_INSUFFICIENT_BALANCE, BOOKING_STATUS_INVALID, BOOKING_HOLD_EXPIRED -> HttpStatus.BAD_REQUEST;
+            case UNAUTHORIZED, INVALID_CREDENTIALS, TOKEN_EXPIRED -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case NOT_FOUND, USER_NOT_FOUND, PARKING_LOT_NOT_FOUND, BOOKING_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case CONFLICT, SLOT_NOT_AVAILABLE, IDEMPOTENCY_KEY_DUPLICATED -> HttpStatus.CONFLICT;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
+        return ResponseEntity.status(status)
                 .body(ApiResponse.error(ex.getErrorCode().getCode(), ex.getMessage()));
     }
 
