@@ -19,6 +19,14 @@ Identity owns `email_otp_challenges` and `users.email_verified_at`. New registra
 
 Identity calls the notification service's private `POST /api/v1/internal/mail/otp` with `X-Internal-Service-Token` and bounded timeouts/circuit breaker to obtain synchronous SMTP acceptance. Notification uses Spring Mail and does not query identity data or persist plaintext OTP. SMTP acceptance does not guarantee inbox delivery. No OTP is exposed by public API or application logging; SMTP secrets belong only in environment variables. Mailpit is an optional development inbox, never a production sender.
 
+Registration preflight (2026-11-10): public `POST /api/v1/auth/otp/verify` accepts
+`{ email, otpCode }` and returns the standard success envelope with null data.
+It checks only REGISTER challenges and shares the expiry, consumed-code checks,
+row lock and persisted failed-attempt limit with registration. It does not consume
+the code or create an account. The frontend calls it before revealing password
+fields. `/register` still rechecks and consumes the OTP in its account-creation
+transaction; expiry or resend after preflight can invalidate the original code.
+
 ### Parking lot review status (Flyway V3)
 
 `parking-lot-service` owns `parking_lots.status`. V3 appends `CHANGES_REQUESTED`

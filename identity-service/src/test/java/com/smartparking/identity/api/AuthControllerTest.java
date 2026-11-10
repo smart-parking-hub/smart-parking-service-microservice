@@ -78,6 +78,15 @@ class AuthControllerTest {
     }
 
     @Test
+    void verifyRegisterOtpDelegatesWithoutCreatingAccount() {
+        VerifyRegisterOtpRequest req = new VerifyRegisterOtpRequest();
+        req.setEmail("driver@example.test"); req.setOtpCode("123456");
+        assertEquals(HttpStatus.OK, controller.verifyRegisterOtp(req).getStatusCode());
+        verify(authService).verifyRegisterOtp(req);
+        verifyNoMoreInteractions(authService);
+    }
+
+    @Test
     @DisplayName("resetPasswordWithOtp delegates to authService")
     void testResetPasswordWithOtp() {
         ForgotPasswordResetRequest req = new ForgotPasswordResetRequest();
