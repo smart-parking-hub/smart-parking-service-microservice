@@ -7,6 +7,9 @@ import com.smartparking.identity.application.dto.AdminDecisionRequest;
 import com.smartparking.identity.application.dto.AdminUserDetailResponse;
 import com.smartparking.identity.application.dto.AdminUserResponse;
 import com.smartparking.identity.application.dto.AuditLogResponse;
+import com.smartparking.identity.application.dto.UserWarningItemResponse;
+import com.smartparking.identity.application.dto.UserWarningRequest;
+import com.smartparking.identity.application.dto.UserWarningResponse;
 import com.smartparking.identity.application.service.UserService;
 import com.smartparking.identity.infrastructure.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
@@ -110,22 +113,64 @@ class AdminUserControllerTest {
     }
 
     @Test
-    @DisplayName("warnUser delegates to userService")
+    @DisplayName("warnUser delegates to userService and returns UserWarningResponse")
     void testWarnUser() {
-        AdminDecisionRequest req = new AdminDecisionRequest("Canh bao");
-        ResponseEntity<ApiResponse<Void>> res = controller.warnUser(admin, 2L, req);
+        UserWarningRequest req = UserWarningRequest.builder()
+                .reason("Canh bao")
+                .penaltyType("OFFICIAL_WARNING")
+                .notifyUser(true)
+                .build();
+        UserWarningResponse mockRes = UserWarningResponse.builder()
+                .id(1L)
+                .userId(2L)
+                .reason("Canh bao")
+                .warningCount(1)
+                .build();
+        when(userService.warnUser(eq(1L), eq(2L), any(UserWarningRequest.class))).thenReturn(mockRes);
+
+        ResponseEntity<ApiResponse<UserWarningResponse>> res = controller.warnUser(admin, 2L, req);
 
         assertEquals(HttpStatus.OK, res.getStatusCode());
-        verify(userService).warnUser(1L, 2L, "Canh bao");
+        assertNotNull(res.getBody());
+        assertEquals("Canh bao", res.getBody().getData().getReason());
+        verify(userService).warnUser(eq(1L), eq(2L), any(UserWarningRequest.class));
     }
 
     @Test
-    @DisplayName("warnUser handles null request")
+    @DisplayName("warnUser handles null request by defaulting")
     void testWarnUserNullRequest() {
-        ResponseEntity<ApiResponse<Void>> res = controller.warnUser(admin, 2L, null);
+        UserWarningResponse mockRes = UserWarningResponse.builder()
+                .id(1L)
+                .userId(2L)
+                .reason("Cảnh báo từ Quản trị viên")
+                .warningCount(1)
+                .build();
+        when(userService.warnUser(eq(1L), eq(2L), any(UserWarningRequest.class))).thenReturn(mockRes);
+
+        ResponseEntity<ApiResponse<UserWarningResponse>> res = controller.warnUser(admin, 2L, null);
 
         assertEquals(HttpStatus.OK, res.getStatusCode());
-        verify(userService).warnUser(1L, 2L, null);
+        assertNotNull(res.getBody());
+        verify(userService).warnUser(eq(1L), eq(2L), any(UserWarningRequest.class));
+    }
+
+    @Test
+    @DisplayName("getUserWarnings delegates to userService")
+    void testGetUserWarnings() {
+        UserWarningItemResponse item = UserWarningItemResponse.builder()
+                .id(1L)
+                .reason("Vi pham")
+                .adminName("Admin")
+                .build();
+        when(userService.getUserWarnings(2L)).thenReturn(List.of(item));
+
+        ResponseEntity<ApiResponse<List<UserWarningItemResponse>>> res = controller.getUserWarnings(2L);
+
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertNotNull(res.getBody());
+        assertEquals(1, res.getBody().getData().size());
+        assertEquals("Vi pham", res.getBody().getData().get(0).getReason());
+        verify(userService).getUserWarnings(2L);
     }
 
     @Test

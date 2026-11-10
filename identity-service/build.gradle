@@ -14,6 +14,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
+    implementation 'org.springframework.kafka:spring-kafka'
+
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
     runtimeOnly 'com.mysql:mysql-connector-j'

@@ -6,6 +6,9 @@ import com.smartparking.identity.application.dto.AdminDecisionRequest;
 import com.smartparking.identity.application.dto.AdminUserDetailResponse;
 import com.smartparking.identity.application.dto.AdminUserResponse;
 import com.smartparking.identity.application.dto.AuditLogResponse;
+import com.smartparking.identity.application.dto.UserWarningItemResponse;
+import com.smartparking.identity.application.dto.UserWarningRequest;
+import com.smartparking.identity.application.dto.UserWarningResponse;
 import com.smartparking.identity.application.service.UserService;
 import com.smartparking.identity.infrastructure.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -15,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -59,13 +64,24 @@ public class AdminUserController {
     }
 
     @PostMapping("/users/{id}/warnings")
-    public ResponseEntity<ApiResponse<Void>> warnUser(
+    public ResponseEntity<ApiResponse<UserWarningResponse>> warnUser(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id,
-            @Valid @RequestBody(required = false) AdminDecisionRequest request) {
-        String reason = request != null ? request.getReason() : null;
-        userService.warnUser(userDetails.getId(), id, reason);
-        return ResponseEntity.ok(ApiResponse.success(null, "Đã gửi cảnh báo"));
+            @Valid @RequestBody(required = false) UserWarningRequest request) {
+        UserWarningRequest safeRequest = request != null ? request : UserWarningRequest.builder()
+                .reason("Cảnh báo từ Quản trị viên")
+                .penaltyType("OFFICIAL_WARNING")
+                .notifyUser(true)
+                .build();
+        UserWarningResponse response = userService.warnUser(userDetails.getId(), id, safeRequest);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã gửi cảnh báo"));
+    }
+
+    @GetMapping("/users/{id}/warnings")
+    public ResponseEntity<ApiResponse<List<UserWarningItemResponse>>> getUserWarnings(
+            @PathVariable Long id) {
+        List<UserWarningItemResponse> warnings = userService.getUserWarnings(id);
+        return ResponseEntity.ok(ApiResponse.success(warnings, "Lấy lịch sử cảnh cáo thành công"));
     }
 
     @GetMapping("/audit-logs")

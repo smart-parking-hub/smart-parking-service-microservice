@@ -22,6 +22,8 @@ public class AdminUserDetailResponse {
     private RoleEnum role;
     private UserStatusEnum status;
     private String statusReason;
+    private Integer warningCount;
+    private LocalDateTime suspendedUntil;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private long bookingCount;
@@ -36,6 +38,8 @@ public class AdminUserDetailResponse {
                 .role(u.getRole())
                 .status(u.getStatus())
                 .statusReason(u.getStatusReason())
+                .warningCount(u.getWarningCount())
+                .suspendedUntil(u.getSuspendedUntil())
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())
                 .bookingCount(bookings)

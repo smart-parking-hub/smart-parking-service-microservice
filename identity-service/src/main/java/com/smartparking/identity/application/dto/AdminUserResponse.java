@@ -20,6 +20,7 @@ public class AdminUserResponse {
     private String email;
     private RoleEnum role;
     private UserStatusEnum status;
+    private Integer warningCount;
     private LocalDateTime createdAt;
 
     public static AdminUserResponse from(User user) {
@@ -29,6 +30,7 @@ public class AdminUserResponse {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .status(user.getStatus())
+                .warningCount(user.getWarningCount())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

@@ -58,6 +58,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(AuthRequest request) {
+        userRepository.findByPhone(request.getPhone()).ifPresent(user -> {
+            if (user.getStatus() == UserStatusEnum.SUSPENDED) {
+                if (user.getSuspendedUntil() != null && user.getSuspendedUntil().isBefore(java.time.LocalDateTime.now())) {
+                    user.setStatus(UserStatusEnum.ACTIVE);
+                    user.setSuspendedUntil(null);
+                    user.setStatusReason("Tự động mở khóa sau khi hết thời hạn kỷ luật 7 ngày");
+                    userRepository.save(user);
+                    log.info("User {} suspension period expired, auto-reactivated to ACTIVE", user.getPhone());
+                }
+            }
+        });
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getPhone(), request.getPassword())
