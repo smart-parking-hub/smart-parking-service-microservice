@@ -34,6 +34,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Đã gửi mã OTP", response));
     }
 
+    @PostMapping("/otp/verify")
+    public ResponseEntity<ApiResponse<Void>> verifyRegisterOtp(@Valid @RequestBody VerifyRegisterOtpRequest request) {
+        authService.verifyRegisterOtp(request);
+        return ResponseEntity.ok(ApiResponse.ok("Mã OTP hợp lệ", null));
+    }
+
     @PostMapping("/forgot-password/otp")
     public ResponseEntity<ApiResponse<SendOtpResponse>> sendForgotPasswordOtp(
             @Valid @RequestBody ForgotPasswordSendOtpRequest request) {

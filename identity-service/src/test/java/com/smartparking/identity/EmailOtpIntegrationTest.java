@@ -55,6 +55,41 @@ class EmailOtpIntegrationTest {
         r.setPassword("LocalPassword123"); r.setOtpCode(code); return r;
     }
 
+    VerifyRegisterOtpRequest verification(String code) {
+        var r = new VerifyRegisterOtpRequest(); r.setEmail(email); r.setOtpCode(code); return r;
+    }
+
+    @Test void verifiesBeforePasswordWithoutConsumingAndRegistrationStillConsumes() {
+        String code = send();
+        assertDoesNotThrow(() -> auth.verifyRegisterOtp(verification(code)));
+        assertNull(challenge().getConsumedAt());
+        assertFalse(users.existsByEmailIgnoreCase(email));
+        auth.register(registration(code));
+        assertNotNull(challenge().getConsumedAt());
+        assertThrows(AppException.class, () -> auth.verifyRegisterOtp(verification(code)));
+    }
+
+    @Test void verificationFailuresPersistAndShareAttemptLimitWithRegistration() {
+        String code = send(); String wrong = code.equals("000000") ? "111111" : "000000";
+        for (int i = 1; i <= 5; i++) {
+            assertThrows(AppException.class, () -> auth.verifyRegisterOtp(verification(wrong)));
+            assertEquals(i, challenge().getAttemptCount());
+        }
+        assertThrows(AppException.class, () -> auth.verifyRegisterOtp(verification(code)));
+        assertThrows(AppException.class, () -> auth.register(registration(code)));
+        assertNull(challenge().getConsumedAt());
+    }
+
+    @Test void verificationRejectsExpiredWrongRecipientAndResetPurpose() {
+        String code = send();
+        var wrongRecipient = verification(code); wrongRecipient.setEmail("other-" + email);
+        assertThrows(AppException.class, () -> auth.verifyRegisterOtp(wrongRecipient));
+        var c = challenge(); c.setExpiresAt(LocalDateTime.now().minusSeconds(1)); challenges.saveAndFlush(c);
+        assertThrows(AppException.class, () -> auth.verifyRegisterOtp(verification(code)));
+        c.setPurpose(OtpPurposeEnum.RESET_PASSWORD); c.setExpiresAt(LocalDateTime.now().plusMinutes(5)); challenges.saveAndFlush(c);
+        assertThrows(AppException.class, () -> auth.verifyRegisterOtp(verification(code)));
+    }
+
     @Test void sendsToNormalizedEmailWithoutExposingCode() throws Exception {
         email = "normalized" + UUID.randomUUID() + "@example.test";
         var r = request(); r.setEmail("  " + email.toUpperCase() + "  ");
