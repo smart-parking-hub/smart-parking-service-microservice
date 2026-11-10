@@ -246,6 +246,8 @@ class MerchantWalletServiceImplTest {
                 .build();
         p.setCreatedAt(LocalDateTime.now());
 
+        when(paymentRepository.sumTotalRevenueByMerchantIdAndParkingLotId(eq(merchantId), eq(parkingLotId)))
+                .thenReturn(new BigDecimal("80000"));
         when(paymentRepository.findByMerchantIdAndParkingLotIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
                 eq(merchantId), eq(parkingLotId), eq(PaymentStatusEnum.SUCCESS), any(), any()))
                 .thenReturn(List.of(p));

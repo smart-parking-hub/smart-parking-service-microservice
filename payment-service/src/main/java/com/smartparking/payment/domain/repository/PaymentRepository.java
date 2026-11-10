@@ -38,6 +38,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS'")
     BigDecimal sumTotalRevenueByMerchantId(@Param("merchantId") Long merchantId);
 
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.merchantId = :merchantId AND p.parkingLotId = :parkingLotId AND p.status = 'SUCCESS'")
+    BigDecimal sumTotalRevenueByMerchantIdAndParkingLotId(
+            @Param("merchantId") Long merchantId,
+            @Param("parkingLotId") Long parkingLotId);
+
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p " +
            "WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS' " +
            "AND p.createdAt >= :startDate AND p.createdAt <= :endDate")

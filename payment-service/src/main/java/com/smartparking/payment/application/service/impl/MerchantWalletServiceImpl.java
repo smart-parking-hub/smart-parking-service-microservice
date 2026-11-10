@@ -471,12 +471,29 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
     @Override
     @Transactional(readOnly = true)
     public MerchantRevenueResponse getRevenueSummary(Long merchantId, Long parkingLotId, String startDate, String endDate, String granularity) {
-        BigDecimal totalGross = paymentRepository.sumTotalRevenueByMerchantId(merchantId);
-        BigDecimal totalFee = ledgerRepository.sumPlatformFeeByMerchantId(merchantId);
-        BigDecimal totalNet = ledgerRepository.sumNetAmountByMerchantId(merchantId);
+        BigDecimal totalGross;
+        BigDecimal totalFee;
+        BigDecimal totalNet;
+
+        if (parkingLotId != null) {
+            BigDecimal lotGross = paymentRepository.sumTotalRevenueByMerchantIdAndParkingLotId(merchantId, parkingLotId);
+            totalGross = lotGross != null ? lotGross : BigDecimal.ZERO;
+            BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
+            totalNet = totalGross.multiply(BigDecimal.valueOf(100).subtract(feePercent))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            totalFee = totalGross.subtract(totalNet);
+        } else {
+            BigDecimal rawGross = paymentRepository.sumTotalRevenueByMerchantId(merchantId);
+            BigDecimal rawFee = ledgerRepository.sumPlatformFeeByMerchantId(merchantId);
+            BigDecimal rawNet = ledgerRepository.sumNetAmountByMerchantId(merchantId);
+            totalGross = rawGross != null ? rawGross : BigDecimal.ZERO;
+            totalFee = rawFee != null ? rawFee : BigDecimal.ZERO;
+            totalNet = rawNet != null ? rawNet : BigDecimal.ZERO;
+        }
+
         BigDecimal currentBalance = getWalletBalance(merchantId);
-        BigDecimal safeGross = totalGross != null ? totalGross : BigDecimal.ZERO;
-        BigDecimal safeNet = totalNet != null ? totalNet : BigDecimal.ZERO;
+        BigDecimal safeGross = totalGross;
+        BigDecimal safeNet = totalNet;
 
         List<RevenueSeriesPointDto> series = calculateRevenueSeries(merchantId, parkingLotId, startDate, endDate);
 
