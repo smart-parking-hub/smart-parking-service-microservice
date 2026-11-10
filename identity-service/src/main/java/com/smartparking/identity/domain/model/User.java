@@ -54,4 +54,11 @@ public class User extends BaseEntity {
 
     @Column(name = "status_reason", length = 1000)
     private String statusReason;
+
+    @Builder.Default
+    @Column(name = "warning_count", nullable = false)
+    private Integer warningCount = 0;
+
+    @Column(name = "suspended_until")
+    private java.time.LocalDateTime suspendedUntil;
 }
