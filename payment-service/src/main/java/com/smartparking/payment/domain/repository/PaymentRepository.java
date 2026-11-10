@@ -66,4 +66,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             PaymentStatusEnum status,
             LocalDateTime startDate,
             LocalDateTime endDate);
+
+    @Query("SELECT MAX(p.createdAt) FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS'")
+    LocalDateTime findLatestPaymentCreatedAtByMerchantId(@Param("merchantId") Long merchantId);
+
+    @Query("SELECT MAX(p.createdAt) FROM Payment p WHERE p.merchantId = :merchantId AND p.parkingLotId = :parkingLotId AND p.status = 'SUCCESS'")
+    LocalDateTime findLatestPaymentCreatedAtByMerchantIdAndParkingLotId(
+            @Param("merchantId") Long merchantId,
+            @Param("parkingLotId") Long parkingLotId);
 }

@@ -506,6 +506,21 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
 
+        boolean isExplicitDateRange = (startDate != null && !startDate.isBlank()) || (endDate != null && !endDate.isBlank());
+        if (!isExplicitDateRange) {
+            LocalDateTime latestCreatedAt = parkingLotId != null
+                    ? paymentRepository.findLatestPaymentCreatedAtByMerchantIdAndParkingLotId(merchantId, parkingLotId)
+                    : paymentRepository.findLatestPaymentCreatedAtByMerchantId(merchantId);
+
+            if (latestCreatedAt != null) {
+                LocalDate latestDate = latestCreatedAt.toLocalDate();
+                if (latestDate.isBefore(today.minusDays(6))) {
+                    endLocalDate = latestDate;
+                    startLocalDate = latestDate.minusDays(6);
+                }
+            }
+        }
+
         if (startDate != null && !startDate.isBlank()) {
             try {
                 startLocalDate = LocalDate.parse(startDate.length() > 10 ? startDate.substring(0, 10) : startDate, formatter);
