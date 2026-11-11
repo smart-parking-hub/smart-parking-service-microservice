@@ -3,6 +3,7 @@ package com.smartparking.payment.infrastructure.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,7 +32,12 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/v1/merchant/**").hasRole("MERCHANT")
                     .requestMatchers("/api/v1/withdrawals/**").hasRole("MERCHANT")
+                    .requestMatchers("/api/v1/disputes/me", "/api/v1/disputes/me/**").hasRole("DRIVER")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/disputes/evidence").hasRole("DRIVER")
+                    .requestMatchers(HttpMethod.GET, "/api/v1/disputes/evidence/**").hasAnyRole("DRIVER", "MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/disputes").hasRole("DRIVER")
                     .requestMatchers("/api/v1/disputes/merchant").hasRole("MERCHANT")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/disputes/*/responses").hasRole("MERCHANT")
                     .requestMatchers("/api/v1/disputes/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/v1/disputes/*/resolve").hasRole("ADMIN")
                     .requestMatchers("/api/v1/payments/**").hasRole("DRIVER")

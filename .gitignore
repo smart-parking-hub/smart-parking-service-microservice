@@ -182,6 +182,10 @@ temp/
 # Local email OTP verification output
 .email-otp-*.log
 
+# Local uploaded runtime files
+uploads/
+**/uploads/
+
 # Python cache
 __pycache__/
 *.pyc

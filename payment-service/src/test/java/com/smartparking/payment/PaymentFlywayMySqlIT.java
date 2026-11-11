@@ -48,6 +48,7 @@ class PaymentFlywayMySqlIT {
         Flyway flyway = Flyway.configure()
                 .dataSource(url, user, password)
                 .locations("classpath:db/migration")
+                .target("5")
                 .cleanDisabled(true)
                 .load();
         MigrateResult result = flyway.migrate();

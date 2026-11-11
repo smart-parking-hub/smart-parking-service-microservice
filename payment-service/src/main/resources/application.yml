@@ -1,5 +1,6 @@
 server:
   port: ${PORT:8084}
+  forward-headers-strategy: framework
 
 eureka:
   instance:
@@ -32,6 +33,10 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 26MB
 
 payos:
   client-id: ${PAYOS_CLIENT_ID:your_payos_client_id}
@@ -46,3 +51,13 @@ management:
   endpoint:
     health:
       show-details: always
+
+resilience4j:
+  timelimiter:
+    instances:
+      dispute-booking:
+        timeout-duration: 9s
+
+app:
+  storage:
+    dispute-evidence-dir: ${DISPUTE_EVIDENCE_DIR:uploads/dispute-evidence}

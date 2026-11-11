@@ -12,6 +12,10 @@ spring:
     show-sql: false
   flyway:
     enabled: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 26MB
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -32,7 +36,15 @@ app:
   demo-payment-enabled: true
   platform:
     fee-percent: 10.0
+  storage:
+    dispute-evidence-dir: build/test-uploads/dispute-evidence
 
 eureka:
   client:
     enabled: false
+
+resilience4j:
+  timelimiter:
+    instances:
+      dispute-booking:
+        timeout-duration: 9s
