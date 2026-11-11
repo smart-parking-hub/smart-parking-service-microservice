@@ -14,6 +14,7 @@ public interface MerchantWalletService {
     void refundWithdrawal(Long merchantId, BigDecimal amount, String note);
     BigDecimal getWalletBalance(Long merchantId);
     MerchantRevenueResponse getRevenueSummary(Long merchantId);
+    MerchantRevenueResponse getRevenueSummary(Long merchantId, Long parkingLotId, String startDate, String endDate, String granularity);
 
     default void recordPaymentEscrow(Payment payment, String note) {
     }
