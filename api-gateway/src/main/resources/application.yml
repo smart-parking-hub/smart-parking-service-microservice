@@ -58,7 +58,13 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOriginPatterns: "*"
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+              - "https://*.vercel.app"
+              - "https://vercel.app"
+              - "http://103.20.102.190"
+              - "http://103.20.102.190:*"
             allowedMethods:
               - GET
               - POST
@@ -68,6 +74,11 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
             allowCredentials: true
+
+app:
+  security:
+    api-key: ${APP_SECURITY_API_KEY:SP_APP_KEY_2026_xM99qP2!}
+    api-key-enabled: ${APP_SECURITY_API_KEY_ENABLED:true}
 
 jwt:
   secret: ${JWT_SECRET:smartparkingsecretkeymustbeverylongandsecure2026version}

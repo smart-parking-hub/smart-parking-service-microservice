@@ -15,5 +15,6 @@ public interface BookingService {
     }
     PageResponse<BookingDto> getMerchantBookings(Long merchantUserId, Long parkingLotId, Pageable pageable);
     BookingDto getBookingDetail(Long userId, Long bookingId);
+    BookingDto getMerchantBookingDetail(Long merchantUserId, Long bookingId);
     CancelBookingResponse cancelBooking(Long driverUserId, Long bookingId, CancelBookingRequest request);
 }

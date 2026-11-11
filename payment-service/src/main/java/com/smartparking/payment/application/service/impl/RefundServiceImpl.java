@@ -108,7 +108,8 @@ public class RefundServiceImpl implements RefundService {
                     .paymentId(paidPayment.getId())
                     .driverId(driverId)
                     .merchantId(merchantId)
-                    .parkingLotId(event.getParkingLotId() != null ? event.getParkingLotId() : paidPayment.getParkingLotId())
+                    .parkingLotId(
+                            event.getParkingLotId() != null ? event.getParkingLotId() : paidPayment.getParkingLotId())
                     .depositAmount(paidPayment.getAmount())
                     .refundAmount(refundAmount)
                     .refundPercentage(percentage)
@@ -149,8 +150,7 @@ public class RefundServiceImpl implements RefundService {
                 paidPayment.getId(),
                 refundAmount,
                 "REFUND_REQ:BOOKING:" + event.getBookingId(),
-                "Ghi nhận nghĩa vụ hoàn tiền thủ công booking #" + event.getBookingId()
-        );
+                "Ghi nhận nghĩa vụ hoàn tiền thủ công booking #" + event.getBookingId());
 
         outboxPublisherService.publishRefundStatusChanged(saved);
         log.info("Created manual refund request {} for booking {} with status={}",
@@ -160,9 +160,11 @@ public class RefundServiceImpl implements RefundService {
 
     @Override
     @Transactional
-    public RefundRequestDto submitTransferEvidence(Long merchantUserId, Long bookingId, SubmitRefundEvidenceRequest request) {
+    public RefundRequestDto submitTransferEvidence(Long merchantUserId, Long bookingId,
+            SubmitRefundEvidenceRequest request) {
         RefundRequest refund = refundRequestRepository.findByBookingIdForUpdate(bookingId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy yêu cầu hoàn tiền cho booking này"));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND,
+                        "Không tìm thấy yêu cầu hoàn tiền cho booking này"));
 
         if (refund.getMerchantId() == null || !refund.getMerchantId().equals(merchantUserId)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền cập nhật hoàn tiền của bãi xe khác");
@@ -181,10 +183,12 @@ public class RefundServiceImpl implements RefundService {
             refund.setStatus(STATUS_REQUIRES_RECONCILIATION);
             refund.setEvidenceSubmittedAt(now);
             refund.setMerchantNote(request != null ? request.getMerchantNote() : null);
-            refund.setVerificationNote("Thiếu mã giao dịch chuyển khoản hoặc có tranh chấp từ phía nhà xe; cần đối soát");
+            refund.setVerificationNote(
+                    "Thiếu mã giao dịch chuyển khoản hoặc có tranh chấp từ phía nhà xe; cần đối soát");
             RefundRequest saved = refundRequestRepository.save(refund);
             outboxPublisherService.publishRefundStatusChanged(saved);
-            log.warn("Refund request {} for booking {} moved to REQUIRES_RECONCILIATION due to missing/disputed evidence",
+            log.warn(
+                    "Refund request {} for booking {} moved to REQUIRES_RECONCILIATION due to missing/disputed evidence",
                     saved.getId(), bookingId);
             return RefundRequestDto.fromEntity(saved);
         }
@@ -210,7 +214,8 @@ public class RefundServiceImpl implements RefundService {
 
     @Override
     @Transactional
-    public RefundRequestDto verifyTransferEvidence(Long adminUserId, Long refundId, VerifyRefundEvidenceRequest request) {
+    public RefundRequestDto verifyTransferEvidence(Long adminUserId, Long refundId,
+            VerifyRefundEvidenceRequest request) {
         RefundRequest refund = refundRequestRepository.findByIdForUpdate(refundId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy yêu cầu hoàn tiền"));
 
@@ -247,7 +252,16 @@ public class RefundServiceImpl implements RefundService {
 
         if (refund.getPaymentId() != null) {
             paymentRepository.findByIdForUpdate(refund.getPaymentId()).ifPresent(payment -> {
-                payment.setStatus(PaymentStatusEnum.REFUNDED);
+                boolean isFullRefund = payment.getAmount() == null
+                        || refund.getRefundAmount() == null
+                        || refund.getRefundAmount().compareTo(payment.getAmount()) >= 0;
+                if (isFullRefund) {
+                    payment.setStatus(PaymentStatusEnum.REFUNDED);
+                } else {
+                    // For partial refund (e.g. 50%), retain SUCCESS status so remaining revenue is
+                    // eligible for daily settlement
+                    payment.setStatus(PaymentStatusEnum.SUCCESS);
+                }
                 paymentRepository.save(payment);
             });
         }
@@ -258,11 +272,11 @@ public class RefundServiceImpl implements RefundService {
                 refund.getPaymentId(),
                 refund.getRefundAmount(),
                 "REFUND_COMPLETED:BOOKING:" + refund.getBookingId(),
-                "Hoàn tất xác minh hoàn tiền thủ công cho booking #" + refund.getBookingId()
-        );
+                "Hoàn tất xác minh hoàn tiền thủ công cho booking #" + refund.getBookingId());
 
         outboxPublisherService.publishRefundStatusChanged(saved);
-        log.info("Admin {} verified refund {} for booking {} as COMPLETED", adminUserId, refundId, refund.getBookingId());
+        log.info("Admin {} verified refund {} for booking {} as COMPLETED", adminUserId, refundId,
+                refund.getBookingId());
         return RefundRequestDto.fromEntity(saved);
     }
 
@@ -279,7 +293,8 @@ public class RefundServiceImpl implements RefundService {
                 continue;
             }
             locked.setStatus(STATUS_REQUIRES_RECONCILIATION);
-            locked.setVerificationNote("Quá hạn nộp bằng chứng hoàn tiền thủ công; chuyển sang trạng thái cần đối soát");
+            locked.setVerificationNote(
+                    "Quá hạn nộp bằng chứng hoàn tiền thủ công; chuyển sang trạng thái cần đối soát");
             RefundRequest saved = refundRequestRepository.save(locked);
             outboxPublisherService.publishRefundStatusChanged(saved);
             updated.add(RefundRequestDto.fromEntity(saved));
@@ -306,4 +321,3 @@ public class RefundServiceImpl implements RefundService {
         return new PageResponse<>(page);
     }
 }
-

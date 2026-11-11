@@ -351,8 +351,8 @@ public class AiParkingAssistantService {
     private String cleanCandidateName(String name) {
         if (name == null) return "";
         String cleaned = name.trim();
-        cleaned = cleaned.replaceAll("(?i)\\s+(không|ko|k|chưa|nhỉ|ạ|hả|vậy)$", "").trim();
-        cleaned = cleaned.replaceAll("^[\\p{Punct}]+|[\\p{Punct}]+$", "").trim();
+        cleaned = cleaned.replaceAll("(?iu)\\s+(?:không|ko|k|chưa|nhỉ|ạ|hả|vậy)$", "").trim();
+        cleaned = cleaned.replaceAll("(^[\\p{Punct}]+)|([\\p{Punct}]+$)", "").trim();
         return cleaned;
     }
 

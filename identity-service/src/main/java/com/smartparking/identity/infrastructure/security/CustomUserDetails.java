@@ -54,7 +54,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return status != UserStatusEnum.BANNED;
+        return status != UserStatusEnum.BANNED && status != UserStatusEnum.SUSPENDED;
     }
 
     @Override

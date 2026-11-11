@@ -37,7 +37,7 @@ public class GeminiApiClient {
     public GeminiApiClient() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(3000); // 3 giây kết nối
-        factory.setReadTimeout(5000);    // 5 giây đọc phản hồi tối đa
+        factory.setReadTimeout(5000); // 5 giây đọc phản hồi tối đa
         this.restTemplate = new RestTemplate(factory);
 
         SimpleClientHttpRequestFactory visionFactory = new SimpleClientHttpRequestFactory();
@@ -72,7 +72,8 @@ public class GeminiApiClient {
             return result;
         }
 
-        // 2. Nếu model chính thức bị 503 (Overloaded), thử gọi model dự phòng gemini-2.0-flash hoặc gemini-1.5-flash
+        // 2. Nếu model chính thức bị 503 (Overloaded), thử gọi model dự phòng
+        // gemini-2.0-flash hoặc gemini-1.5-flash
         if (!"gemini-2.0-flash".equalsIgnoreCase(effectiveModel)) {
             log.info("Model '{}' is unavailable, attempting fast fallback to 'gemini-2.0-flash'...", effectiveModel);
             Optional<String> backupResult = callGeminiApi("gemini-2.0-flash", systemInstruction, userPrompt);
@@ -98,49 +99,79 @@ public class GeminiApiClient {
             return Optional.empty();
         }
 
+        int totalTimeoutMs = (visionReadTimeoutMs != null && visionReadTimeoutMs > 0)
+                ? visionReadTimeoutMs
+                : 25000;
+        long deadline = System.currentTimeMillis() + totalTimeoutMs;
+
         String effectiveModel = getEffectiveModel();
-        Optional<String> result = callGeminiVisionApi(effectiveModel, systemInstruction, userPrompt, mimeType, imageBytes);
+        long remainingMs = deadline - System.currentTimeMillis();
+        if (remainingMs <= 500) {
+            log.warn("Vision extraction deadline budget exhausted before primary call");
+            return Optional.empty();
+        }
+
+        int primaryReadTimeout = (int) Math.min(totalTimeoutMs, remainingMs);
+        int primaryConnectTimeout = (int) Math.min(5000, remainingMs);
+
+        Optional<String> result = callGeminiVisionApi(
+                effectiveModel, systemInstruction, userPrompt, mimeType, imageBytes,
+                primaryConnectTimeout, primaryReadTimeout);
         if (result.isPresent()) {
             return result;
         }
 
+        remainingMs = deadline - System.currentTimeMillis();
+        if (remainingMs <= 1000) {
+            log.warn("Vision extraction deadline budget exhausted (remaining={}ms); skipping fallback", remainingMs);
+            return Optional.empty();
+        }
+
         if (!"gemini-2.0-flash".equalsIgnoreCase(effectiveModel)) {
-            log.info("Vision model '{}' is unavailable, attempting fallback to 'gemini-2.0-flash'", effectiveModel);
-            return callGeminiVisionApi("gemini-2.0-flash", systemInstruction, userPrompt, mimeType, imageBytes);
+            log.info(
+                    "Vision model '{}' is unavailable, attempting fallback to 'gemini-2.0-flash' with remaining budget {}ms",
+                    effectiveModel, remainingMs);
+            int fallbackReadTimeout = (int) remainingMs;
+            int fallbackConnectTimeout = (int) Math.min(3000, remainingMs);
+            return callGeminiVisionApi(
+                    "gemini-2.0-flash", systemInstruction, userPrompt, mimeType, imageBytes,
+                    fallbackConnectTimeout, fallbackReadTimeout);
         }
 
         return Optional.empty();
+    }
+
+    protected RestTemplate createVisionRestTemplate(int connectTimeoutMs, int readTimeoutMs) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Math.max(500, connectTimeoutMs));
+        factory.setReadTimeout(Math.max(500, readTimeoutMs));
+        return new RestTemplate(factory);
     }
 
     private Optional<String> callGeminiApi(String targetModel, String systemInstruction, String userPrompt) {
         try {
             String url = String.format(
                     "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
-                    targetModel, apiKey
-            );
+                    targetModel, apiKey);
 
             Map<String, Object> requestBody = new HashMap<>();
 
             // System instruction
             if (systemInstruction != null && !systemInstruction.isBlank()) {
                 requestBody.put("system_instruction", Map.of(
-                        "parts", List.of(Map.of("text", systemInstruction))
-                ));
+                        "parts", List.of(Map.of("text", systemInstruction))));
             }
 
             // User content
             requestBody.put("contents", List.of(
                     Map.of(
                             "role", "user",
-                            "parts", List.of(Map.of("text", userPrompt))
-                    )
-            ));
+                            "parts", List.of(Map.of("text", userPrompt)))));
 
             // Generation config
             requestBody.put("generationConfig", Map.of(
                     "temperature", temperature != null ? temperature : 0.3,
-                    "maxOutputTokens", maxTokens != null ? maxTokens : 2048
-            ));
+                    "maxOutputTokens", maxTokens != null ? maxTokens : 2048));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -170,47 +201,44 @@ public class GeminiApiClient {
             String systemInstruction,
             String userPrompt,
             String mimeType,
-            byte[] imageBytes) {
+            byte[] imageBytes,
+            int connectTimeoutMs,
+            int readTimeoutMs) {
         try {
             String url = String.format(
                     "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
-                    targetModel, apiKey
-            );
+                    targetModel, apiKey);
 
             Map<String, Object> requestBody = new HashMap<>();
             if (systemInstruction != null && !systemInstruction.isBlank()) {
                 requestBody.put("system_instruction", Map.of(
-                        "parts", List.of(Map.of("text", systemInstruction))
-                ));
+                        "parts", List.of(Map.of("text", systemInstruction))));
             }
 
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
             Map<String, Object> inlineDataPart = Map.of(
                     "inline_data", Map.of(
                             "mime_type", mimeType,
-                            "data", base64Image
-                    )
-            );
-            Map<String, Object> textPart = Map.of("text", userPrompt != null ? userPrompt : "Extract parking layout JSON.");
+                            "data", base64Image));
+            Map<String, Object> textPart = Map.of("text",
+                    userPrompt != null ? userPrompt : "Extract parking layout JSON.");
 
             requestBody.put("contents", List.of(
                     Map.of(
                             "role", "user",
-                            "parts", List.of(textPart, inlineDataPart)
-                    )
-            ));
+                            "parts", List.of(textPart, inlineDataPart))));
 
             requestBody.put("generationConfig", Map.of(
                     "temperature", 0.1,
                     "maxOutputTokens", 4096,
-                    "responseMimeType", "application/json"
-            ));
+                    "responseMimeType", "application/json"));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<String> response = visionRestTemplate.postForEntity(url, entity, String.class);
+            RestTemplate customTemplate = createVisionRestTemplate(connectTimeoutMs, readTimeoutMs);
+            ResponseEntity<String> response = customTemplate.postForEntity(url, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode root = objectMapper.readTree(response.getBody());

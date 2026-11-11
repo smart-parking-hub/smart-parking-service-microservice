@@ -12,5 +12,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [SUCCESS] SonarQube container started!
+echo [SUCCESS] SonarQube container is running!
+echo Access Web Dashboard: http://localhost:9000
+echo Default credentials:  admin / admin
 pause

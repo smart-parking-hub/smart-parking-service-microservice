@@ -86,4 +86,22 @@ class MerchantCheckInOutControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().getData().getContent().size());
     }
+
+    @Test
+    @DisplayName("getMerchantBookingDetail delegates to bookingService and returns booking details")
+    void testGetMerchantBookingDetail() {
+        // Arrange
+        Long bookingId = 99L;
+        BookingDto dto = BookingDto.builder().id(bookingId).bookingCode("BK-99").build();
+        when(bookingService.getMerchantBookingDetail(200L, bookingId)).thenReturn(dto);
+
+        // Act
+        ResponseEntity<ApiResponse<BookingDto>> response = controller.getMerchantBookingDetail(user, bookingId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("BK-99", response.getBody().getData().getBookingCode());
+        verify(bookingService, times(1)).getMerchantBookingDetail(200L, bookingId);
+    }
 }

@@ -39,6 +39,9 @@ class UserServiceImplTest {
     @Mock
     private AuditLogRepository auditLogRepository;
 
+    @Mock
+    private com.smartparking.identity.domain.repository.UserWarningRepository userWarningRepository;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -269,13 +272,142 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("warnUser writes audit log for warning")
-    void testWarnUserSuccess() {
-        User user = User.builder().id(2L).build();
+    @DisplayName("warnUser writes warning, increments warning count, does not suspend on first warning")
+    void testWarnUserSuccessFirstWarning() {
+        User user = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .warningCount(0)
+                .build();
+        User admin = User.builder().id(1L).fullName("Super Admin").build();
+
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(userWarningRepository.save(any())).thenAnswer(invocation -> {
+            com.smartparking.identity.domain.model.UserWarning w = invocation.getArgument(0);
+            w.setId(10L);
+            return w;
+        });
+
+        com.smartparking.identity.application.dto.UserWarningRequest req =
+                com.smartparking.identity.application.dto.UserWarningRequest.builder()
+                        .reason("Vi phạm tốc độ")
+                        .penaltyType("OFFICIAL_WARNING")
+                        .notifyUser(true)
+                        .evidenceUrl("https://evidence.png")
+                        .build();
+
+        com.smartparking.identity.application.dto.UserWarningResponse res = userService.warnUser(1L, 2L, req);
+
+        assertNotNull(res);
+        assertEquals(1, res.getWarningCount());
+        assertEquals(com.smartparking.common.enums.UserStatusEnum.ACTIVE, res.getUserStatus());
+        assertNull(res.getSuspendedUntil());
+        verify(userWarningRepository).save(any());
+        verify(userRepository).save(user);
+        verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("warnUser auto-suspends user for 7 days on 3rd warning")
+    void testWarnUserAutoSuspendOnThirdWarning() {
+        User user = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .status(com.smartparking.common.enums.UserStatusEnum.ACTIVE)
+                .warningCount(2)
+                .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(userWarningRepository.save(any())).thenAnswer(invocation -> {
+            com.smartparking.identity.domain.model.UserWarning w = invocation.getArgument(0);
+            w.setId(11L);
+            return w;
+        });
+
+        com.smartparking.identity.application.dto.UserWarningRequest req =
+                com.smartparking.identity.application.dto.UserWarningRequest.builder()
+                        .reason("Bùng cọc lần 3")
+                        .penaltyType("OFFICIAL_WARNING")
+                        .notifyUser(false)
+                        .build();
+
+        com.smartparking.identity.application.dto.UserWarningResponse res = userService.warnUser(1L, 2L, req);
+
+        assertNotNull(res);
+        assertEquals(3, res.getWarningCount());
+        assertEquals(com.smartparking.common.enums.UserStatusEnum.SUSPENDED, res.getUserStatus());
+        assertNotNull(res.getSuspendedUntil());
+        assertTrue(res.getSuspendedUntil().isAfter(java.time.LocalDateTime.now().plusDays(6)));
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("warnUser throws when target user is ADMIN")
+    void testWarnUserThrowsWhenTargetIsAdmin() {
+        User adminUser = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.ADMIN)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
+
+        com.smartparking.identity.application.dto.UserWarningRequest req =
+                com.smartparking.identity.application.dto.UserWarningRequest.builder()
+                        .reason("Lỗi")
+                        .build();
+
+        AppException ex = assertThrows(AppException.class, () -> userService.warnUser(1L, 2L, req));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("warnUser backward-compatible string signature writes warning and audit log")
+    void testWarnUserBackwardCompatible() {
+        User user = User.builder()
+                .id(2L)
+                .role(com.smartparking.common.enums.RoleEnum.DRIVER)
+                .warningCount(0)
+                .build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+        when(userWarningRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         userService.warnUser(1L, 2L, "Warning note");
         verify(auditLogRepository).save(any());
+        verify(userWarningRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("getUserWarnings returns warning items with admin names")
+    void testGetUserWarningsSuccess() {
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(User.builder().id(1L).fullName("Admin User").build()));
+
+        com.smartparking.identity.domain.model.UserWarning w = com.smartparking.identity.domain.model.UserWarning.builder()
+                .id(5L)
+                .reason("Không mở barrier")
+                .penaltyType("OFFICIAL_WARNING")
+                .evidenceUrl("https://evidence.png")
+                .issuedByAdminId(1L)
+                .build();
+        when(userWarningRepository.findByUserIdOrderByCreatedAtDesc(2L)).thenReturn(java.util.List.of(w));
+
+        java.util.List<com.smartparking.identity.application.dto.UserWarningItemResponse> items =
+                userService.getUserWarnings(2L);
+
+        assertEquals(1, items.size());
+        assertEquals("Admin User", items.get(0).getAdminName());
+        assertEquals("Không mở barrier", items.get(0).getReason());
+    }
+
+    @Test
+    @DisplayName("getUserWarnings throws when target user not found")
+    void testGetUserWarningsNotFound() {
+        when(userRepository.existsById(99L)).thenReturn(false);
+
+        AppException ex = assertThrows(AppException.class, () -> userService.getUserWarnings(99L));
+        assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test

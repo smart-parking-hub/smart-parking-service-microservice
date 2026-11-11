@@ -11,6 +11,8 @@ public final class SecurityConstants {
     public static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
     public static final String HEADER_INTERNAL_SECRET = "X-Internal-Secret";
     public static final String DEFAULT_INTERNAL_SECRET = "SP_SecInternal_2026_qK8mZ99xP2!";
+    public static final String HEADER_APP_KEY = "X-App-Key";
+    public static final String DEFAULT_APP_KEY = "SP_APP_KEY_2026_xM99qP2!";
 
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
     public static final String ROLE_MERCHANT = "ROLE_MERCHANT";
