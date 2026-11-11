@@ -225,7 +225,19 @@ public class AuthServiceImpl implements AuthService {
         log.info("User registered successfully: phone={}, role={}", savedUser.getPhone(), savedUser.getRole());
     }
 
+    @Override
+    @Transactional(noRollbackFor = OtpRejectedException.class)
+    public void verifyRegisterOtp(VerifyRegisterOtpRequest request) {
+        verifyOtp(normalizeEmail(request.getEmail()), request.getOtpCode(), OtpPurposeEnum.REGISTER);
+    }
+
     private void verifyAndConsumeOtp(String identifier, String rawOtp, OtpPurposeEnum purpose) {
+        OtpChallenge challenge = verifyOtp(identifier, rawOtp, purpose);
+        challenge.setConsumedAt(LocalDateTime.now());
+        otpChallengeRepository.save(challenge);
+    }
+
+    private OtpChallenge verifyOtp(String identifier, String rawOtp, OtpPurposeEnum purpose) {
         OtpChallenge challenge = otpChallengeRepository.findByRecipientAndPurpose(identifier, purpose)
                 .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Mã OTP không tồn tại hoặc đã hết hạn!"));
 
@@ -247,8 +259,7 @@ public class AuthServiceImpl implements AuthService {
             throw new OtpRejectedException();
         }
 
-        challenge.setConsumedAt(LocalDateTime.now());
-        otpChallengeRepository.save(challenge);
+        return challenge;
     }
 
     private String generateNumericOtp(int length) {
