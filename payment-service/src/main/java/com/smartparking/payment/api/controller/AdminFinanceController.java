@@ -96,4 +96,17 @@ public class AdminFinanceController {
         RefundRequestDto res = refundService.verifyTransferEvidence(user.getId(), id, request);
         return ResponseEntity.ok(ApiResponse.success(res, "Xử lý xác minh bằng chứng hoàn tiền thành công"));
     }
+
+    @PostMapping("/refunds/reconcile-overdue")
+    public ResponseEntity<ApiResponse<java.util.List<RefundRequestDto>>> reconcileOverdueRefunds() {
+        if (refundService == null) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    java.util.Collections.emptyList(),
+                    "Dịch vụ hoàn tiền chưa được kích hoạt"));
+        }
+        java.util.List<RefundRequestDto> updated = refundService.reconcileOverdueRefunds();
+        return ResponseEntity.ok(ApiResponse.success(
+                updated,
+                "Đối soát các yêu cầu hoàn tiền quá hạn thành công"));
+    }
 }

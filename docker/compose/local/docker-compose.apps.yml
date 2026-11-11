@@ -98,6 +98,9 @@ services:
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       BOOKING_SERVICE_URL: http://booking-service:8083
       APP_DEMO_PAYMENT_ENABLED: ${APP_DEMO_PAYMENT_ENABLED:-false}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-dummy_client_id}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-dummy_api_key}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-dummy_checksum_key}
       PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:-http://localhost:3000/payment/return}
       PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:-http://localhost:3000/payment/cancel}
       PORT: 8084

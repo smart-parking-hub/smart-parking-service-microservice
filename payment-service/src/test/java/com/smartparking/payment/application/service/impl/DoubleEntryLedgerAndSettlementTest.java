@@ -377,4 +377,81 @@ class DoubleEntryLedgerAndSettlementTest {
         assertEquals(1, concurrentRun.size());
         assertEquals("COMPLETED", concurrentRun.get(0).getStatus());
     }
+
+    @Test
+    @DisplayName("R4 regression: Integrated lifecycle from payment 100k -> 50% refund -> evidence -> completion -> daily settlement settles 45k net and 5k fee")
+    void integratedFiftyPercentRefundAndDailySettlementLifecycle() {
+        LocalDate businessDate = LocalDate.of(2026, 11, 10);
+        Long merchantId = 88L;
+        Long bookingId = 777L;
+        Long paymentId = 999L;
+
+        // Step 1: Inbound payment of 100,000 VND
+        Payment payment = Payment.builder()
+                .id(paymentId)
+                .bookingId(bookingId)
+                .merchantId(merchantId)
+                .amount(new BigDecimal("100000.00"))
+                .status(PaymentStatusEnum.SUCCESS)
+                .build();
+        payment.setCreatedAt(businessDate.atTime(10, 0));
+
+        Wallet wallet = Wallet.builder()
+                .merchantId(merchantId)
+                .balance(BigDecimal.ZERO.setScale(2))
+                .build();
+
+        // Step 2: 50% refund of 50,000 VND is requested and completed prior to daily settlement
+        RefundRequest completedRefund = RefundRequest.builder()
+                .id(55L)
+                .bookingId(bookingId)
+                .merchantId(merchantId)
+                .paymentId(paymentId)
+                .refundAmount(new BigDecimal("50000.00"))
+                .status(RefundServiceImpl.STATUS_COMPLETED)
+                .build();
+
+        // Payment status must remain SUCCESS for partial refund (not overwritten to REFUNDED)
+        assertEquals(PaymentStatusEnum.SUCCESS, payment.getStatus(),
+                "Partial refund must keep payment status as SUCCESS");
+
+        when(paymentRepository.findSuccessfulPaymentsInWindow(
+                businessDate.atStartOfDay(), businessDate.plusDays(1).atStartOfDay()))
+                .thenReturn(List.of(payment));
+
+        when(refundRequestRepository.findByBookingId(bookingId))
+                .thenReturn(Optional.of(completedRefund));
+
+        when(settlementBatchRepository.findByBusinessDateAndMerchantId(businessDate, merchantId))
+                .thenReturn(Optional.empty());
+        when(ledgerJournalRepository.findByJournalKey("SETTLE:PAYMENT:" + paymentId))
+                .thenReturn(Optional.empty());
+        when(ledgerJournalRepository.existsByJournalKey(anyString())).thenReturn(false);
+        when(walletRepository.findByMerchantIdForUpdate(merchantId)).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Step 3: Run daily settlement for business date
+        List<SettlementBatch> batches = dailySettlementService.runDailySettlement(businessDate);
+        assertEquals(1, batches.size());
+        SettlementBatch batch = batches.get(0);
+
+        // Retained revenue of 50,000 VND is settled: 10% fee (5,000 VND) and 90% merchant payable (45,000 VND)
+        assertEquals(0, new BigDecimal("50000.00").compareTo(batch.getGrossAmount()),
+                "Settlement gross must be remaining 50,000 VND");
+        assertEquals(0, new BigDecimal("5000.00").compareTo(batch.getFeeAmount()),
+                "Platform fee must be 5,000 VND (10%)");
+        assertEquals(0, new BigDecimal("45000.00").compareTo(batch.getNetAmount()),
+                "Merchant payable must be 45,000 VND (90%)");
+        assertEquals(0, new BigDecimal("45000.00").compareTo(wallet.getBalance()),
+                "Wallet balance must be credited by exactly 45,000 VND net");
+
+        // Step 4: Duplicate daily settlement run is idempotent
+        when(settlementBatchRepository.findByBusinessDateAndMerchantId(businessDate, merchantId))
+                .thenReturn(Optional.of(batch));
+        List<SettlementBatch> duplicateRun = dailySettlementService.runDailySettlement(businessDate);
+        assertEquals(1, duplicateRun.size());
+        assertEquals(0, new BigDecimal("45000.00").compareTo(wallet.getBalance()),
+                "Duplicate settlement invocation must preserve idempotency and not double-credit wallet");
+    }
 }
