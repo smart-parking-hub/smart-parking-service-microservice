@@ -55,6 +55,32 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
         Merchant merchant = requireMerchant(merchantUserId);
         User user = merchant.getUser();
 
+        // 1. Pre-validate banking fields if present (atomic / no partial update)
+        String trimmedBankName = null;
+        if (request.getBankName() != null) {
+            trimmedBankName = request.getBankName().trim();
+            if (trimmedBankName.isEmpty() || trimmedBankName.length() > 100) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Tên ngân hàng phải từ 1 đến 100 ký tự!");
+            }
+        }
+
+        String trimmedBankAccountNum = null;
+        if (request.getBankAccountNum() != null) {
+            trimmedBankAccountNum = request.getBankAccountNum().trim();
+            if (!trimmedBankAccountNum.matches("^\\d{6,30}$")) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Số tài khoản phải gồm 6–30 chữ số!");
+            }
+        }
+
+        String trimmedAccountHolderName = null;
+        if (request.getAccountHolderName() != null) {
+            trimmedAccountHolderName = request.getAccountHolderName().trim();
+            if (trimmedAccountHolderName.isEmpty() || trimmedAccountHolderName.length() > 100) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Tên chủ tài khoản phải từ 1 đến 100 ký tự!");
+            }
+        }
+
+        // 2. Validate and update user contact / license fields
         if (request.getFullName() != null) {
             String name = request.getFullName().trim();
             user.setFullName(name.isEmpty() ? null : name);
@@ -90,11 +116,16 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
         if (request.getBusinessLicense() != null) {
             merchant.setBusinessLicense(blankToNull(request.getBusinessLicense()));
         }
-        if (request.getBankName() != null && !request.getBankName().isBlank()) {
-            merchant.setBankName(request.getBankName().trim());
+
+        // 3. Apply validated banking fields (patch-like: null/absent retains existing)
+        if (trimmedBankName != null) {
+            merchant.setBankName(trimmedBankName);
         }
-        if (request.getBankAccountNum() != null && !request.getBankAccountNum().isBlank()) {
-            merchant.setBankAccountNum(request.getBankAccountNum().trim());
+        if (trimmedBankAccountNum != null) {
+            merchant.setBankAccountNum(trimmedBankAccountNum);
+        }
+        if (trimmedAccountHolderName != null) {
+            merchant.setAccountHolderName(trimmedAccountHolderName);
         }
 
         userRepository.save(user);
@@ -159,6 +190,7 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
                 .businessLicense(merchant.getBusinessLicense())
                 .bankName(merchant.getBankName())
                 .bankAccountNum(bankAccount)
+                .accountHolderName(merchant.getAccountHolderName())
                 .maskedBankAccount(mask(bankAccount, 4))
                 .walletBalance(merchant.getWalletBalance() != null ? merchant.getWalletBalance() : BigDecimal.ZERO)
                 .accountStatus(user.getStatus())

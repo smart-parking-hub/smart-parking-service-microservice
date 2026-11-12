@@ -51,7 +51,7 @@ class MerchantProfileServiceImplTest {
     }
 
     @Test
-    @DisplayName("Get profile successfully with masked citizenId and bank account")
+    @DisplayName("Get profile successfully with masked citizenId, bank account, and accountHolderName")
     void testGetProfileSuccess() {
         User user = User.builder()
                 .id(merchantUserId)
@@ -67,6 +67,7 @@ class MerchantProfileServiceImplTest {
                 .citizenId("079200009999")
                 .bankName("Techcombank")
                 .bankAccountNum("190333444555")
+                .accountHolderName("BUI THI CHU BAI")
                 .walletBalance(new BigDecimal("1500000"))
                 .businessLicense("GPKD-12345")
                 .build();
@@ -78,6 +79,7 @@ class MerchantProfileServiceImplTest {
         assertNotNull(response);
         assertEquals(merchantUserId, response.getUserId());
         assertEquals("Bui Thi Chu Bai", response.getFullName());
+        assertEquals("BUI THI CHU BAI", response.getAccountHolderName());
         assertEquals("********9999", response.getMaskedCitizenId());
         assertEquals("********4555", response.getMaskedBankAccount());
         assertEquals("VERIFIED", response.getVerificationStatus());
@@ -93,7 +95,7 @@ class MerchantProfileServiceImplTest {
     }
 
     @Test
-    @DisplayName("Update profile updates all fields successfully")
+    @DisplayName("Update profile updates all fields successfully including accountHolderName")
     void testUpdateProfileSuccess() {
         User user = User.builder().id(merchantUserId).email("old@example.com").build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
@@ -108,6 +110,7 @@ class MerchantProfileServiceImplTest {
         req.setBusinessLicense("GPKD-8888");
         req.setBankName("Vietcombank");
         req.setBankAccountNum("9988776655");
+        req.setAccountHolderName("NGUYEN VAN OWNER");
 
         when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
         when(merchantRepository.findByCitizenId("012345678901")).thenReturn(Optional.empty());
@@ -118,8 +121,158 @@ class MerchantProfileServiceImplTest {
         assertEquals("Nguyen Van Owner", resp.getFullName());
         assertEquals("new@example.com", resp.getEmail());
         assertEquals("GPKD-8888", resp.getBusinessLicense());
+        assertEquals("Vietcombank", resp.getBankName());
+        assertEquals("9988776655", resp.getBankAccountNum());
+        assertEquals("NGUYEN VAN OWNER", resp.getAccountHolderName());
         verify(userRepository, times(1)).save(user);
         verify(merchantRepository, times(1)).save(merchant);
+    }
+
+    @Test
+    @DisplayName("Update profile preserves existing accountHolderName when request omits it (legacy client)")
+    void testUpdateProfileLegacyClientPreservesAccountHolderName() {
+        User user = User.builder().id(merchantUserId).email("merchant@example.com").build();
+        Merchant merchant = Merchant.builder()
+                .id(15L)
+                .user(user)
+                .bankName("Vietcombank")
+                .bankAccountNum("0071001234567")
+                .accountHolderName("OLD ACCOUNT HOLDER")
+                .build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setBankName("MB Bank");
+        // accountHolderName is null (omitted)
+
+        MerchantProfileResponse resp = merchantProfileService.updateProfile(merchantUserId, req);
+
+        assertNotNull(resp);
+        assertEquals("MB Bank", resp.getBankName());
+        assertEquals("0071001234567", resp.getBankAccountNum());
+        assertEquals("OLD ACCOUNT HOLDER", resp.getAccountHolderName());
+        assertEquals("OLD ACCOUNT HOLDER", merchant.getAccountHolderName());
+    }
+
+    @Test
+    @DisplayName("Update profile preserves leading zeros in bankAccountNum")
+    void testUpdateProfilePreservesLeadingZeros() {
+        User user = User.builder().id(merchantUserId).build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setBankAccountNum("0071001234567");
+
+        MerchantProfileResponse resp = merchantProfileService.updateProfile(merchantUserId, req);
+
+        assertNotNull(resp);
+        assertEquals("0071001234567", resp.getBankAccountNum());
+        assertEquals("0071001234567", merchant.getBankAccountNum());
+    }
+
+    @Test
+    @DisplayName("Update profile trims bank fields and preserves Vietnamese diacritics and case")
+    void testUpdateProfileTrimsAndPreservesDiacritics() {
+        User user = User.builder().id(merchantUserId).build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setBankName("  Ngân Hàng Ngoại Thương  ");
+        req.setBankAccountNum("  0123456789  ");
+        req.setAccountHolderName("  Trần Thị Ngọc Diệp  ");
+
+        MerchantProfileResponse resp = merchantProfileService.updateProfile(merchantUserId, req);
+
+        assertNotNull(resp);
+        assertEquals("Ngân Hàng Ngoại Thương", resp.getBankName());
+        assertEquals("0123456789", resp.getBankAccountNum());
+        assertEquals("Trần Thị Ngọc Diệp", resp.getAccountHolderName());
+    }
+
+    @Test
+    @DisplayName("Update profile throws BAD_REQUEST when bankName is empty or whitespace-only")
+    void testUpdateProfileWhitespaceBankNameFails() {
+        User user = User.builder().id(merchantUserId).build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setBankName("   ");
+
+        AppException ex = assertThrows(AppException.class, () -> merchantProfileService.updateProfile(merchantUserId, req));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+        verify(merchantRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Update profile throws BAD_REQUEST when accountHolderName is empty or whitespace-only")
+    void testUpdateProfileWhitespaceAccountHolderNameFails() {
+        User user = User.builder().id(merchantUserId).build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setAccountHolderName("   ");
+
+        AppException ex = assertThrows(AppException.class, () -> merchantProfileService.updateProfile(merchantUserId, req));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+        verify(merchantRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Update profile throws BAD_REQUEST when bankAccountNum is whitespace-only")
+    void testUpdateProfileWhitespaceBankAccountNumFails() {
+        User user = User.builder().id(merchantUserId).build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setBankAccountNum("   ");
+
+        AppException ex = assertThrows(AppException.class, () -> merchantProfileService.updateProfile(merchantUserId, req));
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+        verify(merchantRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Update profile throws BAD_REQUEST when bankAccountNum has invalid pattern")
+    void testUpdateProfileInvalidBankAccountNumPatternFails() {
+        User user = User.builder().id(merchantUserId).build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest reqShort = new UpdateMerchantProfileRequest();
+        reqShort.setBankAccountNum("12345"); // < 6 digits
+        AppException ex1 = assertThrows(AppException.class, () -> merchantProfileService.updateProfile(merchantUserId, reqShort));
+        assertEquals(ErrorCode.BAD_REQUEST, ex1.getErrorCode());
+
+        UpdateMerchantProfileRequest reqAlpha = new UpdateMerchantProfileRequest();
+        reqAlpha.setBankAccountNum("123456ABCD"); // non-digits
+        AppException ex2 = assertThrows(AppException.class, () -> merchantProfileService.updateProfile(merchantUserId, reqAlpha));
+        assertEquals(ErrorCode.BAD_REQUEST, ex2.getErrorCode());
+
+        verify(merchantRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Update profile atomic: partial failure does not persist other changes")
+    void testUpdateProfileAtomicPartialFailure() {
+        User user = User.builder().id(merchantUserId).fullName("Old Name").build();
+        Merchant merchant = Merchant.builder().id(15L).user(user).bankName("Old Bank").build();
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+
+        UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
+        req.setFullName("New Name");
+        req.setBankName("New Bank");
+        req.setBankAccountNum("invalid-account");
+
+        assertThrows(AppException.class, () -> merchantProfileService.updateProfile(merchantUserId, req));
+        assertEquals("Old Name", user.getFullName());
+        assertEquals("Old Bank", merchant.getBankName());
+        verify(userRepository, never()).save(any());
+        verify(merchantRepository, never()).save(any());
     }
 
     @Test

@@ -34,6 +34,9 @@ public class Merchant extends BaseEntity {
     @Column(name = "bank_account_num", nullable = false, length = 30)
     private String bankAccountNum;
 
+    @Column(name = "account_holder_name", length = 100)
+    private String accountHolderName;
+
     @Column(name = "wallet_balance", precision = 15, scale = 2)
     @Builder.Default
     private BigDecimal walletBalance = BigDecimal.ZERO;

@@ -10,6 +10,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          # Disposable CI database only; migration tests create their own schemas.
+          MYSQL_ROOT_PASSWORD: ci-only-mysql-root
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=ci-only-mysql-root --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+          --health-start-period=30s
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USERNAME: root
+      DB_PASSWORD: ci-only-mysql-root
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
