@@ -132,7 +132,7 @@ public class ParkingLotController {
 
     @GetMapping("/api/v1/parking-lots/search")
     public ResponseEntity<ApiResponse<PageResponse<ParkingLotSearchResponse>>> search(
-            @RequestParam VehicleTypeEnum vehicleType,
+            @RequestParam(required = false) VehicleTypeEnum vehicleType,
             @RequestParam(defaultValue = "false") boolean includeFull,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,

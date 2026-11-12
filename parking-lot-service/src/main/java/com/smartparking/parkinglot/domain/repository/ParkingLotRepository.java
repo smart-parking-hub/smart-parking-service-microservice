@@ -41,17 +41,19 @@ public interface ParkingLotRepository extends JpaRepository<ParkingLot, Long> {
             @Param("keyword") String keyword,
             Pageable pageable);
 
-    @Query("SELECT p FROM ParkingLot p WHERE p.status = 'APPROVED' AND EXISTS (" +
+    @Query("SELECT p FROM ParkingLot p WHERE p.status = 'APPROVED' AND (" +
+           ":vehicleType IS NULL OR EXISTS (" +
            "SELECT s FROM Slot s WHERE s.parkingLot = p AND s.vehicleType = :vehicleType " +
-           "AND (:includeFull = true OR s.availableCapacity > 0))")
+           "AND (:includeFull = true OR s.availableCapacity > 0)))")
     Page<ParkingLot> searchApprovedByVehicleType(
             @Param("vehicleType") VehicleTypeEnum vehicleType,
             @Param("includeFull") boolean includeFull,
             Pageable pageable);
 
-    @Query("SELECT p FROM ParkingLot p WHERE p.status = 'APPROVED' AND EXISTS (" +
+    @Query("SELECT p FROM ParkingLot p WHERE p.status = 'APPROVED' AND (" +
+           ":vehicleType IS NULL OR EXISTS (" +
            "SELECT s FROM Slot s WHERE s.parkingLot = p AND s.vehicleType = :vehicleType " +
-           "AND (:includeFull = true OR s.availableCapacity > 0))")
+           "AND (:includeFull = true OR s.availableCapacity > 0)))")
     List<ParkingLot> findApprovedByVehicleType(
             @Param("vehicleType") VehicleTypeEnum vehicleType,
             @Param("includeFull") boolean includeFull);

@@ -155,8 +155,12 @@ public class PaymentServiceImpl implements PaymentService {
         String key = "booking:" + bookingId + ":DEPOSIT";
         var previous = paymentRepository.findByIdempotencyKey(key);
         if (previous.isPresent()) {
-            if (!driverUserId.equals(previous.get().getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
-            return PaymentDto.fromEntity(previous.get());
+            Payment prevPayment = previous.get();
+            if (!driverUserId.equals(prevPayment.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
+            if (prevPayment.getStatus() == PaymentStatusEnum.PENDING) {
+                applyPaidPayment(prevPayment);
+            }
+            return PaymentDto.fromEntity(prevPayment);
         }
         var quote = bookingPaymentVerifier.require(bookingId, driverUserId);
         BigDecimal amount = quote.payable(PaymentTypeEnum.DEPOSIT);

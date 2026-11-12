@@ -1,0 +1,4409 @@
+[
+  {
+    "id": "6aeb0e31ab56be8ab36cadb0",
+    "name": "[SP-S3-DAT-01] [DATABASE] Thiết lập Spatial Index (ST_Distance_Sphere) và bộ đệm Redis Cache-Aside cho API tìm bãi (3 STP)",
+    "descLen": 472,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0e32d666654969668dbd",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e31ab56be8ab36cadb0",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e33d4ea7ac868689b73",
+            "name": "Viết migration Flyway tạo Spatial Point và Index trên parking_lots",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e32d666654969668dbd"
+          },
+          {
+            "id": "6aeb0e3524ac4a55f9f38b34",
+            "name": "Refactor repository query sử dụng MySQL Spatial Functions ST_Distance_Sphere",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e32d666654969668dbd"
+          },
+          {
+            "id": "6aeb0e356bd61236e498f136",
+            "name": "Cài đặt RedisTemplate cache danh sách bãi với TTL 15 phút",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e32d666654969668dbd"
+          },
+          {
+            "id": "6aeb0e36764e662b3e9d0f11",
+            "name": "Benchmark so sánh hiệu năng phản hồi: Giảm thời gian query từ 180ms xuống < 25ms",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e32d666654969668dbd"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeafc32a05866d1f2b5e97a",
+    "name": "[SP-S3-UI-05] [FE] Xây dựng bộ UI Component dùng chung (Skeleton, Toast, EmptyState, Modal) theo chuẩn Stitch Design System (5 STP)",
+    "descLen": 1204,
+    "checklistsCount": 1,
+    "totalItems": 5,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeafc33372b4f1cfb7ed37e",
+        "name": "Tiêu chuẩn hoàn thành (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeafc32a05866d1f2b5e97a",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeafc342a242157743cfaae",
+            "name": "Xây dựng Skeleton loading shimmer component cho bãi đỗ xe và bảng dữ liệu",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeafc33372b4f1cfb7ed37e"
+          },
+          {
+            "id": "6aeafc357a93553766822e4f",
+            "name": "Tích hợp thư viện Sonner / Toast thông báo sinh động góc màn hình",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeafc33372b4f1cfb7ed37e"
+          },
+          {
+            "id": "6aeafc3513d6ccf574002393",
+            "name": "Xây dựng EmptyState component với hình minh họa khi danh sách trống",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeafc33372b4f1cfb7ed37e"
+          },
+          {
+            "id": "6aeafc365db0d96f4627d032",
+            "name": "Tối ưu hóa Drawer / Modal responsive trên kích thước màn hình điện thoại di động",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeafc33372b4f1cfb7ed37e"
+          },
+          {
+            "id": "6aeafc377197f1dd8a719009",
+            "name": "Viết tài liệu hướng dẫn tái sử dụng component cho toàn đội ngũ Frontend",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeafc33372b4f1cfb7ed37e"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f7ec3e486772b73abb4",
+    "name": "[SP-S3-GOV-03] [FE] Hồ sơ Người dùng, Lịch sử Đỗ & Khóa tài khoản (AdminUserDetailPage) (SCR-046) (3 STP)",
+    "descLen": 2672,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f7fb8d47894c1d7cc93",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f7ec3e486772b73abb4",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f7f11deca9dbb4fb547",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f7fb8d47894c1d7cc93"
+          },
+          {
+            "id": "6aeb0f80f80c170450f73cd2",
+            "name": "2. Cấu hình Route \"/admin/users/:userId\", liên kết Inbound/Outbound với [SCR-045] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f7fb8d47894c1d7cc93"
+          },
+          {
+            "id": "6aeb0f8102e5d5348aecb7ab",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f7fb8d47894c1d7cc93"
+          },
+          {
+            "id": "6aeb0f81d3f52fbfd13e0907",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/users/{id}`, PUT `/ban`, PUT `/unban`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f7fb8d47894c1d7cc93"
+          },
+          {
+            "id": "6aeb0f82cc8039ab66744f0b",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f7fb8d47894c1d7cc93"
+          },
+          {
+            "id": "6aeb0f83c2b19e082c091170",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f7fb8d47894c1d7cc93"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae1b2961d17df34ea9755",
+    "name": "[SP-S3-UI-03] [FE] Giao diện khởi tạo và theo dõi khiếu nại cho Tài xế (SCR-DRV-01) (5 STP)",
+    "descLen": 1938,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeae7f42e723655b92e4d49",
+        "name": "Checklist thực hiện",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae1b2961d17df34ea9755",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeae7f584affa18142bca09",
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7f42e723655b92e4d49"
+          },
+          {
+            "id": "6aeae7f6ff2e0322e2c709c2",
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7f42e723655b92e4d49"
+          },
+          {
+            "id": "6aeae7f622bc86361490c2ed",
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7f42e723655b92e4d49"
+          },
+          {
+            "id": "6aeae7f77f4f726b352f4339",
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7f42e723655b92e4d49"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f66955d882f7f081609",
+    "name": "[SP-S3-UI-02] [FE] Trung tâm Điều hành Toàn sàn Super Admin (AdminDashboardPage) (SCR-042) (5 STP)",
+    "descLen": 2564,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f67e6492d21b047c9fe",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f66955d882f7f081609",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f680cada0e635dfc6a2",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f67e6492d21b047c9fe"
+          },
+          {
+            "id": "6aeb0f68a4bec34684736072",
+            "name": "2. Cấu hình Route \"/admin/dashboard\", liên kết Inbound/Outbound với [SCR-043, SCR-045, SCR-047, SCR-048] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f67e6492d21b047c9fe"
+          },
+          {
+            "id": "6aeb0f69bbc02f9dd2390991",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f67e6492d21b047c9fe"
+          },
+          {
+            "id": "6aeb0f6ab45cce3e4e9f1d9d",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/dashboard`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f67e6492d21b047c9fe"
+          },
+          {
+            "id": "6aeb0f6a7f972ea022a6e095",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f67e6492d21b047c9fe"
+          },
+          {
+            "id": "6aeb0f6b94e39cbd2cfdc072",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f67e6492d21b047c9fe"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0ddcb7f015ffe8a907bf",
+    "name": "[SP-S3-INT-01] [QA] Xây dựng bộ kịch bản kiểm thử E2E tự động (Playwright) cho luồng Giữ chỗ 10 phút & Barie QR (5 STP)",
+    "descLen": 569,
+    "checklistsCount": 1,
+    "totalItems": 5,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0ddd8c60e955f15f7613",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0ddcb7f015ffe8a907bf",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0dde3135c99079410d46",
+            "name": "Cấu hình dự án Playwright trong thư mục smart-parking-app-v2/e2e",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ddd8c60e955f15f7613"
+          },
+          {
+            "id": "6aeb0ddfaae7ace4eb14727d",
+            "name": "Viết kịch bản test-01-driver-booking-deposit.spec.ts",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ddd8c60e955f15f7613"
+          },
+          {
+            "id": "6aeb0ddfc7f9162ed03c1281",
+            "name": "Viết kịch bản test-02-merchant-qr-checkin.spec.ts",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ddd8c60e955f15f7613"
+          },
+          {
+            "id": "6aeb0de00c5fd1bda2c2ec2f",
+            "name": "Viết kịch bản test-03-merchant-qr-checkout-cash.spec.ts",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ddd8c60e955f15f7613"
+          },
+          {
+            "id": "6aeb0de1edaf35b2f6a9ad97",
+            "name": "Tích hợp chạy tự động trong CI pipeline với báo cáo Playwright HTML report",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ddd8c60e955f15f7613"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0dd7eb63b5ead21a7b83",
+    "name": "[SP-S3-SEC-01] [SECURITY] Tái cấu trúc cơ chế OTP: Chuyển sang SMTP Server Backend & Hủy bỏ trường otpCode trong DTO (GAP-09) (3 STP)",
+    "descLen": 589,
+    "checklistsCount": 1,
+    "totalItems": 5,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0dd80a4f1f90cf741c55",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0dd7eb63b5ead21a7b83",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0dd81ed819c4fbf73121",
+            "name": "Xóa bỏ trường otpCode trong SendOtpResponse DTO ở identity-service",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dd80a4f1f90cf741c55"
+          },
+          {
+            "id": "6aeb0dd986c24288c529d162",
+            "name": "Cấu hình Spring Boot Starter Mail với SMTP Server trong application.yml",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dd80a4f1f90cf741c55"
+          },
+          {
+            "id": "6aeb0ddabdcc5b0e5a92c1e2",
+            "name": "Gỡ bỏ @emailjs/browser khỏi dependencies của Frontend v2",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dd80a4f1f90cf741c55"
+          },
+          {
+            "id": "6aeb0dda1940c1d33d4e3ba8",
+            "name": "Cài đặt Rate Limit Redis 60s cho endpoint /api/v1/auth/otp/send",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dd80a4f1f90cf741c55"
+          },
+          {
+            "id": "6aeb0ddbc9f01facaba6285c",
+            "name": "Kiểm thử bảo mật hộp đen xác nhận mã OTP không bao giờ rò rỉ trên Network tab",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dd80a4f1f90cf741c55"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0dc572d101c0e2d91da4",
+    "name": "[SP-S3-RT-01] [BE] Triển khai API Bật/Tắt Trạng thái Mở/Tạm dừng Bãi Đỗ Xe Thời Gian Thực (GAP-16) (3 STP)",
+    "descLen": 887,
+    "checklistsCount": 1,
+    "totalItems": 5,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0dc7cac8ab420344352b",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0dc572d101c0e2d91da4",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0dc87d8a438f81153ef9",
+            "name": "Bổ sung enum OperatingStatus (OPEN, TEMPORARILY_CLOSED, MAINTENANCE) trong ParkingLot.java",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dc7cac8ab420344352b"
+          },
+          {
+            "id": "6aeb0dc8ac07936ed5557d4b",
+            "name": "Tạo controller endpoint PATCH /operating-status kèm kiểm tra quyền sở hữu",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dc7cac8ab420344352b"
+          },
+          {
+            "id": "6aeb0dc96ca18d602fb32297",
+            "name": "Triển khai Redis cache eviction cho key parking_search_*",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dc7cac8ab420344352b"
+          },
+          {
+            "id": "6aeb0dca560e3b900b3bef38",
+            "name": "Ngăn chặn tạo booking mới khi bãi xe có status != OPEN",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dc7cac8ab420344352b"
+          },
+          {
+            "id": "6aeb0dcb1c9e084e7d72e697",
+            "name": "Viết integration test cho luồng toggle trạng thái và kiểm tra kết quả tìm kiếm",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dc7cac8ab420344352b"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0dbd8d9855b7f2cfb17b",
+    "name": "[SP-S3-GOV-02] [BE] Hoàn thiện API Cảnh báo Người dùng & Lịch sử Kỷ luật Tài khoản Admin (GAP-11) (3 STP)",
+    "descLen": 913,
+    "checklistsCount": 1,
+    "totalItems": 5,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0dbf610b76e4640cf99d",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0dbd8d9855b7f2cfb17b",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0dc08debfbb4a4c1585c",
+            "name": "Tạo bảng user_warnings (id, user_id, reason, penalty_type, issued_by_admin_id, created_at)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dbf610b76e4640cf99d"
+          },
+          {
+            "id": "6aeb0dc1a3239677389b9aee",
+            "name": "Thêm trường warning_count trong bảng users",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dbf610b76e4640cf99d"
+          },
+          {
+            "id": "6aeb0dc367066ceb9195420a",
+            "name": "Viết phương thức warnUser trong UserServiceImpl, phát sinh Kafka event USER_WARNED",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dbf610b76e4640cf99d"
+          },
+          {
+            "id": "6aeb0dc35b35998014133670",
+            "name": "Tích hợp notification-service gửi email và push notification cảnh cáo tới tài khoản vi phạm",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dbf610b76e4640cf99d"
+          },
+          {
+            "id": "6aeb0dc43978dc3693c54694",
+            "name": "Viết Unit Test kiểm thử logic tự động suspend tài khoản sau 3 lần cảnh cáo",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dbf610b76e4640cf99d"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0dadbb71853d80e2d9b0",
+    "name": "[SP-S3-GOV-01] [BE] Triển khai bộ API và Luồng Quản lý Khiếu nại cho Tài xế (Driver Dispute API - GAP-01) (5 STP)",
+    "descLen": 1590,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0dae18903ecef4ca0b80",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0dadbb71853d80e2d9b0",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0dae4c322deca7ec64bf",
+            "name": "Định nghĩa DTO CreateDisputeRequest với Bean Validation (@notnull bookingId, @notblank reason, @size(max=5) evidenceUrls)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dae18903ecef4ca0b80"
+          },
+          {
+            "id": "6aeb0db04a8cecd166659068",
+            "name": "Tạo migration Flyway V12__add_evidence_urls_to_disputes.sql trong payment-service",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dae18903ecef4ca0b80"
+          },
+          {
+            "id": "6aeb0db1302175ab56dfc279",
+            "name": "Triển khai phương thức createDispute và getMyDisputes trong DisputeServiceImpl",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dae18903ecef4ca0b80"
+          },
+          {
+            "id": "6aeb0db31cc628b5e0ea44f8",
+            "name": "Bổ sung route định tuyến Gateway /api/v1/disputes/** trỏ tới payment-service",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dae18903ecef4ca0b80"
+          },
+          {
+            "id": "6aeb0db387899b4762caf1b2",
+            "name": "Viết Unit Test (MockMvc) kiểm thử bảo vệ phân quyền @preauthorize(\"hasRole('DRIVER')\")",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dae18903ecef4ca0b80"
+          },
+          {
+            "id": "6aeb0db43a928381fd84be73",
+            "name": "Kiểm thử tích hợp luồng tạo khiếu nại và trả về đúng PageResponse",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dae18903ecef4ca0b80"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae1b65751708e47a3e025",
+    "name": "[SP-S3-SEC-02] [Security] Rà soát và loại bỏ việc gửi mã OTP trong response demo (GAP-09) (2 STP)",
+    "descLen": 1655,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeae802d1ee339ed0371ca7",
+        "name": "Checklist thực hiện",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae1b65751708e47a3e025",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeae803b4c7545e86fc8e69",
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae802d1ee339ed0371ca7"
+          },
+          {
+            "id": "6aeae80487899b4762844a33",
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae802d1ee339ed0371ca7"
+          },
+          {
+            "id": "6aeae804856527f539692bac",
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae802d1ee339ed0371ca7"
+          },
+          {
+            "id": "6aeae805f10526095805ab86",
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae802d1ee339ed0371ca7"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae18dfb37261374dcc65d",
+    "name": "[SP-S3-OPS-01] [CI/CD] Thiết lập pipeline GitHub Actions tự động kiểm tra chất lượng Frontend v2 (3 STP)",
+    "descLen": 1577,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeae7c3dc4438dcef401ede",
+        "name": "Checklist thực hiện",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae18dfb37261374dcc65d",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeae7c40697314db88bcab8",
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7c3dc4438dcef401ede"
+          },
+          {
+            "id": "6aeae7c590a6ccac92e401e0",
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7c3dc4438dcef401ede"
+          },
+          {
+            "id": "6aeae7c64a8cecd166222814",
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7c3dc4438dcef401ede"
+          },
+          {
+            "id": "6aeae7c697810ecd54ccd9bc",
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7c3dc4438dcef401ede"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae1b86d504b5a734dd19c",
+    "name": "[SP-S3-PAY-02] [QA] Kiểm thử toàn diện quy trình đối soát tài chính kép và duyệt rút tiền (5 STP)",
+    "descLen": 2244,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeaefd231a30cf5949a0fe1",
+        "name": "Checklist thực hiện & Nghiệm thu Sprint 02",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae1b86d504b5a734dd19c",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeaefd3ef1999c722201f85",
+            "name": "Viết test cases kiểm thử luồng đối soát dòng tiền Ledger giữa PayOS và ví nội bộ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeaefd231a30cf5949a0fe1"
+          },
+          {
+            "id": "6aeaefd4aa383812121d8d66",
+            "name": "Kiểm thử kịch bản duyệt lệnh rút tiền thành công và kiểm tra số dư ví chủ bãi",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeaefd231a30cf5949a0fe1"
+          },
+          {
+            "id": "6aeaefd4f719d037b7a7a5a5",
+            "name": "Kiểm thử kịch bản từ chối lệnh rút tiền và xác nhận hoàn lại tiền vào ví",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeaefd231a30cf5949a0fe1"
+          },
+          {
+            "id": "6aeaefd51bdaabb37fe25bed",
+            "name": "Kiểm thử kịch bản tranh chấp khiếu nại và tự động giải ngân hoàn tiền tài xế",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeaefd231a30cf5949a0fe1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae18fcadfd8c144060950",
+    "name": "[SP-S3-BKG-01] [BE] Bổ sung API truy vấn chi tiết đơn đặt chỗ cho chủ bãi theo ID (GAP-06) (3 STP)",
+    "descLen": 1477,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 1,
+    "checklists": [
+      {
+        "id": "6aeae77993c8cf190c306d2d",
+        "name": "Checklist thực hiện",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae18fcadfd8c144060950",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeae77aa4c6cbcfc6215fc1",
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae77993c8cf190c306d2d"
+          },
+          {
+            "id": "6aeae77ae160fedf64a3ba61",
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae77993c8cf190c306d2d"
+          },
+          {
+            "id": "6aeae77ba80b0b855f78e54e",
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae77993c8cf190c306d2d"
+          },
+          {
+            "id": "6aeae77ca9ad0e88d1d10b62",
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae77993c8cf190c306d2d"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae18e7ab30a12756e0b4d",
+    "name": "[SP-S3-PAY-01] [BE] Đồng bộ hóa hợp đồng API thu tiền mặt Barie confirm-cash (GAP-02) (3 STP)",
+    "descLen": 2775,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 1,
+    "checklists": [
+      {
+        "id": "6aeae774fb57495631f95096",
+        "name": "Checklist thực hiện",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae18e7ab30a12756e0b4d",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeae774f3a4012d1fee4346",
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae774fb57495631f95096"
+          },
+          {
+            "id": "6aeae7750829ab3bba284757",
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae774fb57495631f95096"
+          },
+          {
+            "id": "6aeae7769cc4293497954790",
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae774fb57495631f95096"
+          },
+          {
+            "id": "6aeae7776863085cc77691a4",
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae774fb57495631f95096"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0efc0d35d62e6da9af95",
+    "name": "[SP-S3-UI-06] [FE] Trung tâm Thông báo Vận hành Tài xế (DriverNotificationsPage) (SCR-025) (2 STP)",
+    "descLen": 2586,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0efd7cfe616ee8fa0867",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0efc0d35d62e6da9af95",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0efe01dae6be241c7cb7",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0efd7cfe616ee8fa0867"
+          },
+          {
+            "id": "6aeb0eff6c3da748cdde4d8a",
+            "name": "2. Cấu hình Route \"/notifications\", liên kết Inbound/Outbound với [SCR-017, SCR-018] & RBAC Guard [DRIVER]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0efd7cfe616ee8fa0867"
+          },
+          {
+            "id": "6aeb0f00f5904e6f5bd20267",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0efd7cfe616ee8fa0867"
+          },
+          {
+            "id": "6aeb0f01a1a05d98530389f6",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/notifications`, POST `/{id}/read`, POST `/read-all`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0efd7cfe616ee8fa0867"
+          },
+          {
+            "id": "6aeb0f019fec8d23f60d3133",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0efd7cfe616ee8fa0867"
+          },
+          {
+            "id": "6aeb0f022f299583c5361e7d",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0efd7cfe616ee8fa0867"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f03d074be4e7f25299c",
+    "name": "[SP-S3-UI-01] [FE] Bảng Điều khiển Tổng quan Vận hành Chủ bãi (MerchantDashboardPage) (SCR-026) (5 STP)",
+    "descLen": 2652,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f0434124d9ceb4a1420",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f03d074be4e7f25299c",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f05c660c083cf8ae309",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0434124d9ceb4a1420"
+          },
+          {
+            "id": "6aeb0f057812a3975dba5074",
+            "name": "2. Cấu hình Route \"/merchant/dashboard\", liên kết Inbound/Outbound với [SCR-028, SCR-034, SCR-036, SCR-037] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0434124d9ceb4a1420"
+          },
+          {
+            "id": "6aeb0f062ac0d3685c86b800",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0434124d9ceb4a1420"
+          },
+          {
+            "id": "6aeb0f073423fbade1f7487f",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/parking-lots`, GET `/api/v1/merchant/revenue`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0434124d9ceb4a1420"
+          },
+          {
+            "id": "6aeb0f07fd22f1892241de34",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0434124d9ceb4a1420"
+          },
+          {
+            "id": "6aeb0f0873d665c46736391b",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0434124d9ceb4a1420"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f096c29d1cb11bdb011",
+    "name": "[SP-S3-PAY-08] [FE] Hồ sơ Chủ bãi & Thông tin Ngân hàng Rút tiền (MerchantProfilePage) (SCR-027) (2 STP)",
+    "descLen": 2582,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f0acdb6e39a4d20bc02",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f096c29d1cb11bdb011",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f0be893a2d494445e8f",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0acdb6e39a4d20bc02"
+          },
+          {
+            "id": "6aeb0f0b3978dc3693c7544f",
+            "name": "2. Cấu hình Route \"/merchant/profile\", liên kết Inbound/Outbound với [SCR-026, SCR-038] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0acdb6e39a4d20bc02"
+          },
+          {
+            "id": "6aeb0f0cf1786b3f2f3af9aa",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0acdb6e39a4d20bc02"
+          },
+          {
+            "id": "6aeb0f0d8d9b89cd5a5dbfde",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/profile`, PUT `/api/v1/merchant/profile`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0acdb6e39a4d20bc02"
+          },
+          {
+            "id": "6aeb0f0deda0c8051de490a0",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0acdb6e39a4d20bc02"
+          },
+          {
+            "id": "6aeb0f0eb75ad8ffa6c41f6f",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f0acdb6e39a4d20bc02"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f0fe79ce69670c43ac3",
+    "name": "[SP-S3-UI-10] [FE] Danh sách & Lưới Trạng thái Bãi đỗ xe (MerchantParkingLotsPage) (SCR-028) (3 STP)",
+    "descLen": 2608,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f105725ed91bb968ade",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f0fe79ce69670c43ac3",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f1028d03007ce89a4ac",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f105725ed91bb968ade"
+          },
+          {
+            "id": "6aeb0f11ca76d82a3a84c4b0",
+            "name": "2. Cấu hình Route \"/merchant/parking-lots\", liên kết Inbound/Outbound với [SCR-029, SCR-030, SCR-032, SCR-033] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f105725ed91bb968ade"
+          },
+          {
+            "id": "6aeb0f12a6f35c4bee031dc0",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f105725ed91bb968ade"
+          },
+          {
+            "id": "6aeb0f1200fa43943506a8f3",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/parking-lots`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f105725ed91bb968ade"
+          },
+          {
+            "id": "6aeb0f1347830ce2c01c19db",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f105725ed91bb968ade"
+          },
+          {
+            "id": "6aeb0f14907c107809eade11",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f105725ed91bb968ade"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f1ad9ead4ce22829aca",
+    "name": "[SP-S3-UI-11] [FE] Chi tiết Vận hành & Doanh thu Bãi đỗ (MerchantParkingLotDetailPage) (SCR-030) (3 STP)",
+    "descLen": 2706,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f1c48c40007cf58c931",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f1ad9ead4ce22829aca",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f1c749c15e75e347701",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f1c48c40007cf58c931"
+          },
+          {
+            "id": "6aeb0f1d404632250fc90028",
+            "name": "2. Cấu hình Route \"/merchant/parking-lots/:parkingLotId\", liên kết Inbound/Outbound với [SCR-028, SCR-031, SCR-032, SCR-033] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f1c48c40007cf58c931"
+          },
+          {
+            "id": "6aeb0f1de2b5b85e778e33a5",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f1c48c40007cf58c931"
+          },
+          {
+            "id": "6aeb0f1e466359dca27b074b",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/parking-lots/{id}`, GET `/{id}/revenue`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f1c48c40007cf58c931"
+          },
+          {
+            "id": "6aeb0f1f75c52afebc6f0366",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f1c48c40007cf58c931"
+          },
+          {
+            "id": "6aeb0f20d2a2c3c19baa8d63",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f1c48c40007cf58c931"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f20c156365db84b421b",
+    "name": "[SP-S3-UI-12] [FE] Chỉnh sửa Thông tin & Tiện ích Bãi đỗ (EditMerchantParkingLotPage) (SCR-031) (3 STP)",
+    "descLen": 2580,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f21f576e712ba8f02c0",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f20c156365db84b421b",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f225524481f6cc2b4f8",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f21f576e712ba8f02c0"
+          },
+          {
+            "id": "6aeb0f238d15b6848b445f66",
+            "name": "2. Cấu hình Route \"/merchant/parking-lots/:parkingLotId/edit\", liên kết Inbound/Outbound với [SCR-030] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f21f576e712ba8f02c0"
+          },
+          {
+            "id": "6aeb0f24b182bc2c8e3d9a53",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f21f576e712ba8f02c0"
+          },
+          {
+            "id": "6aeb0f245d9b0e1305c091a7",
+            "name": "4. Tích hợp API Backend [PUT `/api/v1/merchant/parking-lots/{id}`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f21f576e712ba8f02c0"
+          },
+          {
+            "id": "6aeb0f255bc8ac26afee6934",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f21f576e712ba8f02c0"
+          },
+          {
+            "id": "6aeb0f2627f6d0e670a0a015",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f21f576e712ba8f02c0"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f2c7bece0719e972573",
+    "name": "[SP-S3-PRC-01] [FE] Thiết lập Biểu phí Ma trận 4 Thông số (MerchantPricingPage) (SCR-033) (5 STP)",
+    "descLen": 2651,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f2dc1926bed1cf76ebe",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f2c7bece0719e972573",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f2e1a16ce9519ca4566",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f2dc1926bed1cf76ebe"
+          },
+          {
+            "id": "6aeb0f2f68d8d4e0bc220c44",
+            "name": "2. Cấu hình Route \"/merchant/parking-lots/:parkingLotId/pricing\", liên kết Inbound/Outbound với [SCR-030] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f2dc1926bed1cf76ebe"
+          },
+          {
+            "id": "6aeb0f2fb52d95c090f0b233",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f2dc1926bed1cf76ebe"
+          },
+          {
+            "id": "6aeb0f30240b19e7c8451a95",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/parking-lots/{id}/pricing`, PUT `/pricing`, PUT `/pricing/bulk`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f2dc1926bed1cf76ebe"
+          },
+          {
+            "id": "6aeb0f31d59f24210f41bf96",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f2dc1926bed1cf76ebe"
+          },
+          {
+            "id": "6aeb0f314e81691d182ea550",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f2dc1926bed1cf76ebe"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f32fdee4b86f9e1f67a",
+    "name": "[SP-S3-UI-13] [FE] Quản lý Lịch sử & Đơn Đặt chỗ Khách hàng (MerchantBookingsPage) (SCR-034) (3 STP)",
+    "descLen": 2543,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f33c52f9b2921851f3e",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f32fdee4b86f9e1f67a",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f34a749d0d049924479",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f33c52f9b2921851f3e"
+          },
+          {
+            "id": "6aeb0f35f42f0187a0309fab",
+            "name": "2. Cấu hình Route \"/merchant/bookings\", liên kết Inbound/Outbound với [SCR-035, SCR-036] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f33c52f9b2921851f3e"
+          },
+          {
+            "id": "6aeb0f351e044f7ad64e21da",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f33c52f9b2921851f3e"
+          },
+          {
+            "id": "6aeb0f36c5d7da5ffb28c1e8",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/bookings`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f33c52f9b2921851f3e"
+          },
+          {
+            "id": "6aeb0f370e25baf02d8e3b73",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f33c52f9b2921851f3e"
+          },
+          {
+            "id": "6aeb0f379f7e8da482465553",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f33c52f9b2921851f3e"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f383bda5951e9a49330",
+    "name": "[SP-S3-UI-14] [FE] Chi tiết Đơn Đặt chỗ & Nhật ký Barie (MerchantBookingDetailPage) (SCR-035) (3 STP)",
+    "descLen": 2544,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f39d30ec1e7d4e937d2",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f383bda5951e9a49330",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f3ac12e879901b84c3b",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f39d30ec1e7d4e937d2"
+          },
+          {
+            "id": "6aeb0f3b439ccbeee23cd43c",
+            "name": "2. Cấu hình Route \"/merchant/bookings/:bookingId\", liên kết Inbound/Outbound với [SCR-034] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f39d30ec1e7d4e937d2"
+          },
+          {
+            "id": "6aeb0f3bfbc7df278e35b22c",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f39d30ec1e7d4e937d2"
+          },
+          {
+            "id": "6aeb0f3c8140eb119e08b259",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/bookings/{id}`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f39d30ec1e7d4e937d2"
+          },
+          {
+            "id": "6aeb0f3dc85e9df646275967",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f39d30ec1e7d4e937d2"
+          },
+          {
+            "id": "6aeb0f3e411364e83241cc20",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f39d30ec1e7d4e937d2"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f4432b1657fe29a10d7",
+    "name": "[SP-S3-PAY-03] [FE] Phân tích Biểu đồ Doanh thu & Sổ cái Ví (MerchantRevenuePage) (SCR-037) (5 STP)",
+    "descLen": 2525,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f465f94b113f297af81",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f4432b1657fe29a10d7",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f469f2723cfd42bd900",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f465f94b113f297af81"
+          },
+          {
+            "id": "6aeb0f47db7df584511b5e68",
+            "name": "2. Cấu hình Route \"/merchant/revenue\", liên kết Inbound/Outbound với [SCR-026, SCR-038] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f465f94b113f297af81"
+          },
+          {
+            "id": "6aeb0f4821c3b3edc05d546f",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f465f94b113f297af81"
+          },
+          {
+            "id": "6aeb0f49ec4c6c62a6e8b528",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/merchant/revenue`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f465f94b113f297af81"
+          },
+          {
+            "id": "6aeb0f497dd683f1226c54f1",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f465f94b113f297af81"
+          },
+          {
+            "id": "6aeb0f4afea289dc2120f942",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f465f94b113f297af81"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f4bd41db630688a2103",
+    "name": "[SP-S3-PAY-04] [FE] Tạo Yêu cầu Rút tiền & Quản lý Giải ngân (MerchantWithdrawalsPage) (SCR-038) (5 STP)",
+    "descLen": 2742,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f4c4ed91e9b1427b418",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f4bd41db630688a2103",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f4c91b0aa67d3863c8e",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f4c4ed91e9b1427b418"
+          },
+          {
+            "id": "6aeb0f4d209e957019ce1776",
+            "name": "2. Cấu hình Route \"/merchant/withdrawals\", liên kết Inbound/Outbound với [SCR-027, SCR-037, SCR-MOD-05] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f4c4ed91e9b1427b418"
+          },
+          {
+            "id": "6aeb0f4ea9e618dea07e28c5",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f4c4ed91e9b1427b418"
+          },
+          {
+            "id": "6aeb0f4ef4ad95fa3be26ba8",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/withdrawals`, POST `/api/v1/withdrawals`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f4c4ed91e9b1427b418"
+          },
+          {
+            "id": "6aeb0f4fd59f24210f41f3bc",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f4c4ed91e9b1427b418"
+          },
+          {
+            "id": "6aeb0f50706d5d13aca806de",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f4c4ed91e9b1427b418"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f51258c3f76952c34f0",
+    "name": "[SP-S3-GOV-06] [FE] Danh sách Khiếu nại từ Tài xế (MerchantDisputesPage) (SCR-039) (2 STP)",
+    "descLen": 2503,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f523e50d6f69d5d0025",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f51258c3f76952c34f0",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f52ab936c61a2975f78",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f523e50d6f69d5d0025"
+          },
+          {
+            "id": "6aeb0f535b3599801415d1cf",
+            "name": "2. Cấu hình Route \"/merchant/disputes\", liên kết Inbound/Outbound với [SCR-040] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f523e50d6f69d5d0025"
+          },
+          {
+            "id": "6aeb0f54133ad00ca2ff4c1c",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f523e50d6f69d5d0025"
+          },
+          {
+            "id": "6aeb0f55e9577023521b4d1c",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/disputes/merchant`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f523e50d6f69d5d0025"
+          },
+          {
+            "id": "6aeb0f55904b1186d9bb5168",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f523e50d6f69d5d0025"
+          },
+          {
+            "id": "6aeb0f56a22f2946c338845d",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f523e50d6f69d5d0025"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f57c3e486772b73701c",
+    "name": "[SP-S3-GOV-07] [FE] Chi tiết Khiếu nại, Lời khai & Bằng chứng (MerchantDisputeDetailPage) (SCR-040) (3 STP)",
+    "descLen": 2532,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f58c1105088bb4d3ee0",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f57c3e486772b73701c",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f58f9936bc6704f8f7b",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f58c1105088bb4d3ee0"
+          },
+          {
+            "id": "6aeb0f590c84b6f7b0e19f2d",
+            "name": "2. Cấu hình Route \"/merchant/disputes/:ticketId\", liên kết Inbound/Outbound với [SCR-039] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f58c1105088bb4d3ee0"
+          },
+          {
+            "id": "6aeb0f5a256b09208b2ab726",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f58c1105088bb4d3ee0"
+          },
+          {
+            "id": "6aeb0f5a8a1cf4d11172dbaf",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/disputes/merchant/{id}`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f58c1105088bb4d3ee0"
+          },
+          {
+            "id": "6aeb0f5b69875bdcb14309b8",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f58c1105088bb4d3ee0"
+          },
+          {
+            "id": "6aeb0f5c7b87441bb33b611b",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f58c1105088bb4d3ee0"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f5d33fd061e88f19572",
+    "name": "[SP-S3-UI-07] [FE] Trung tâm Thông báo Vận hành Bãi xe (MerchantNotificationsPage) (SCR-041) (2 STP)",
+    "descLen": 2576,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f5e92efdeeb91adc2f4",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f5d33fd061e88f19572",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f5e4a4f1f05e44dfc44",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f5e92efdeeb91adc2f4"
+          },
+          {
+            "id": "6aeb0f5f72c8e9b0cb19a0d0",
+            "name": "2. Cấu hình Route \"/merchant/notifications\", liên kết Inbound/Outbound với [SCR-026, SCR-028, SCR-038] & RBAC Guard [MERCHANT]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f5e92efdeeb91adc2f4"
+          },
+          {
+            "id": "6aeb0f60d516c6293237d1f3",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f5e92efdeeb91adc2f4"
+          },
+          {
+            "id": "6aeb0f610bbe3bc9b8f2ab89",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/notifications`, POST `/read`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f5e92efdeeb91adc2f4"
+          },
+          {
+            "id": "6aeb0f616bbbe66f992e760b",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f5e92efdeeb91adc2f4"
+          },
+          {
+            "id": "6aeb0f64b288cc3c920beca0",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f5e92efdeeb91adc2f4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f7879b01fca676fa830",
+    "name": "[SP-S3-GOV-04] [FE] Danh bạ Quản lý Tài khoản & Phân quyền Toàn sàn (AdminUsersPage) (SCR-045) (3 STP)",
+    "descLen": 2535,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f795552eb536906d58a",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f7879b01fca676fa830",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f79ef0a8edce17fc9ba",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f795552eb536906d58a"
+          },
+          {
+            "id": "6aeb0f7ac9f02a37295c0e37",
+            "name": "2. Cấu hình Route \"/admin/users\", liên kết Inbound/Outbound với [SCR-046] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f795552eb536906d58a"
+          },
+          {
+            "id": "6aeb0f7b939e9d5207e94606",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f795552eb536906d58a"
+          },
+          {
+            "id": "6aeb0f7c22e34f84b570dde3",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/users`, PUT `/{id}/ban`, PUT `/{id}/unban`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f795552eb536906d58a"
+          },
+          {
+            "id": "6aeb0f7c9b05af63d8b93da7",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f795552eb536906d58a"
+          },
+          {
+            "id": "6aeb0f7d573136be242f57a2",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f795552eb536906d58a"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f84bd4fe57a3eb1a785",
+    "name": "[SP-S3-PAY-05] [FE] Sổ cái Giám sát Giao dịch Dòng tiền Toàn hệ thống (AdminTransactionsPage) (SCR-047) (5 STP)",
+    "descLen": 2503,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f859df2c67364c9f882",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f84bd4fe57a3eb1a785",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f860afb2652bd884ad4",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f859df2c67364c9f882"
+          },
+          {
+            "id": "6aeb0f86b14d52bb45288e18",
+            "name": "2. Cấu hình Route \"/admin/transactions\", liên kết Inbound/Outbound với [SCR-042] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f859df2c67364c9f882"
+          },
+          {
+            "id": "6aeb0f87f096f2e0cd71368d",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f859df2c67364c9f882"
+          },
+          {
+            "id": "6aeb0f88d51130147eb0111f",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/transactions`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f859df2c67364c9f882"
+          },
+          {
+            "id": "6aeb0f89fcbc1e430681356f",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f859df2c67364c9f882"
+          },
+          {
+            "id": "6aeb0f89623bb45464f9d147",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f859df2c67364c9f882"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f8ab1cfb4f0f389da16",
+    "name": "[SP-S3-PAY-06] [FE] Phê duyệt & Quyết toán Lệnh Rút tiền Ví Chủ bãi (AdminWithdrawalsPage) (SCR-048) (5 STP)",
+    "descLen": 2564,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f8bcb53384f69d2af7d",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f8ab1cfb4f0f389da16",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f8cfafd4ea95dbc0c7a",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f8bcb53384f69d2af7d"
+          },
+          {
+            "id": "6aeb0f8cd3efb6b2d25424e6",
+            "name": "2. Cấu hình Route \"/admin/withdrawals\", liên kết Inbound/Outbound với [SCR-042] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f8bcb53384f69d2af7d"
+          },
+          {
+            "id": "6aeb0f8d965591f2e78bb3c0",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f8bcb53384f69d2af7d"
+          },
+          {
+            "id": "6aeb0f8ecd92ba1c5a5b3dc2",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/withdrawals`, PUT `/{id}/approve`, PUT `/{id}/reject`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f8bcb53384f69d2af7d"
+          },
+          {
+            "id": "6aeb0f8fa34edfef8d3574a4",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f8bcb53384f69d2af7d"
+          },
+          {
+            "id": "6aeb0f8f40844eab83afa159",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f8bcb53384f69d2af7d"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f9041d30bcd02604e02",
+    "name": "[SP-S3-GOV-05] [FE] Bàn Trọng tài & Danh sách Tranh chấp Mở (AdminDisputesPage) (SCR-049) (3 STP)",
+    "descLen": 2467,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f916f4b3c3e91a36e3c",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f9041d30bcd02604e02",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f928378fe44bb0fe62f",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f916f4b3c3e91a36e3c"
+          },
+          {
+            "id": "6aeb0f92b9928e534971f9b5",
+            "name": "2. Cấu hình Route \"/admin/disputes\", liên kết Inbound/Outbound với [SCR-050] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f916f4b3c3e91a36e3c"
+          },
+          {
+            "id": "6aeb0f932268ebc33ff52851",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f916f4b3c3e91a36e3c"
+          },
+          {
+            "id": "6aeb0f940c2bc48f8558131a",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/disputes/admin`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f916f4b3c3e91a36e3c"
+          },
+          {
+            "id": "6aeb0f94df2c5ce750f07a8d",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f916f4b3c3e91a36e3c"
+          },
+          {
+            "id": "6aeb0f9595710779a1ba9658",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f916f4b3c3e91a36e3c"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f9617aabd604a27a3bd",
+    "name": "[SP-S3-PAY-07] [FE] Phán quyết Trọng tài & Phân bổ Tiền bồi thường (AdminDisputeDetailPage) (SCR-050) (5 STP)",
+    "descLen": 2711,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f975a6e4cea681029d7",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f9617aabd604a27a3bd",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f9794c354e849150ad0",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f975a6e4cea681029d7"
+          },
+          {
+            "id": "6aeb0f9815d5fcf48dfa9313",
+            "name": "2. Cấu hình Route \"/admin/disputes/:disputeId\", liên kết Inbound/Outbound với [SCR-049] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f975a6e4cea681029d7"
+          },
+          {
+            "id": "6aeb0f99eb6e628247a4a2b3",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f975a6e4cea681029d7"
+          },
+          {
+            "id": "6aeb0f99259c12eb20ef35af",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/disputes/admin/{id}`, PUT `/resolve`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f975a6e4cea681029d7"
+          },
+          {
+            "id": "6aeb0f9abc8321a7a5c834b4",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f975a6e4cea681029d7"
+          },
+          {
+            "id": "6aeb0f9b255eb02d8b0b9575",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f975a6e4cea681029d7"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e6af81c012127035f0d",
+    "name": "[SP-S3-UI-04] [FE] Trang chủ Marketing & Live Hero Map (LandingPage) (SCR-001) (3 STP)",
+    "descLen": 2447,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 5,
+    "checklists": [
+      {
+        "id": "6aeb0e6b4f2435abd5f7ea68",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e6af81c012127035f0d",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e6b95b5ec324bdac1f0",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e6b4f2435abd5f7ea68"
+          },
+          {
+            "id": "6aeb0e6c77f2e95b098c2ae5",
+            "name": "2. Cấu hình Route \"/\", liên kết Inbound/Outbound với [SCR-002, SCR-010, SCR-015] & RBAC Guard [GUEST, ALL]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e6b4f2435abd5f7ea68"
+          },
+          {
+            "id": "6aeb0e6d79f6e1468507aeee",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e6b4f2435abd5f7ea68"
+          },
+          {
+            "id": "6aeb0e6dd8a8a15597f14100",
+            "name": "4. Tích hợp API Backend [Không gọi API], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e6b4f2435abd5f7ea68"
+          },
+          {
+            "id": "6aeb0e6e0e2bccb665c98aed",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e6b4f2435abd5f7ea68"
+          },
+          {
+            "id": "6aeb0e6f7df17df5ed4aba71",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e6b4f2435abd5f7ea68"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f9ca5b36ca5f1d8e306",
+    "name": "[SP-S3-SEC-03] [FE] Nhật ký Kiểm toán An ninh & Vết Quản trị (AdminAuditLogsPage) (SCR-051) (3 STP)",
+    "descLen": 2486,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0f9d1e044f7ad64ed880",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0f9ca5b36ca5f1d8e306",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0f9dd5def4aea6faeb91",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f9d1e044f7ad64ed880"
+          },
+          {
+            "id": "6aeb0f9e7f864d1da98453d3",
+            "name": "2. Cấu hình Route \"/admin/audit-logs\", liên kết Inbound/Outbound với [SCR-042] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f9d1e044f7ad64ed880"
+          },
+          {
+            "id": "6aeb0f9fa64f30c5a8527cd7",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f9d1e044f7ad64ed880"
+          },
+          {
+            "id": "6aeb0f9f46135d4f946d4e2f",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/audit-logs`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f9d1e044f7ad64ed880"
+          },
+          {
+            "id": "6aeb0fa0ab791439c3e1f094",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f9d1e044f7ad64ed880"
+          },
+          {
+            "id": "6aeb0fa144fa68691f3fab51",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0f9d1e044f7ad64ed880"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aec0ae11c7ed614eaf6b1ff",
+    "name": "[SP-S3-INT-02] [FE+BE] Sửa lỗi lệch Contract DTO và cơ chế Fallback Mock khi Đặt cọc giữ chỗ (GAP-17) (5 STP)",
+    "descLen": 2726,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aec0ae2b584736e717c7d9e",
+    "name": "[SP-S3-UI-09] [FE] Sửa lỗi parse Response API danh sách đặt chỗ cá nhân MyBookings (GAP-18) (2 STP)",
+    "descLen": 2008,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aec0ae38abeb86974d3cd6d",
+    "name": "[SP-S3-SEC-04] [FE] Thay thế axios trần bằng apiClient để gắn Authorization Token cho Notification API (GAP-19) (2 STP)",
+    "descLen": 1798,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aec0ae4c015dee2c6cf8cc9",
+    "name": "[SP-S3-BKG-02] [BE+FE] Khắc phục đứt gãy luồng Hàng đợi ảo: Bổ sung trạng thái NOTIFIED và API Accept Slot (GAP-20) (5 STP)",
+    "descLen": 2394,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aec0ae5e05668d30f6c6996",
+    "name": "[SP-S3-DAT-02] [BE+FE] Đồng bộ hóa danh mục loại phương tiện TRAILER giữa FE và Backend (GAP-21) (3 STP)",
+    "descLen": 2178,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aec0ae6e85b218f0abcd01b",
+    "name": "[SP-S3-INT-03] [FE] Loại bỏ Mock Data biểu đồ và tích hợp API chuỗi doanh thu ngày cho Merchant Dashboard (GAP-22) (3 STP)",
+    "descLen": 1736,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aeb0ed8cf41eb6b7287a249",
+    "name": "[SP-S3-PAY-10] [FE] Sổ cái Lịch sử Thanh toán & Đối soát Cọc (DriverPaymentsPage) (SCR-019) (2 STP)",
+    "descLen": 2470,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0ed92adf784ac3135826",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0ed8cf41eb6b7287a249",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0edaebf3b9cba081d034",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ed92adf784ac3135826"
+          },
+          {
+            "id": "6aeb0eda7f972ea022a5fae4",
+            "name": "2. Cấu hình Route \"/payments\", liên kết Inbound/Outbound với [SCR-017] & RBAC Guard [DRIVER]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ed92adf784ac3135826"
+          },
+          {
+            "id": "6aeb0edbd394e608885ec040",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ed92adf784ac3135826"
+          },
+          {
+            "id": "6aeb0edc9906285d74f05998",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/payments/my`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ed92adf784ac3135826"
+          },
+          {
+            "id": "6aeb0edc39b8e0672d97af5c",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ed92adf784ac3135826"
+          },
+          {
+            "id": "6aeb0edd4d39aff4c0cfbb1d",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ed92adf784ac3135826"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e7b5444efd54d87a05f",
+    "name": "[SP-S3-UI-21] [FE] Bảng giá Dịch vụ & Gói Bãi xe (PricingPage) (SCR-004) (2 STP)",
+    "descLen": 2416,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 5,
+    "checklists": [
+      {
+        "id": "6aeb0e7c1a4bf7ac1f51fa49",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e7b5444efd54d87a05f",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e7d796ba5bbf308ec0c",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e7c1a4bf7ac1f51fa49"
+          },
+          {
+            "id": "6aeb0e7e32b1657fe298da34",
+            "name": "2. Cấu hình Route \"/pricing\", liên kết Inbound/Outbound với [SCR-001, SCR-011] & RBAC Guard [GUEST, ALL]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e7c1a4bf7ac1f51fa49"
+          },
+          {
+            "id": "6aeb0e7edd8134611fded9f4",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e7c1a4bf7ac1f51fa49"
+          },
+          {
+            "id": "6aeb0e7f2822b2f2af4d63a3",
+            "name": "4. Tích hợp API Backend [Không gọi API], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e7c1a4bf7ac1f51fa49"
+          },
+          {
+            "id": "6aeb0e806c3da748cddd2616",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "complete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e7c1a4bf7ac1f51fa49"
+          },
+          {
+            "id": "6aeb0e81f04cee18ce300add",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e7c1a4bf7ac1f51fa49"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae1b59847688c91687384",
+    "name": "[SP-S3-AI-01] [FE] Tích hợp widget trợ lý ảo AI Copilot tra cứu bãi đỗ (SCR-MOD-01) (5 STP)",
+    "descLen": 1838,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeae7fefc1033221bea27a4",
+        "name": "Checklist thực hiện",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeae1b59847688c91687384",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeae7fec33d77b1e3ffcc44",
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7fefc1033221bea27a4"
+          },
+          {
+            "id": "6aeae7ff6bbbe66f99e7db39",
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7fefc1033221bea27a4"
+          },
+          {
+            "id": "6aeae8001c8b2c0fa3296f4d",
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7fefc1033221bea27a4"
+          },
+          {
+            "id": "6aeae8011256bfc173c170f7",
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeae7fefc1033221bea27a4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aec368f5ca048394a3bdb60",
+    "name": "[SP-S3-UI-15] [FE] Chuẩn hóa cơ chế xử lý lỗi API và cờ cấu hình Mock Data môi trường (3 STP)",
+    "descLen": 2893,
+    "checklistsCount": 0,
+    "totalItems": 0,
+    "checkedItems": 0,
+    "checklists": []
+  },
+  {
+    "id": "6aeb0ef6e0fd652d8a6439c5",
+    "name": "[SP-S3-UI-08] [FE] Thông báo Thanh toán Bị hủy & Hướng dẫn Thử lại (PaymentCancelPage) (SCR-024) (2 STP)",
+    "descLen": 2435,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0ef7033bd478942f2573",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0ef6e0fd652d8a6439c5",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0ef8bd4c2afdf8783365",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef7033bd478942f2573"
+          },
+          {
+            "id": "6aeb0ef9654db4fc4c67f908",
+            "name": "2. Cấu hình Route \"/payment/cancel\", liên kết Inbound/Outbound với [SCR-017] & RBAC Guard [DRIVER]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef7033bd478942f2573"
+          },
+          {
+            "id": "6aeb0ef96415a71b16a1294a",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef7033bd478942f2573"
+          },
+          {
+            "id": "6aeb0efa62b808225c2a5c69",
+            "name": "4. Tích hợp API Backend [Không gọi API mới], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef7033bd478942f2573"
+          },
+          {
+            "id": "6aeb0efbdddab48344ea82bd",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef7033bd478942f2573"
+          },
+          {
+            "id": "6aeb0efc429731932a3bcd00",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef7033bd478942f2573"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e37edffa306ef88ff11",
+    "name": "[SP-S3-OPS-02] [ARCH] Dọn dẹp nợ kỹ thuật: Xóa bỏ Ant Design Sider chết và trang mồ côi (GAP-08, GAP-16) (2 STP)",
+    "descLen": 451,
+    "checklistsCount": 1,
+    "totalItems": 4,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0e3846c225d83eb71964",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e37edffa306ef88ff11",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e390a0a869b65f8a74d",
+            "name": "Xóa sạch code Ant Design Sider không hoạt động trong DashboardLayout.tsx",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e3846c225d83eb71964"
+          },
+          {
+            "id": "6aeb0e3b3bda5951e9a2fe9f",
+            "name": "Xóa file MerchantPlaceholderPage.tsx và các import thừa",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e3846c225d83eb71964"
+          },
+          {
+            "id": "6aeb0e3ba5a9f51a69bf9c70",
+            "name": "Kiểm tra lại toàn bộ file routes đảm bảo không còn liên kết gãy",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e3846c225d83eb71964"
+          },
+          {
+            "id": "6aeb0e3daf77235aabaf67dc",
+            "name": "Chạy typecheck và lint đảm bảo 0 lỗi",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e3846c225d83eb71964"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0dcbfd4829d28a5fbc8c",
+    "name": "[SP-S3-SAGA-01] [BE] Tự động hóa Đối soát và Xử lý Hoàn tiền Tranh chấp (Auto-Refund Settlement - GAP-13) (5 STP)",
+    "descLen": 814,
+    "checklistsCount": 1,
+    "totalItems": 5,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0dccf7f28a3da6082806",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0dcbfd4829d28a5fbc8c",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0dce9466669738cb64a6",
+            "name": "Thiết kế DTO DisputeResolutionRequest với các trường refundAmount, decisionType, settlementNotes",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dccf7f28a3da6082806"
+          },
+          {
+            "id": "6aeb0dce11725e3f59149a4f",
+            "name": "Cập nhật DisputeServiceImpl thực hiện giao dịch hoàn tiền có transactional an toàn",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dccf7f28a3da6082806"
+          },
+          {
+            "id": "6aeb0dcff003872ff48fabca",
+            "name": "Tạo bảng wallet_transactions ghi nhận biến động số dư ví của Driver và Merchant",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dccf7f28a3da6082806"
+          },
+          {
+            "id": "6aeb0dd050c95453b49bb9d7",
+            "name": "Tích hợp cơ chế Idempotency chống Double-Refund",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dccf7f28a3da6082806"
+          },
+          {
+            "id": "6aeb0dd1689b364a4fc4f3f8",
+            "name": "Bắn notification realtime tới cả Driver và Merchant khi hoàn tiền hoàn tất",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0dccf7f28a3da6082806"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0ef091047129466afe98",
+    "name": "[SP-S3-PAY-09] [FE] Kết quả Thanh toán PayOS Thành công (PaymentSuccessPage) (SCR-023) (3 STP)",
+    "descLen": 2552,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0ef1219ad3295c13cc71",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0ef091047129466afe98",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0ef23df131421f671121",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef1219ad3295c13cc71"
+          },
+          {
+            "id": "6aeb0ef33436ba87609501e4",
+            "name": "2. Cấu hình Route \"/payment/success\", liên kết Inbound/Outbound với [SCR-017] & RBAC Guard [DRIVER]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef1219ad3295c13cc71"
+          },
+          {
+            "id": "6aeb0ef3a02ddabadfbc69db",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef1219ad3295c13cc71"
+          },
+          {
+            "id": "6aeb0ef491cf061af8037d89",
+            "name": "4. Tích hợp API Backend [POST `/api/v1/bookings/{id}/sync-payos`, POST `/demo-deposit`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef1219ad3295c13cc71"
+          },
+          {
+            "id": "6aeb0ef58c7458d7e88dce8e",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef1219ad3295c13cc71"
+          },
+          {
+            "id": "6aeb0ef569ee06788506a907",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0ef1219ad3295c13cc71"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0fa18fbf9f87906f1768",
+    "name": "[SP-S3-UI-16] [FE] Trung tâm Phát sóng & Cảnh báo Điều hành (AdminNotificationsPage) (SCR-052) (2 STP)",
+    "descLen": 2482,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0fa3995829aaf3f9808e",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0fa18fbf9f87906f1768",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0fa3c4a797e4411d499b",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0fa3995829aaf3f9808e"
+          },
+          {
+            "id": "6aeb0fa484bae4fd14f28d8b",
+            "name": "2. Cấu hình Route \"/admin/notifications\", liên kết Inbound/Outbound với [SCR-042] & RBAC Guard [ADMIN]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0fa3995829aaf3f9808e"
+          },
+          {
+            "id": "6aeb0fa5221b3f4a2c31004c",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0fa3995829aaf3f9808e"
+          },
+          {
+            "id": "6aeb0fa585aab84edbfceef4",
+            "name": "4. Tích hợp API Backend [GET `/api/v1/notifications`, POST `/read`], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0fa3995829aaf3f9808e"
+          },
+          {
+            "id": "6aeb0fa6f6b2951eee122005",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0fa3995829aaf3f9808e"
+          },
+          {
+            "id": "6aeb0fa7066b33864508fac4",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0fa3995829aaf3f9808e"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e81796cb8e86163ed8a",
+    "name": "[SP-S3-UI-17] [FE] Tài liệu Tích hợp API & Webhooks (ApiIntegrationPage) (SCR-005) (2 STP)",
+    "descLen": 2458,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0e82194e5e631d5e8617",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e81796cb8e86163ed8a",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e842e213b95ded524d9",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e82194e5e631d5e8617"
+          },
+          {
+            "id": "6aeb0e8473b1d77dba24efa9",
+            "name": "2. Cấu hình Route \"/solutions/api\", liên kết Inbound/Outbound với [SCR-001, SCR-009] & RBAC Guard [GUEST, ALL]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e82194e5e631d5e8617"
+          },
+          {
+            "id": "6aeb0e85f70dc6365188a88e",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e82194e5e631d5e8617"
+          },
+          {
+            "id": "6aeb0e863771ae27cf04a960",
+            "name": "4. Tích hợp API Backend [Không gọi API], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e82194e5e631d5e8617"
+          },
+          {
+            "id": "6aeb0e861e5d76359228c8b8",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e82194e5e631d5e8617"
+          },
+          {
+            "id": "6aeb0e8721e810b65cd748c7",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e82194e5e631d5e8617"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e8ef14ba0aee24fe3cc",
+    "name": "[SP-S3-UI-18] [FE] Cơ hội Nghề nghiệp & Tuyển dụng (CareersPage) (SCR-007) (2 STP)",
+    "descLen": 2429,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0e8f253388eaa7c20832",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e8ef14ba0aee24fe3cc",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e902ff4965b80eb52b2",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e8f253388eaa7c20832"
+          },
+          {
+            "id": "6aeb0e911cf1fa47f6c6d9f1",
+            "name": "2. Cấu hình Route \"/company/careers\", liên kết Inbound/Outbound với [SCR-001, SCR-009] & RBAC Guard [GUEST, ALL]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e8f253388eaa7c20832"
+          },
+          {
+            "id": "6aeb0e912a25d5536eaed383",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e8f253388eaa7c20832"
+          },
+          {
+            "id": "6aeb0e929779297edfb724e6",
+            "name": "4. Tích hợp API Backend [Không gọi API], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e8f253388eaa7c20832"
+          },
+          {
+            "id": "6aeb0e9307a3375e6a0553ff",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e8f253388eaa7c20832"
+          },
+          {
+            "id": "6aeb0e941a16ce9519c8e02e",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e8f253388eaa7c20832"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e9b9b05af63d8b7df57",
+    "name": "[SP-S3-UI-19] [FE] Liên hệ Hợp tác & Hỗ trợ Kỹ thuật 24/7 (ContactPage) (SCR-009) (3 STP)",
+    "descLen": 2447,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0e9ce3143090cf61d142",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0e9b9b05af63d8b7df57",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0e9c41af4f443f944540",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e9ce3143090cf61d142"
+          },
+          {
+            "id": "6aeb0e9d73f638a9f14006fb",
+            "name": "2. Cấu hình Route \"/company/contact\", liên kết Inbound/Outbound với [SCR-001] & RBAC Guard [GUEST, ALL]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e9ce3143090cf61d142"
+          },
+          {
+            "id": "6aeb0e9e50019b6edbce264f",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e9ce3143090cf61d142"
+          },
+          {
+            "id": "6aeb0e9fc87a3b1e611e36c5",
+            "name": "4. Tích hợp API Backend [Không gọi API (Form HTML tĩnh)], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e9ce3143090cf61d142"
+          },
+          {
+            "id": "6aeb0e9ff319d3b16d60dac5",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e9ce3143090cf61d142"
+          },
+          {
+            "id": "6aeb0ea0afa005ac29de4b2e",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0e9ce3143090cf61d142"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0eb378ada3de72fcb490",
+    "name": "[SP-S3-UI-20] [FE] Thông báo Lỗi Truy cập 403 Forbidden (ForbiddenPage) (SCR-013) (1 STP)",
+    "descLen": 2401,
+    "checklistsCount": 1,
+    "totalItems": 6,
+    "checkedItems": 0,
+    "checklists": [
+      {
+        "id": "6aeb0eb4a22a1f1661616bc6",
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "idBoard": "6adec797ec1dfad62536f785",
+        "idCard": "6aeb0eb378ada3de72fcb490",
+        "pos": 140737488355328,
+        "checkItems": [
+          {
+            "id": "6aeb0eb5907c107809ea472e",
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488355328,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0eb4a22a1f1661616bc6"
+          },
+          {
+            "id": "6aeb0eb5c9197d8a2d296fbf",
+            "name": "2. Cấu hình Route \"/403\", liên kết Inbound/Outbound với [SCR-001, SCR-014, SCR-026] & RBAC Guard [ALL]",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488371712,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0eb4a22a1f1661616bc6"
+          },
+          {
+            "id": "6aeb0eb72ac0d3685c86363f",
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488388096,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0eb4a22a1f1661616bc6"
+          },
+          {
+            "id": "6aeb0eb757fda06cf905d2b2",
+            "name": "4. Tích hợp API Backend [Không gọi API], xử lý TanStack Query & Client Caching",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488404480,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0eb4a22a1f1661616bc6"
+          },
+          {
+            "id": "6aeb0eb82965ae14bf3359c3",
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488420864,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0eb4a22a1f1661616bc6"
+          },
+          {
+            "id": "6aeb0eb99eb1688464ef3ff2",
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "nameData": {
+              "emoji": {}
+            },
+            "pos": 140737488437248,
+            "state": "incomplete",
+            "due": null,
+            "dueReminder": null,
+            "idMember": null,
+            "idChecklist": "6aeb0eb4a22a1f1661616bc6"
+          }
+        ]
+      }
+    ]
+  }
+]
