@@ -13,6 +13,6 @@ if errorlevel 1 (
 echo ==========================================
 echo  Starting Microservices Containers
 echo ==========================================
-docker compose --project-directory . -f docker\compose\local\compose.yaml up -d --build
+docker compose -p docker --project-directory . -f docker\compose\local\compose.yaml up -d --build
 echo All microservices started!
 pause

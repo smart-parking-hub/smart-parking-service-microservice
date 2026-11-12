@@ -60,12 +60,11 @@ public class BookingExpirationScheduler {
                     // Promote next waiting driver in queue if any
                     queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
                 } catch (Exception ex) {
-                    booking.setStatus(BookingStatusEnum.PENDING_PAYMENT); bookingRepository.save(booking);
-                    log.warn("Failed to release slot or promote queue for expired booking {}: {}",
+                    log.warn("Failed to release slot or promote queue for expired booking {} (kept EXPIRED): {}",
                             booking.getBookingCode(), ex.getMessage());
                 }
 
-                log.info("Booking {} expired and slot released for lot {}",
+                log.info("Booking {} marked as EXPIRED for lot {}",
                         booking.getBookingCode(), booking.getParkingLotId());
 
             } catch (Exception e) {
@@ -118,13 +117,12 @@ public class BookingExpirationScheduler {
 
                     queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
                 } catch (Exception ex) {
-                    booking.setStatus(BookingStatusEnum.PENDING_CHECKIN); bookingRepository.save(booking);
-                    log.warn("Failed to release slot or promote queue for no-show booking {}: {}",
+                    log.warn("Failed to release slot or promote queue for no-show booking {} (kept CANCELLED): {}",
                             booking.getBookingCode(), ex.getMessage());
                 }
 
-                if (booking.getStatus() == BookingStatusEnum.CANCELLED) outboxPublisherService.publishBookingCancelled(booking, noShowReason);
-                log.info("No-show booking {} cancelled and slot released for lot {}",
+                outboxPublisherService.publishBookingCancelled(booking, noShowReason);
+                log.info("No-show booking {} cancelled for lot {}",
                         booking.getBookingCode(), booking.getParkingLotId());
 
             } catch (Exception e) {

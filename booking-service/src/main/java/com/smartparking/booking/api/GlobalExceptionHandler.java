@@ -52,6 +52,25 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ErrorCode.FORBIDDEN.getCode(), "Bạn không có quyền thực hiện hành động này"));
     }
 
+    @ExceptionHandler({
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            IllegalArgumentException.class
+    })
+    public ResponseEntity<ApiResponse<Void>> handleBadRequestExceptions(Exception ex) {
+        log.warn("Bad request parameter: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.web.client.HttpStatusCodeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpStatusCodeException(org.springframework.web.client.HttpStatusCodeException ex) {
+        log.warn("Downstream HTTP error: status={}, body={}", ex.getStatusCode(), ex.getResponseBodyAsString());
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(ApiResponse.error("ERR_" + ex.getStatusCode().value(), ex.getResponseBodyAsString()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
         log.error("Unhandled exception: ", ex);

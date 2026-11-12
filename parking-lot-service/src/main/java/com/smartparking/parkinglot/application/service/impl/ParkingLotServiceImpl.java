@@ -270,15 +270,28 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     }
 
     private ParkingLotSearchResponse toSearchResponse(ParkingLot lot, VehicleTypeEnum vehicleType, Double distanceKm) {
-        int available = slotRepository.findByParkingLotIdAndVehicleType(lot.getId(), vehicleType)
-                .map(Slot::getAvailableCapacity)
-                .orElse(0);
+        int available;
+        BigDecimal basePrice;
+
+        if (vehicleType != null) {
+            available = slotRepository.findByParkingLotIdAndVehicleType(lot.getId(), vehicleType)
+                    .map(Slot::getAvailableCapacity)
+                    .orElse(0);
+            basePrice = pricingRuleRepository
+                    .findByParkingLotIdAndVehicleType(lot.getId(), vehicleType)
+                    .map(PricingRule::getBasePricePerHour)
+                    .orElse(null);
+        } else {
+            List<Slot> slots = slotRepository.findByParkingLotId(lot.getId());
+            available = slots.stream().mapToInt(Slot::getAvailableCapacity).sum();
+            basePrice = pricingRuleRepository.findByParkingLotId(lot.getId()).stream()
+                    .map(PricingRule::getBasePricePerHour)
+                    .filter(java.util.Objects::nonNull)
+                    .min(BigDecimal::compareTo)
+                    .orElse(null);
+        }
 
         Double avgRating = lot.getRatingAverage() != null ? lot.getRatingAverage().doubleValue() : 0.0;
-        BigDecimal basePrice = pricingRuleRepository
-                .findByParkingLotIdAndVehicleType(lot.getId(), vehicleType)
-                .map(PricingRule::getBasePricePerHour)
-                .orElse(null);
 
         return ParkingLotSearchResponse.builder()
                 .id(lot.getId())
