@@ -108,6 +108,9 @@ services:
       PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-mock}
       PAYOS_API_KEY: ${PAYOS_API_KEY:-mock}
       PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-mock}
+      DISPUTE_EVIDENCE_DIR: /app/uploads/dispute-evidence
+    volumes:
+      - payment_uploads:/app/uploads/dispute-evidence
     networks:
       - smart-parking-net
 
@@ -157,3 +160,6 @@ networks:
   smart-parking-net:
     name: smart-parking-net
     driver: bridge
+
+volumes:
+  payment_uploads:

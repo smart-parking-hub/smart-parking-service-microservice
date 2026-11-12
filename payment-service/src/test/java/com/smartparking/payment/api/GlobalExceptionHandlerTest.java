@@ -3,17 +3,32 @@ package com.smartparking.payment.api;
 import com.smartparking.common.dto.ApiResponse;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class GlobalExceptionHandlerTest {
 
@@ -54,6 +69,50 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ApiResponse<Void>> res = handler.handleValidationException(ex);
         assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
         assertTrue(res.getBody().getMessage().contains("Field cannot be blank"));
+    }
+
+    @Test
+    @DisplayName("Handle malformed JSON, parameter type mismatch, missing parameter, and constraint violations with safe 400 BAD_REQUEST")
+    void testHandleBadRequestExceptions() throws Exception {
+        HttpInputMessage inputMessage = new MockHttpInputMessage("{}".getBytes(StandardCharsets.UTF_8));
+        ResponseEntity<ApiResponse<Void>> jsonRes = handler.handleUnreadableMessage(
+                new HttpMessageNotReadableException("Jackson internal class com.smartparking", inputMessage));
+        assertEquals(HttpStatus.BAD_REQUEST, jsonRes.getStatusCode());
+        assertFalse(jsonRes.getBody().getMessage().contains("Jackson"));
+
+        MethodParameter param = new MethodParameter(
+                GlobalExceptionHandlerTest.class.getDeclaredMethod("testHandleBadRequestExceptions"), -1);
+        ResponseEntity<ApiResponse<Void>> mismatchRes = handler.handleTypeMismatch(
+                new MethodArgumentTypeMismatchException("abc", Long.class, "id", param, new NumberFormatException()));
+        assertEquals(HttpStatus.BAD_REQUEST, mismatchRes.getStatusCode());
+        assertTrue(mismatchRes.getBody().getMessage().contains("id"));
+
+        ResponseEntity<ApiResponse<Void>> missingRes = handler.handleMissingParam(
+                new MissingServletRequestParameterException("page", "Integer"));
+        assertEquals(HttpStatus.BAD_REQUEST, missingRes.getStatusCode());
+        assertTrue(missingRes.getBody().getMessage().contains("page"));
+
+        ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+        when(violation.getMessage()).thenReturn("URL không hợp lệ");
+        ResponseEntity<ApiResponse<Void>> constraintRes = handler.handleConstraintViolation(
+                new ConstraintViolationException(Set.of(violation)));
+        assertEquals(HttpStatus.BAD_REQUEST, constraintRes.getStatusCode());
+        assertEquals("URL không hợp lệ", constraintRes.getBody().getMessage());
+
+        ResponseEntity<ApiResponse<Void>> maxUploadRes = handler.handleMaxUploadSizeExceeded(
+                new MaxUploadSizeExceededException(5_242_880L));
+        assertEquals(HttpStatus.BAD_REQUEST, maxUploadRes.getStatusCode());
+        assertTrue(maxUploadRes.getBody().getMessage().contains("5 MB"));
+
+        ResponseEntity<ApiResponse<Void>> missingPartRes = handler.handleMissingServletRequestPart(
+                new MissingServletRequestPartException("files"));
+        assertEquals(HttpStatus.BAD_REQUEST, missingPartRes.getStatusCode());
+        assertTrue(missingPartRes.getBody().getMessage().contains("files"));
+
+        ResponseEntity<ApiResponse<Void>> multipartRes = handler.handleMultipartException(
+                new MultipartException("Invalid boundary"));
+        assertEquals(HttpStatus.BAD_REQUEST, multipartRes.getStatusCode());
+        assertTrue(multipartRes.getBody().getMessage().contains("multipart"));
     }
 
     @Test

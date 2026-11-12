@@ -22,6 +22,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,6 +32,9 @@ public class PaymentServiceTest {
 
     @MockBean
     private com.smartparking.payment.infrastructure.client.BookingPaymentVerifier bookingPaymentVerifier;
+
+    @MockBean
+    private com.smartparking.payment.infrastructure.client.DisputeBookingClient disputeBookingClient;
 
     @Autowired
     private PaymentService paymentService;
@@ -62,6 +66,8 @@ public class PaymentServiceTest {
         org.mockito.Mockito.lenient().when(bookingPaymentVerifier.require(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong()))
             .thenAnswer(inv -> new com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote(inv.getArgument(0), inv.getArgument(1), merchantUserId, 10L, "PENDING_PAYMENT", new BigDecimal("50000"), new BigDecimal("250000"), java.time.LocalDateTime.now().plusMinutes(15)));
         org.mockito.Mockito.lenient().when(bookingPaymentVerifier.confirm(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        org.mockito.Mockito.lenient().when(disputeBookingClient.verifyBookingOwnership(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong()))
+            .thenAnswer(inv -> new com.smartparking.payment.infrastructure.client.DisputeBookingClient.VerifiedBooking(inv.getArgument(0), inv.getArgument(1), merchantUserId, 10L));
     }
 
     @Test
@@ -145,22 +151,36 @@ public class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("Dispute creation and resolution lifecycle")
+    @DisplayName("Dispute creation, merchant response, and resolution lifecycle")
     void testDisputeLifecycle() {
         CreateDisputeRequest req = CreateDisputeRequest.builder()
                 .bookingId(bookingId)
-                .merchantId(merchantUserId)
+                .merchantId(999L)
                 .reason("Bãi xe thu thêm phí ngoài quy định")
                 .description("Bảo vệ đòi thêm 50k khi lấy xe")
+                .evidenceUrls(List.of("https://cdn.example.com/receipt.jpg"))
                 .build();
 
         DisputeDto dispute = disputeService.createDispute(driverUserId, req);
         assertNotNull(dispute.getId());
-        assertEquals(DisputeStatusEnum.PENDING, dispute.getStatus());
+        assertEquals(DriverDisputeStatus.OPEN, dispute.getStatus());
+        assertEquals(merchantUserId, dispute.getMerchantId());
+        assertEquals(10L, dispute.getParkingLotId());
+        assertEquals(List.of("https://cdn.example.com/receipt.jpg"), dispute.getEvidenceUrls());
+
+        disputeService.addMerchantResponse(merchantUserId, dispute.getId(),
+                new CreateDisputeResponseRequest("Bãi xe đã kiểm tra biên lai và xác nhận."));
+        DisputeDetailDto inReviewDetail = disputeService.getMyDisputeDetail(driverUserId, dispute.getId());
+        assertEquals(DriverDisputeStatus.IN_REVIEW, inReviewDetail.getStatus());
+        assertEquals(1, inReviewDetail.getTimeline().size());
 
         // Admin resolves dispute
         AdminDisputeResponse resolved = disputeService.resolveDispute(1L, dispute.getId(), "Đã hoàn tiền cho khách");
         assertEquals(DisputeStatusEnum.RESOLVED, resolved.getStatus());
         assertEquals("Đã hoàn tiền cho khách", resolved.getResolution());
+
+        DisputeDetailDto finalDetail = disputeService.getMyDisputeDetail(driverUserId, dispute.getId());
+        assertEquals(DriverDisputeStatus.RESOLVED, finalDetail.getStatus());
+        assertEquals(2, finalDetail.getTimeline().size());
     }
 }
