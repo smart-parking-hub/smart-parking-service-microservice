@@ -23,6 +23,7 @@ public class MerchantProfileResponse {
     private String businessLicense;
     private String bankName;
     private String bankAccountNum;
+    private String accountHolderName;
     private String maskedBankAccount;
     private BigDecimal walletBalance;
     private UserStatusEnum accountStatus;

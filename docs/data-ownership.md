@@ -94,3 +94,15 @@ replace validation of the full Flyway chain on MySQL before deployment.
   - Applies cancellation policy in `Asia/Ho_Chi_Minh` (`<= T-2h` -> `100%`, `(T-2h, T)` -> `50%` `HALF_UP` VND, `>= T` -> `0%`, `PENDING_PAYMENT` -> `0%`, `No-show` -> `0%`) and persists booking cancellation + outbox atomically.
 - **ai-service (`POST /api/v1/ai/extract-layout`)**:
   - Validates multipart PNG/JPEG magic bytes (`<= 10MB`, `<= 4096x4096px`), calls Gemini Vision with a 25s read timeout, and returns schema-validated 0-based `(row, col)` cells (`PARKING_SLOT`, `CHARGING_PILLAR`, `EMERGENCY_EXIT`, `ENTRANCE`, `EXIT`, `DRIVEWAY`, `OBSTACLE`), nullable `dimensionsMeters`, and `needsHumanReview = true` whenever `overallConfidence < 0.75` or any cell confidence `< 0.75`.
+
+### Merchant Bank Profile & Account Holder Name (identity Flyway V5, 2026-11-12)
+
+- **identity-service (Flyway V5)**:
+  - Sở hữu `merchants.account_holder_name VARCHAR(100) NULL` (thêm sau `bank_account_num`).
+  - Dữ liệu `account_holder_name` là giá trị **tự khai** của Merchant, **chưa được ngân hàng xác minh**.
+  - Không tự ép in hoa, không tự loại bỏ dấu tiếng Việt, không tự backfill từ `users.full_name` sang dữ liệu tài khoản đã xác nhận. Dữ liệu lịch sử giữ giá trị `NULL`.
+  - Không expose plain số tài khoản ngân hàng trong log hoặc token; GET profile trả số đầy đủ và `maskedBankAccount`.
+- **Ranh giới dữ liệu với payment-service**:
+  - `payment-service` sở hữu các yêu cầu rút tiền (`withdrawal_requests`). Mỗi `WithdrawalRequest` lưu **snapshot bất biến** các thông tin ngân hàng (`bank_name`, `bank_account_number`, `account_holder_name`) tại thời điểm Merchant tạo lệnh rút.
+  - Khi Merchant cập nhật `account_holder_name`, `bank_name` hoặc `bank_account_num` trong `identity-service`, các lệnh rút tiền cũ (`WithdrawalRequest`) trong `payment-service` **hoàn toàn không bị thay đổi**.
+  - `payment-service` không truy vấn chéo database `smart_parking_identity_db`.
