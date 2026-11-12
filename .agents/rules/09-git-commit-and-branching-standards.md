@@ -1,6 +1,7 @@
-# Quy Chuẩn Git Workflow & Commit Chuẩn Doanh Nghiệp (09-git-commit-and-branching-standards.md)
+# Quy Chuẩn Git Workflow & Commit — smart-parking-microservice (09-git-commit-and-branching-standards.md)
 
-> **⚠️ BẮT BUỘC TUÂN THỦ:** Mỗi khi Agent hoặc lập trình viên thực hiện thao tác tạo nhánh, commit hoặc push mã nguồn, phải luôn đối chiếu quy chuẩn này.
+> **⚠️ BẮT BUỘC TUÂN THỦ:** Mỗi khi Agent hoặc lập trình viên thực hiện thao tác tạo nhánh, commit hoặc push mã nguồn trong repository `smart-parking-microservice`, phải luôn đối chiếu quy chuẩn này.
+> Đối với quy chuẩn hợp nhất toàn bộ workspace SmartParkingHub, tham khảo master rule: `.agents/rules/01-git-commit-and-branching-standards.md`.
 
 ---
 
@@ -37,8 +38,8 @@ Ghi chú kiểm thử / Lưu ý triển khai (nếu có):
 - <Test case hoặc lưu ý môi trường (Local / VPS)>
 ```
 
-### Các Scope chuẩn trong hệ sinh thái SmartParkingHub:
-- `repo` / `infra`: Cấu hình toàn bộ repo, Gradle root, Docker compose, CI/CD
+### Các Scope chuẩn trong Microservice Backend:
+- `repo` / `infra`: Cấu hình toàn bộ repo, Gradle root, Docker compose, CI/CD, scripts
 - `common`: `common-library` (DTO, Event, Enum, Exceptions, Util)
 - `gateway`: `api-gateway` (Spring Cloud Gateway, Routing, JWT Filter)
 - `identity`: `identity-service` (Tài khoản, phân quyền, authentication, JWT)
@@ -60,38 +61,3 @@ Khi người dùng yêu cầu push hoặc thực hiện một đợt commit:
 3. **Stage đúng phạm vi:** Chỉ `git add` các file thuộc phạm vi của đợt đó.
 4. **Tạo commit chuẩn:** Viết commit message đầy đủ Header + Body giải thích chi tiết theo mục 2.
 5. **Push lên Remote:** Chạy `git push -u origin <tên-nhánh>` và báo cáo tóm tắt commit hash cùng danh sách file đã push cho người dùng.
-
----
-
-## 4. Kế Hoạch 10 Đợt Commit & Nhánh Chuẩn Bị Sẵn
-
-- **Đợt 1 - Dọn dẹp & Git Hygiene:**
-  - Nhánh: `chore/clean-build-artifacts-and-gitignore`
-  - Scope: Cập nhật `.gitignore`, xóa sạch các tệp build nhị phân bị cache (`.gradle`, `build/`, `*.class`, `*.bin`).
-- **Đợt 2 - Hạ tầng & Cấu hình Docker / Gradle:**
-  - Nhánh: `chore/infra-docker-compose-setup`
-  - Scope: `build.gradle`, `compose.yaml`, `compose.local-full.yaml`, `docker/docker-compose.apps.yml`, dependencies.
-- **Đợt 3 - Thư viện dùng chung (Common Library):**
-  - Nhánh: `feat/common-library-dto-events`
-  - Scope: `common-library` (ApiResponse, PageResponse, ParkingLotEvent, Enums, Utils).
-- **Đợt 4 - API Gateway & JWT Security Filter:**
-  - Nhánh: `feat/api-gateway-jwt-filter`
-  - Scope: `api-gateway` (JwtAuthenticationFilter, application.yml, gateway test).
-- **Đợt 5 - Identity Service (Xác thực & Người dùng):**
-  - Nhánh: `feat/identity-service-auth-domain`
-  - Scope: `identity-service` (V1 migration, domain, application, api, security cleanup, tests).
-- **Đợt 6 - Parking Lot Service (Quản lý bãi xe):**
-  - Nhánh: `feat/parking-lot-service-management`
-  - Scope: `parking-lot-service` (V1 migration, domain, slot tracking, api, tests).
-- **Đợt 7 - Booking Service (Đặt chỗ & Vòng đời đặt):**
-  - Nhánh: `feat/booking-service-reservation`
-  - Scope: `booking-service` (V1 migration, booking entities, saga event producer, tests).
-- **Đợt 8 - Payment Service (Thanh toán & PayOS):**
-  - Nhánh: `feat/payment-service-integration`
-  - Scope: `payment-service` (V1 migration, PayOS webhook, payment verification, tests).
-- **Đợt 9 - Notification Service (Xử lý thông báo Kafka):**
-  - Nhánh: `feat/notification-service-consumer`
-  - Scope: `notification-service` (V1 migration, kafka event listener, notification templates, tests).
-- **Đợt 10 - Discovery & Config Servers Testing:**
-  - Nhánh: `test/infra-discovery-config-tests`
-  - Scope: `discovery-server/src/test/`, `config-server/src/test/`.
