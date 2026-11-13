@@ -48,6 +48,9 @@ class ParkingLotServiceImplTest {
     @Mock
     private ParkingLotImageRepository parkingLotImageRepository;
 
+    @Mock
+    private com.smartparking.common.messaging.TransactionalEventOutbox adminEventOutbox;
+
     @InjectMocks
     private ParkingLotServiceImpl parkingLotService;
 
@@ -101,13 +104,35 @@ class ParkingLotServiceImplTest {
         assertNotNull(dto);
         assertEquals("Bãi Đỗ Trung Tâm", dto.getName());
         assertEquals(ParkingLotStatusEnum.PENDING_APPROVAL, dto.getStatus());
+        verify(adminEventOutbox).enqueue(eq(com.smartparking.common.event.AdminOperationEvent.TOPIC), eq("parking-lot:10"),
+                argThat(event -> event instanceof com.smartparking.common.event.AdminOperationEvent operation
+                        && operation.getEventType().equals("PARKING_LOT_REVIEW_REQUESTED")
+                        && operation.getSubmissionVersion() == 1L));
+    }
+
+    @Test
+    void resubmissionPublishesOneNewVersionAndSubsequentEditsCannotPublishAgain() {
+        ParkingLot lot = ParkingLot.builder().id(parkingLotId).merchantId(merchantUserId)
+                .status(ParkingLotStatusEnum.CHANGES_REQUESTED).reviewSubmissionVersion(3).build();
+        when(parkingLotRepository.findByIdForUpdate(parkingLotId)).thenReturn(Optional.of(lot));
+        when(parkingLotRepository.save(lot)).thenReturn(lot);
+        when(slotRepository.findByParkingLotId(parkingLotId)).thenReturn(Collections.emptyList());
+        when(pricingRuleRepository.findByParkingLotId(parkingLotId)).thenReturn(Collections.emptyList());
+        when(parkingLotImageRepository.findByParkingLotIdOrderByCoverDescCreatedAtAsc(parkingLotId)).thenReturn(Collections.emptyList());
+        var request = CreateParkingLotRequest.builder().name("Hồ sơ đã sửa").address("Địa chỉ").build();
+        parkingLotService.updateParkingLot(merchantUserId, parkingLotId, request);
+        assertEquals(4, lot.getReviewSubmissionVersion());
+        verify(adminEventOutbox).enqueue(any(), any(), argThat(event ->
+                ((com.smartparking.common.event.AdminOperationEvent) event).getSubmissionVersion() == 4L));
+        assertThrows(AppException.class, () -> parkingLotService.updateParkingLot(merchantUserId, parkingLotId, request));
+        verifyNoMoreInteractions(adminEventOutbox);
     }
 
     @Test
     @DisplayName("Update parking lot fails when user is not the merchant owner")
     void testUpdateParkingLotForbidden() {
         ParkingLot lot = ParkingLot.builder().id(parkingLotId).merchantId(999L).build();
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(lot));
+        when(parkingLotRepository.findByIdForUpdate(parkingLotId)).thenReturn(Optional.of(lot));
 
         CreateParkingLotRequest request = CreateParkingLotRequest.builder().name("Test").address("Test").build();
 
@@ -119,7 +144,7 @@ class ParkingLotServiceImplTest {
     @DisplayName("Update parking lot fails if status is not REJECTED")
     void testUpdateParkingLotNotRejected() {
         ParkingLot lot = ParkingLot.builder().id(parkingLotId).merchantId(merchantUserId).status(ParkingLotStatusEnum.APPROVED).build();
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(lot));
+        when(parkingLotRepository.findByIdForUpdate(parkingLotId)).thenReturn(Optional.of(lot));
 
         CreateParkingLotRequest request = CreateParkingLotRequest.builder().name("Test").address("Test").build();
 

@@ -1,6 +1,7 @@
 package com.smartparking.payment.application.service;
 
 import com.smartparking.common.dto.PageResponse;
+import com.smartparking.common.messaging.TransactionalEventOutbox;
 import com.smartparking.common.enums.DisputeStatusEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
@@ -140,7 +141,7 @@ class DisputeServiceImplTest {
     void testWriteServiceConflictAndConstraintTranslation() {
         DisputeRepository repo = mock(DisputeRepository.class);
         DisputeEvidenceFileRepository evidenceRepo = mock(DisputeEvidenceFileRepository.class);
-        DisputeWriteService writeService = new DisputeWriteService(repo, evidenceRepo);
+        DisputeWriteService writeService = new DisputeWriteService(repo, evidenceRepo, mock(TransactionalEventOutbox.class));
 
         when(repo.findByBookingId(10L)).thenReturn(Optional.of(Dispute.builder()
                 .id(1L).bookingId(10L).status(DisputeStatusEnum.RESOLVED).build()));
@@ -170,7 +171,7 @@ class DisputeServiceImplTest {
     void testWriteServiceLinksEvidenceFilesAndEnforcesOwnership() {
         DisputeRepository repo = mock(DisputeRepository.class);
         DisputeEvidenceFileRepository evidenceRepo = mock(DisputeEvidenceFileRepository.class);
-        DisputeWriteService writeService = new DisputeWriteService(repo, evidenceRepo);
+        DisputeWriteService writeService = new DisputeWriteService(repo, evidenceRepo, mock(TransactionalEventOutbox.class));
 
         String fileUuid1 = "11111111-1111-1111-1111-111111111111.png";
         String internalUrl1 = "http://localhost:8088/api/v1/disputes/evidence/" + fileUuid1;

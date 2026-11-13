@@ -1,6 +1,8 @@
 package com.smartparking.payment.application.service.impl;
 
 import com.smartparking.common.enums.DisputeStatusEnum;
+import com.smartparking.common.event.AdminOperationEvent;
+import com.smartparking.common.messaging.TransactionalEventOutbox;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.payment.domain.model.Dispute;
@@ -29,6 +31,7 @@ public class DisputeWriteService {
 
     private final DisputeRepository disputeRepository;
     private final DisputeEvidenceFileRepository disputeEvidenceFileRepository;
+    private final TransactionalEventOutbox adminEventOutbox;
 
     @Transactional
     public Dispute createDisputeRecord(
@@ -64,6 +67,9 @@ public class DisputeWriteService {
                 }
                 disputeEvidenceFileRepository.saveAllAndFlush(filesToAttach);
             }
+            adminEventOutbox.enqueue(AdminOperationEvent.TOPIC, "dispute:" + saved.getId(),
+                    AdminOperationEvent.builder().eventType(AdminOperationEvent.DISPUTE_OPENED)
+                            .aggregateId(String.valueOf(saved.getId())).targetId(saved.getId()).actorId(driverUserId).build());
             log.info("Created dispute {} for booking {}", saved.getId(), bookingId);
             return saved;
         } catch (DataIntegrityViolationException ex) {

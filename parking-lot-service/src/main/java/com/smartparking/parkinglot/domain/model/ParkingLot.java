@@ -51,4 +51,8 @@ public class ParkingLot extends BaseEntity {
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
+
+    @Column(name = "review_submission_version", nullable = false)
+    @Builder.Default
+    private long reviewSubmissionVersion = 1;
 }

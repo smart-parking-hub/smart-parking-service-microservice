@@ -23,9 +23,16 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<NotificationDto> getMyNotifications(Long userId, Pageable pageable) {
-        Page<NotificationDto> page = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+        Page<NotificationDto> page = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(
+                        userId, sanitizeNotificationPage(pageable))
                 .map(NotificationDto::fromEntity);
         return new PageResponse<>(page);
+    }
+
+    private Pageable sanitizeNotificationPage(Pageable pageable) {
+        Pageable safe = com.smartparking.common.util.Pageables.sanitize(pageable);
+        // Notification ordering is part of the feed contract, not client-driven.
+        return org.springframework.data.domain.PageRequest.of(safe.getPageNumber(), safe.getPageSize());
     }
 
     @Override

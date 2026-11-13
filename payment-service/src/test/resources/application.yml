@@ -17,6 +17,8 @@ spring:
       max-file-size: 5MB
       max-request-size: 26MB
   kafka:
+    admin:
+      auto-create: false
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -33,6 +35,8 @@ jwt:
   secret: smartparkingsecretkeymustbeverylongandsecure2026version
 
 app:
+  admin-operations:
+    enabled: false
   demo-payment-enabled: true
   platform:
     fee-percent: 10.0

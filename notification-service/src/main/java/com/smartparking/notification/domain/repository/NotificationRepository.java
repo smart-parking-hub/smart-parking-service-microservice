@@ -12,12 +12,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    Page<Notification> findByUserIdOrderByCreatedAtDescIdDesc(Long userId, Pageable pageable);
 
     int countByUserIdAndReadAtIsNull(Long userId);
 
     @Modifying
-    @Query("UPDATE Notification n SET n.readAt = CURRENT_TIMESTAMP WHERE n.id = :id AND n.userId = :userId")
+    @Query("UPDATE Notification n SET n.readAt = CURRENT_TIMESTAMP WHERE n.id = :id AND n.userId = :userId AND n.readAt IS NULL")
     int markAsRead(@Param("userId") Long userId, @Param("id") Long id);
 
     @Modifying

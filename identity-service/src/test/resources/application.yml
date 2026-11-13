@@ -1,4 +1,10 @@
+app:
+  admin-operations:
+    enabled: false
 spring:
+  kafka:
+    admin:
+      auto-create: false
   application:
     name: identity-service-test
   datasource:

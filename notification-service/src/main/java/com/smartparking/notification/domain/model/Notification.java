@@ -7,7 +7,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", uniqueConstraints = @UniqueConstraint(
+        name = "uq_notification_source_recipient", columnNames = {"source_event_id", "user_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -42,6 +43,9 @@ public class Notification {
 
     @Column(name = "target_id")
     private Long targetId;
+
+    @Column(name = "source_event_id", length = 100)
+    private String sourceEventId;
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
