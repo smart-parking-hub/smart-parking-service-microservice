@@ -12,6 +12,11 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./frontend:/usr/share/nginx/html:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -35,6 +40,11 @@ services:
     depends_on:
       - smart-parking-redis-edge
       - smart-parking-identity
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -51,6 +61,11 @@ services:
       DB_URL: jdbc:mysql://116.118.6.107:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: ${IDENTITY_DB_USERNAME:-identity_svc}
       DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-SP_SecUser_Iden2026_xM3!}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -60,6 +75,11 @@ services:
     restart: always
     ports:
       - "127.0.0.1:6379:6379"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 

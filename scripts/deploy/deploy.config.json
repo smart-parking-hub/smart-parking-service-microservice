@@ -1,0 +1,98 @@
+{
+  "registry": {
+    "server": "ghcr.io",
+    "owner": "smart-parking-hub",
+    "imagePrefix": "ghcr.io/smart-parking-hub"
+  },
+  "ssh": {
+    "defaultKeyPath": "~/.ssh/github_actions_vps",
+    "defaultUser": "tungdeptrai",
+    "connectTimeoutSeconds": 8
+  },
+  "nodes": {
+    "vps1": {
+      "id": "vps1",
+      "name": "VPS 1 - Edge & Gateway",
+      "host": "103.20.102.190",
+      "port": 2222,
+      "user": "tungdeptrai",
+      "keyPath": "~/.ssh/github_actions_vps",
+      "targetDir": "~/smartparking",
+      "composeFile": "docker/compose/vps-cluster/compose.vps1-edge.yml",
+      "services": ["api-gateway", "identity-service"]
+    },
+    "vps2": {
+      "id": "vps2",
+      "name": "VPS 2 - Data & Async Services",
+      "host": "116.118.6.107",
+      "port": 22,
+      "user": "devops",
+      "keyPath": "~/.ssh/github_actions_vps",
+      "targetDir": "~/smartparking",
+      "composeFile": "docker/compose/vps-cluster/compose.vps2-data.yml",
+      "services": ["payment-service", "notification-service", "ai-service"]
+    },
+    "vps3": {
+      "id": "vps3",
+      "name": "VPS 3 - Core Business Services",
+      "host": "103.20.102.137",
+      "port": 22,
+      "user": "deployfriend",
+      "keyPath": "~/.ssh/github_actions_vps",
+      "targetDir": "~/smartparking",
+      "composeFile": "docker/compose/vps-cluster/compose.vps3-core.yml",
+      "services": ["parking-lot-service", "booking-service"]
+    }
+  },
+  "services": {
+    "api-gateway": {
+      "name": "API Gateway",
+      "dir": "api-gateway",
+      "gradleTask": ":api-gateway:bootJar -x test",
+      "node": "vps1",
+      "composeService": "smart-parking-gateway"
+    },
+    "identity-service": {
+      "name": "Identity Service",
+      "dir": "identity-service",
+      "gradleTask": ":identity-service:bootJar -x test",
+      "node": "vps1",
+      "composeService": "smart-parking-identity"
+    },
+    "payment-service": {
+      "name": "Payment Service",
+      "dir": "payment-service",
+      "gradleTask": ":payment-service:bootJar -x test",
+      "node": "vps2",
+      "composeService": "smart-parking-payment"
+    },
+    "notification-service": {
+      "name": "Notification Service",
+      "dir": "notification-service",
+      "gradleTask": ":notification-service:bootJar -x test",
+      "node": "vps2",
+      "composeService": "smart-parking-notification"
+    },
+    "ai-service": {
+      "name": "AI Service",
+      "dir": "ai-service",
+      "gradleTask": ":ai-service:bootJar -x test",
+      "node": "vps2",
+      "composeService": "smart-parking-ai"
+    },
+    "parking-lot-service": {
+      "name": "Parking Lot Service",
+      "dir": "parking-lot-service",
+      "gradleTask": ":parking-lot-service:bootJar -x test",
+      "node": "vps3",
+      "composeService": "smart-parking-parkinglot"
+    },
+    "booking-service": {
+      "name": "Booking Service",
+      "dir": "booking-service",
+      "gradleTask": ":booking-service:bootJar -x test",
+      "node": "vps3",
+      "composeService": "smart-parking-booking"
+    }
+  }
+}

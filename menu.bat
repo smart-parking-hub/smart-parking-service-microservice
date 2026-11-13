@@ -12,7 +12,8 @@ echo      1.1 - Khoi dong Ha tang: MySQL, Redis, Kafka, Prometheus
 echo      1.2 - Khoi dong Local Dev Profile
 echo      1.3 - Khoi dong Full Local Lab
 echo      1.4 - Giai phong port bi chiem dung (Kill Busy Ports)
-echo      1.5 - Cap nhat (Build JAR & Reload) toan bo Microservices len Docker
+echo      1.5 - Cap nhat (Build JAR & Reload) toan bo Microservices len Docker Local
+echo      1.6 - Trien khai (Build, Push & Reload) Microservices len VPS Cluster
 echo.
 echo  [2] BIEN DICH VA KIEM THU - scripts/build-test
 echo      2.1 - Build toan bo Microservices
@@ -45,6 +46,7 @@ if "%opt%"=="1.2" goto DEV_LOCAL
 if "%opt%"=="1.3" goto DEV_FULL
 if "%opt%"=="1.4" goto DEV_KILL
 if "%opt%"=="1.5" goto DEV_UPDATE
+if "%opt%"=="1.6" goto DEV_DEPLOY_VPS
 if "%opt%"=="2.1" goto BT_BUILD
 if "%opt%"=="2.2" goto BT_TEST
 if "%opt%"=="2.3" goto BT_VERIFY
@@ -82,6 +84,10 @@ goto MENU
 
 :DEV_UPDATE
 call "%~dp0scripts\dev\update-microservices-docker.bat"
+goto MENU
+
+:DEV_DEPLOY_VPS
+call "%~dp0scripts\deploy\deploy-vps.bat"
 goto MENU
 
 :BT_BUILD

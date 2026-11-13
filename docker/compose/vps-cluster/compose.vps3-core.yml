@@ -17,6 +17,11 @@ services:
       REDIS_HOST: smart-parking-redis-core
     depends_on:
       - smart-parking-redis-core
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -40,6 +45,11 @@ services:
     depends_on:
       - smart-parking-redis-core
       - smart-parking-parkinglot
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -49,6 +59,11 @@ services:
     restart: always
     ports:
       - "127.0.0.1:6379:6379"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 

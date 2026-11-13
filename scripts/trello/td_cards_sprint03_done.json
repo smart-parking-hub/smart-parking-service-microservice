@@ -1,0 +1,327 @@
+[
+  {
+    "id": "6aec0ae38abeb86974d3cd6d",
+    "name": "[SP-S3-SEC-04] Xây dựng Thay thế axios trần bằng apiClient để gắn Authorization Token cho Notification API (2 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-SEC-04`\n- **Phân loại & Bounded Context:** `FE` — Giao diện & Trải nghiệm Người dùng (Frontend CRM)\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-app-v2`\n- **Tập tin tác động (File Paths):**\n  - `smart-parking-app-v2`\n  - `smart-parking-app-v2/src/features/notifications/services/notification`\n  - `smart-parking-app-v2/src/services/api/api`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - GET /api/v1/notifications\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - `npm run test`\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [x] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [x] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [x] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [x] Code Review đã được chấp thuận (Sign-off).\n- [x] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Báo cáo Vitest Frontend pass\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "FE",
+      "P1 - High",
+      "Notification",
+      "Bug",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "items": [
+          {
+            "name": "1. Rà soát toàn bộ cuộc gọi Axios trần trong notificationsApi.ts",
+            "state": "complete"
+          },
+          {
+            "name": "2. Thay thế bằng instance apiClient có đính kèm Bearer JWT và X-App-Key",
+            "state": "complete"
+          },
+          {
+            "name": "3. Kiểm tra tự động gắn refresh token khi token hết hạn (401 Interceptor)",
+            "state": "complete"
+          },
+          {
+            "name": "4. Viết test giả lập cuộc gọi API thông báo có đủ Authentication Header",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e31ab56be8ab36cadb0",
+    "name": "[SP-S3-DAT-01] Triển khai Thiết lập Spatial Index (ST_Distance_Sphere) và bộ đệm Redis Cache-Aside cho API tìm bãi (3 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-DAT-01`\n- **Phân loại & Bounded Context:** `BE` — Dịch vụ Nghiệp vụ Backend Microservices\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-microservice`\n- **Tập tin tác động (File Paths):**\n  - `Chưa xác minh`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Theo Flyway Migrations và Entity Models tương ứng trong service.\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - `./gradlew test`\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [x] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [x] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [x] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [x] Code Review đã được chấp thuận (Sign-off).\n- [x] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Báo cáo Gradle Backend pass 100%\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "P1 - High",
+      "Parking",
+      "Database",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "items": [
+          {
+            "name": "Viết migration Flyway tạo Spatial Point và Index trên parking_lots",
+            "state": "complete"
+          },
+          {
+            "name": "Refactor repository query sử dụng MySQL Spatial Functions ST_Distance_Sphere",
+            "state": "complete"
+          },
+          {
+            "name": "Cài đặt RedisTemplate cache danh sách bãi với TTL 15 phút",
+            "state": "complete"
+          },
+          {
+            "name": "Benchmark so sánh hiệu năng phản hồi: Giảm thời gian query từ 180ms xuống < 25ms",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae18dfb37261374dcc65d",
+    "name": "[SP-S3-OPS-01] Thiết lập pipeline GitHub Actions tự động kiểm tra chất lượng Frontend v2 (3 STP)",
+    "desc": "> [!NOTE] THẺ TRÙNG LẶP / ĐÃ ĐỒNG BỘ\n> Thẻ này trùng phạm vi với thẻ gốc **[SP-S3-OPS-03]** (Pipeline GitHub Actions kiểm soát chất lượng FE v2 đã hoàn thành). Nghiệm thu tại thẻ gốc.\n\n## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-OPS-01`\n- **Phân loại & Bounded Context:** `DEVOPS` — Hạ tầng Mạng, Docker & Pipeline Tự động hóa\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Thiết lập quy trình CI/CD tự động bằng GitHub Actions (`frontend-v2-ci.yml`) để kiểm tra toàn bộ 4 cổng chất lượng mã nguồn của `smart-parking-app-v2` (Typecheck, Lint, Test, Build).\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-microservice/docker` & `.github/workflows`\n- **Tập tin tác động (File Paths):**\n  - `smart-parking-app-v2`\n  - `smart-parking-app-v2/.github`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - Không áp dụng\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [ ] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [ ] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [ ] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [ ] Code Review đã được chấp thuận (Sign-off).\n- [ ] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Chưa xác minh\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "Feature",
+      "P1 - High",
+      "DevOps",
+      "CI/CD",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist thực hiện",
+        "items": [
+          {
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "state": "complete"
+          },
+          {
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "state": "complete"
+          },
+          {
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "state": "complete"
+          },
+          {
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeae1b65751708e47a3e025",
+    "name": "[SP-S3-SEC-02] Rà soát và loại bỏ việc gửi mã OTP trong response demo (2 STP)",
+    "desc": "> [!NOTE] THẺ TRÙNG LẶP / ĐÃ ĐỒNG BỘ\n> Thẻ này trùng phạm vi với thẻ gốc **[SP-S3-SEC-01]** (Tái cấu trúc cơ chế OTP GAP-09). Nghiệm thu kỹ thuật được thực hiện tại thẻ gốc.\n\n## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-SEC-02`\n- **Phân loại & Bounded Context:** `BE` — Dịch vụ Nghiệp vụ Backend Microservices\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Khắc phục triệt để lỗ hổng an ninh GAP-09: Loại bỏ hoàn toàn trường trả mã OTP trong JSON phản hồi của API `/api/v1/auth/otp/send` trên môi trường Staging và Production.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-microservice`\n- **Tập tin tác động (File Paths):**\n  - `smart-parking-microservice/identity-service/src/main/java/com/smartparking/identity/application/service/impl/`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Theo Flyway Migrations và Entity Models tương ứng trong service.\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - `./gradlew test`\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [ ] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [ ] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [ ] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [ ] Code Review đã được chấp thuận (Sign-off).\n- [ ] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Chưa xác minh\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "BE",
+      "P0 - Critical",
+      "User Management",
+      "Bug",
+      "Security",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist thực hiện",
+        "items": [
+          {
+            "name": "Phân tích yêu cầu kỹ thuật và đặc tả API/UI",
+            "state": "complete"
+          },
+          {
+            "name": "Triển khai mã nguồn logic nghiệp vụ",
+            "state": "complete"
+          },
+          {
+            "name": "Viết và chạy thành công Unit / Integration Tests",
+            "state": "incomplete"
+          },
+          {
+            "name": "Kiểm thử nghiệm thu QA và ký duyệt chuyển Done",
+            "state": "incomplete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0f9ca5b36ca5f1d8e306",
+    "name": "[SP-S3-SEC-03] Xây dựng Nhật ký Kiểm toán An ninh & Vết Quản trị (3 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-SEC-03`\n- **Phân loại & Bounded Context:** `FE` — Giao diện & Trải nghiệm Người dùng (Frontend CRM)\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-app-v2`\n- **Tập tin tác động (File Paths):**\n  - `smart-parking-app-v2`\n  - `smart-parking-app-v2/src/features/admin/`\n  - `smart-parking-app-v2/src/features/admin/components/`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - `npm run test`\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [ ] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [ ] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [ ] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [ ] Code Review đã được chấp thuận (Sign-off).\n- [ ] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Chưa xác minh\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "FE",
+      "P2 - Medium",
+      "Security",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "items": [
+          {
+            "name": "1. Phân tích Stitch HTML/CSS & dựng component theo Kiến trúc 4 Lớp (Tailwind CSS v4, Responsive)",
+            "state": "complete"
+          },
+          {
+            "name": "2. Cấu hình Route \"/admin/audit-logs\", liên kết Inbound/Outbound với [SCR-042] & RBAC Guard [ADMIN]",
+            "state": "complete"
+          },
+          {
+            "name": "3. Xây dựng form validation (Zod/React Hook Form) & Zustand UI State",
+            "state": "complete"
+          },
+          {
+            "name": "4. Tích hợp API Backend [GET `/api/v1/admin/audit-logs`], xử lý TanStack Query & Client Caching",
+            "state": "complete"
+          },
+          {
+            "name": "5. Xử lý đầy đủ 4 trạng thái giao diện (Loading Skeleton, Empty State, Error Alert, Success Toast)",
+            "state": "complete"
+          },
+          {
+            "name": "6. Kiểm thử tự động & Vượt qua cổng chất lượng Zero-Error (typecheck, lint, build)",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeafc32a05866d1f2b5e97a",
+    "name": "[SP-S3-UI-05] Xây dựng bộ UI Component dùng chung (Skeleton, Toast, EmptyState, Modal) theo chuẩn Stitch Design System (5 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-UI-05`\n- **Phân loại & Bounded Context:** `FE` — Giao diện & Trải nghiệm Người dùng (Frontend CRM)\n- **Người thực hiện chính (Owner):** Chưa phân công\n- **Phụ thuộc tiền đề (BLOCKED BY):** ** SEQ-01\n- **Giải phóng tiếp theo (UNBLOCKS):** ** Toàn bộ các màn hình FE phía sau (Driver, Merchant, Admin)\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-app-v2`\n- **Tập tin tác động (File Paths):**\n  - `Chưa xác minh`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - `npm run test`\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [ ] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [ ] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [ ] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [ ] Code Review đã được chấp thuận (Sign-off).\n- [ ] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Chưa xác minh\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "FE",
+      "P1 - High",
+      "Improvement",
+      "UI/UX",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Tiêu chuẩn hoàn thành (Definition of Done)",
+        "items": [
+          {
+            "name": "Xây dựng Skeleton loading shimmer component cho bãi đỗ xe và bảng dữ liệu",
+            "state": "complete"
+          },
+          {
+            "name": "Tích hợp thư viện Sonner / Toast thông báo sinh động góc màn hình",
+            "state": "complete"
+          },
+          {
+            "name": "Xây dựng EmptyState component với hình minh họa khi danh sách trống",
+            "state": "complete"
+          },
+          {
+            "name": "Tối ưu hóa Drawer / Modal responsive trên kích thước màn hình điện thoại di động",
+            "state": "complete"
+          },
+          {
+            "name": "Viết tài liệu hướng dẫn tái sử dụng component cho toàn đội ngũ Frontend",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aec0ae11c7ed614eaf6b1ff",
+    "name": "[SP-S3-INT-02] [FE+BE] Sửa lỗi lệch Contract DTO và cơ chế Fallback Mock khi Đặt cọc giữ chỗ (5 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-INT-02`\n- **Phân loại & Bounded Context:** `FE` — Giao diện & Trải nghiệm Người dùng (Frontend CRM)\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-app-v2`\n- **Tập tin tác động (File Paths):**\n  - `smart-parking-app-v2`\n  - `smart-parking-app-v2/src/features/driver/services/parking`\n  - `smart-parking-app-v2/src/features/driver/services/booking`\n  - `smart-parking-microservice/booking-service/src/main/java/com/smartparking/booking/dto/`\n  - `smart-parking-microservice/payment-service/src/main/java/com/smartparking/payment/controller/`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - POST /api/v1/bookings/, POST /api/v1/payments\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - `npm run test`\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [ ] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [ ] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [ ] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [ ] Code Review đã được chấp thuận (Sign-off).\n- [ ] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Chưa xác minh\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "FE",
+      "P0 - Critical",
+      "BE",
+      "Booking",
+      "Bug",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "items": [
+          {
+            "name": "1. Phân tích schema DTO HoldSlotRequest và đối soát field estimatedDurationHours",
+            "state": "complete"
+          },
+          {
+            "name": "2. Cấu hình cơ chế Fallback Mock an toàn khi API Gateway trả lỗi 5xx",
+            "state": "complete"
+          },
+          {
+            "name": "3. Triển khai Unit test kiểm thử luồng đặt cọc giữ chỗ 10 phút",
+            "state": "complete"
+          },
+          {
+            "name": "4. Kiểm thử tích hợp E2E luồng tạo booking từ giao diện bản đồ",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e3dd2a2c3c19ba8e889",
+    "name": "[SP-S3-OPS-03] Xây dựng GitHub Actions Pipeline kiểm soát chất lượng tự động Zero-Error trước khi merge PR (3 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-OPS-03`\n- **Phân loại & Bounded Context:** `DEVOPS` — Hạ tầng Mạng, Docker & Pipeline Tự động hóa\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-microservice/docker` & `.github/workflows`\n- **Tập tin tác động (File Paths):**\n  - `Chưa xác minh`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - Không áp dụng\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [x] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [x] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [x] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [x] Code Review đã được chấp thuận (Sign-off).\n- [x] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Nhật ký triển khai thực tế\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "P1 - High",
+      "Infrastructure",
+      "CI/CD",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "items": [
+          {
+            "name": "Tạo file .github/workflows/frontend-quality-gate.yml",
+            "state": "complete"
+          },
+          {
+            "name": "Cấu hình cache node_modules trên GitHub Actions để tăng tốc độ chạy",
+            "state": "complete"
+          },
+          {
+            "name": "Thiết lập Branch Protection Rule yêu cầu pipeline pass trước khi merge",
+            "state": "complete"
+          },
+          {
+            "name": "Thử nghiệm tạo PR kiểm thử kích hoạt workflow thành công",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6aeb0e2ac8951ab59827a1c0",
+    "name": "[SP-S3-OPS-04] Cấu hình Docker Compose đa môi trường và Nginx Reverse Proxy tối ưu bộ đệm Frontend v2 (3 STP)",
+    "desc": "## 1. THÔNG TIN ĐIỀU PHỐI (COORDINATION)\n- **Mã định danh:** `SP-S3-OPS-04`\n- **Phân loại & Bounded Context:** `DEVOPS` — Hạ tầng Mạng, Docker & Pipeline Tự động hóa\n- **Người thực hiện chính (Owner):** Đội ngũ phát triển SPH\n- **Phụ thuộc tiền đề (BLOCKED BY):** Không áp dụng\n- **Giải phóng tiếp theo (UNBLOCKS):** Không áp dụng\n- **Có thể chạy song song (PARALLEL WITH):** Không áp dụng\n\n## 2. BỐI CẢNH & PHẠM VI (CONTEXT & SCOPE)\n- **Hiện trạng trước khi làm (As-Is):** Cần triển khai mới hoặc nâng cấp theo đặc tả kỹ thuật hệ thống.\n- **Mục tiêu đạt được (To-Be):** Triển khai và hoàn thiện cấu phần mã nguồn theo chuẩn kiến trúc.\n- **Trong phạm vi (In-Scope):**\n  - Triển khai đầy đủ các cấu phần mã nguồn và logic nghiệp vụ theo đặc tả.\n  - Bảo đảm tính toàn vẹn dữ liệu, kiểm thử và tương thích ngược.\n- **Ngoài phạm vi (Out-of-Scope):** Không áp dụng\n\n## 3. ĐẶC TẢ KỸ THUẬT (TECHNICAL SPECIFICATION)\n- **Sub-project / Repository:** `smart-parking-microservice/docker` & `.github/workflows`\n- **Tập tin tác động (File Paths):**\n  - `Chưa xác minh`\n- **Giao diện API / Lệnh CLI / Cấu hình (Contracts / Commands):**\n  - Không áp dụng\n- **Cơ sở dữ liệu / Thực thể / Message Event (Data & Events):**\n  - Không áp dụng\n- **Ràng buộc an ninh & Hiệu năng (Constraints):**\n  - Tuân thủ phân quyền RBAC, token JWT và an toàn luồng dữ liệu.\n\n## 4. TIÊU CHÍ NGHIỆM THU (ACCEPTANCE CRITERIA - GHERKIN)\n- **Kịch bản chính (Happy Path):**\n  - **Given:** Người dùng và hệ thống ở trạng thái hoạt động bình thường,\n  - **When:** Kích hoạt chức năng hoặc gửi yêu cầu hợp lệ,\n  - **Then:** Hệ thống phản hồi thành công, xử lý đúng luồng và cập nhật trạng thái chuẩn xác.\n- **Kịch bản ngoại lệ & Xử lý lỗi (Edge Case / Error Handling):**\n  - **Given:** Dữ liệu đầu vào không hợp lệ hoặc sự cố kết nối gián đoạn,\n  - **When:** Thao tác được kích hoạt,\n  - **Then:** Hệ thống thông báo lỗi rõ ràng, trả về mã HTTP chính xác và không làm gián đoạn phiên làm việc.\n\n## 5. HƯỚNG DẪN KIỂM THỬ (TESTING & VERIFICATION GUIDE)\n- **Môi trường & Dữ liệu test (Test Environment & Data):** Môi trường Local Development / VPS Test Cluster; tài khoản và dữ liệu seed tương ứng.\n- **Các bước kiểm thử thủ công (Manual Test Steps):**\n  1. Khởi chạy dịch vụ liên quan và đăng nhập tài khoản có thẩm quyền.\n  2. Thực hiện thao tác nghiệp vụ theo kịch bản trên giao diện hoặc gửi request API.\n  3. Kiểm tra phản hồi và đối chiếu dữ liệu ghi nhận trong database / state.\n- **Lệnh kiểm thử tự động (Automated Test Commands):**\n  - Không áp dụng\n\n## 6. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DoD)\n- [x] Mã nguồn tuân thủ coding standards và linting (không có cảnh báo/lỗi).\n- [x] 100% Unit/Integration Tests liên quan chạy đạt (Pass).\n- [x] Đã kiểm tra tính tương thích ngược, không gây lỗi lan (No regression).\n- [x] Code Review đã được chấp thuận (Sign-off).\n- [x] Tài liệu kỹ thuật, API Doc hoặc README được cập nhật (nếu có).\n\n## 7. BẰNG CHỨNG NGHIỆM THU (EVIDENCE & ARTIFACTS)\n- **Commit SHA / Pull Request:** Chưa xác minh\n- **Báo cáo kiểm thử tự động:** Nhật ký triển khai thực tế\n- **Ảnh chụp / Video kiểm chứng / Log:** Không áp dụng",
+    "labels": [
+      "P1 - High",
+      "DevOps",
+      "Infrastructure",
+      "Sprint 03"
+    ],
+    "checklists": [
+      {
+        "name": "Checklist Thực Hiện (Definition of Done)",
+        "items": [
+          {
+            "name": "Tạo Dockerfile tối ưu kích thước image (< 50MB)",
+            "state": "complete"
+          },
+          {
+            "name": "Cấu hình Nginx reverse proxy định tuyến SPA và tối ưu cache header",
+            "state": "complete"
+          },
+          {
+            "name": "Cập nhật docker-compose.staging.yml với healthcheck tự động",
+            "state": "complete"
+          },
+          {
+            "name": "Kiểm thử khởi động và kiểm tra tải giao diện với Google Lighthouse",
+            "state": "complete"
+          }
+        ]
+      }
+    ]
+  }
+]
