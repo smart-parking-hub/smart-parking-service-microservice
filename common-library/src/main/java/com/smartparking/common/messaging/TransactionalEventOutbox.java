@@ -14,7 +14,8 @@ import java.util.Set;
 
 /** Uses only the importing service's datasource and its current business transaction. */
 public class TransactionalEventOutbox {
-    private static final Set<String> TOPICS = Set.of(AdminOperationEvent.TOPIC, AdminRecipientSnapshot.TOPIC);
+    private static final Set<String> TOPICS = Set.of(AdminOperationEvent.TOPIC, AdminRecipientSnapshot.TOPIC,
+            com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC);
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
 

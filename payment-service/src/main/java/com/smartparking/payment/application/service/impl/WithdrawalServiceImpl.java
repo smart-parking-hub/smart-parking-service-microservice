@@ -2,6 +2,7 @@ package com.smartparking.payment.application.service.impl;
 
 import com.smartparking.common.dto.PageResponse;
 import com.smartparking.common.event.AdminOperationEvent;
+import com.smartparking.common.event.WithdrawalDecisionEvent;
 import com.smartparking.common.messaging.TransactionalEventOutbox;
 import com.smartparking.common.enums.WithdrawalStatusEnum;
 import com.smartparking.common.exception.AppException;
@@ -81,7 +82,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
     @Override
     @Transactional
     public WithdrawalResponse processWithdrawal(Long adminUserId, Long withdrawalId, boolean approved, String reason) {
-        WithdrawalRequest withdrawal = withdrawalRequestRepository.findById(withdrawalId)
+        WithdrawalRequest withdrawal = withdrawalRequestRepository.findForUpdate(withdrawalId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy yêu cầu rút tiền"));
 
         if (withdrawal.getStatus() != WithdrawalStatusEnum.PENDING) {
@@ -110,6 +111,11 @@ public class WithdrawalServiceImpl implements WithdrawalService {
         }
 
         WithdrawalRequest saved = withdrawalRequestRepository.save(withdrawal);
+        adminEventOutbox.enqueue(WithdrawalDecisionEvent.TOPIC, "withdrawal:" + saved.getId(),
+                WithdrawalDecisionEvent.builder()
+                        .eventType(approved ? WithdrawalDecisionEvent.APPROVED : WithdrawalDecisionEvent.REJECTED)
+                        .aggregateId(String.valueOf(saved.getId())).withdrawalId(saved.getId())
+                        .merchantId(saved.getMerchantId()).amount(saved.getAmount()).currency("VND").build());
         BigDecimal currentBalance = merchantWalletService.getWalletBalance(withdrawal.getMerchantId());
         return WithdrawalResponse.fromEntity(saved, currentBalance);
     }
@@ -117,7 +123,15 @@ public class WithdrawalServiceImpl implements WithdrawalService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<WithdrawalResponse> getAllWithdrawalsForAdmin(Pageable pageable) {
-        Page<WithdrawalResponse> page = withdrawalRequestRepository.findAll(pageable)
+        var safe = com.smartparking.common.util.Pageables.sanitize(pageable);
+        var requested = safe.getSort().stream().findFirst().orElse(
+                new org.springframework.data.domain.Sort.Order(org.springframework.data.domain.Sort.Direction.DESC, "requestedAt"));
+        String property = java.util.Set.of("requestedAt", "amount", "id").contains(requested.getProperty())
+                ? requested.getProperty() : "requestedAt";
+        var sort = org.springframework.data.domain.Sort.by(requested.getDirection(), property);
+        if (!property.equals("id")) sort = sort.and(org.springframework.data.domain.Sort.by(requested.getDirection(), "id"));
+        var sorted = org.springframework.data.domain.PageRequest.of(safe.getPageNumber(), safe.getPageSize(), sort);
+        Page<WithdrawalResponse> page = withdrawalRequestRepository.findAll(sorted)
                 .map(req -> {
                     BigDecimal balance = merchantWalletService.getWalletBalance(req.getMerchantId());
                     return WithdrawalResponse.fromEntity(req, balance);

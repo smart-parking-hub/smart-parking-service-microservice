@@ -103,7 +103,7 @@ class NotificationServiceImplTest {
                 .build();
 
         PageRequest pageable = PageRequest.of(0, 10);
-        when(notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(eq(userId), any(Pageable.class)))
+        when(notificationRepository.findByUserId(eq(userId), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(n), pageable, 1));
 
         PageResponse<NotificationDto> response = notificationService.getMyNotifications(userId, pageable);

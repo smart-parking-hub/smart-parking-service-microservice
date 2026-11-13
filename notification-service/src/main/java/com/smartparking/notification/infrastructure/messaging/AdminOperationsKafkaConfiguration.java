@@ -48,6 +48,8 @@ public class AdminOperationsKafkaConfiguration {
             @Value("${app.admin-operations.partitions:3}") int partitions,
             @Value("${app.admin-operations.replicas:1}") int replicas) {
         return new KafkaAdmin.NewTopics(
+                TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminOperationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminOperationEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminRecipientSnapshot.TOPIC).partitions(1).replicas(replicas).build(),
