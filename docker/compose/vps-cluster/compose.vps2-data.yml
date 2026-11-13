@@ -23,6 +23,11 @@ services:
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
       KAFKA_JVM_PERFORMANCE_OPTS: "-Xms256m -Xmx512m"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -45,6 +50,11 @@ services:
       PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-mock}
     depends_on:
       - smart-parking-kafka
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -64,6 +74,11 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: smart-parking-kafka:29092
     depends_on:
       - smart-parking-kafka
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -83,6 +98,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
@@ -98,6 +118,11 @@ services:
       PARKING_LOT_SERVICE_URL: http://103.20.102.137:8082
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - smart-parking-net
 
