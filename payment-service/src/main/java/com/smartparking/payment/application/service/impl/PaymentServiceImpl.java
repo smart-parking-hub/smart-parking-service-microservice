@@ -75,7 +75,35 @@ public class PaymentServiceImpl implements PaymentService {
             Payment old = previous.get();
             if (!driverUserId.equals(old.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
             if (old.getStatus() == PaymentStatusEnum.SUCCESS) return appendQueryParam(payOSConfig.getReturnUrl(), "bookingId", old.getBookingId().toString());
-            if (old.getCheckoutUrl() != null && old.getStatus() == PaymentStatusEnum.PENDING && (old.getBookingExpiresAt() == null || old.getBookingExpiresAt().isAfter(java.time.LocalDateTime.now()))) return old.getCheckoutUrl();
+            if (old.getCheckoutUrl() != null && old.getStatus() == PaymentStatusEnum.PENDING
+                    && (old.getBookingExpiresAt() == null || old.getBookingExpiresAt().isAfter(java.time.LocalDateTime.now()))) {
+                var quote = bookingPaymentVerifier.require(request.getBookingId(), driverUserId);
+                BigDecimal expectedAmount = quote.payable(type);
+                if (expectedAmount == null || expectedAmount.signum() <= 0 || old.getAmount() == null
+                        || old.getAmount().compareTo(expectedAmount) != 0
+                        || !java.util.Objects.equals(old.getMerchantId(), quote.merchantId())
+                        || !java.util.Objects.equals(old.getParkingLotId(), quote.parkingLotId())) {
+                    throw new AppException(ErrorCode.CONFLICT,
+                            "Link thanh toán cũ không khớp số tiền booking hiện tại. Chưa mở thanh toán; vui lòng kiểm tra lại booking hoặc liên hệ hỗ trợ.");
+                }
+                try {
+                    PaymentLink link = old.getOrderCode() == null ? null : payOS.paymentRequests().get(old.getOrderCode());
+                    if (link == null || link.getAmount() == null
+                            || BigDecimal.valueOf(link.getAmount()).compareTo(expectedAmount) != 0
+                            || !java.util.Objects.equals(link.getOrderCode(), old.getOrderCode())
+                            || link.getStatus() != vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING) {
+                        throw new AppException(ErrorCode.CONFLICT,
+                                "Link PayOS không khớp số tiền hoặc không còn chờ thanh toán. Vui lòng kiểm tra trạng thái giao dịch trước khi tiếp tục.");
+                    }
+                } catch (AppException failure) {
+                    throw failure;
+                } catch (Exception failure) {
+                    log.warn("Could not verify existing PayOS checkout for booking {}", request.getBookingId());
+                    throw new AppException(ErrorCode.PAYMENT_FAILED,
+                            "Chưa xác minh được số tiền trên PayOS. Vui lòng thử lại; chưa mở thanh toán.");
+                }
+                return old.getCheckoutUrl();
+            }
             throw new AppException(ErrorCode.BAD_REQUEST, "Giao dịch đã hết hạn hoặc cần đối soát; không tạo thêm khoản thu");
         }
         var quote = bookingPaymentVerifier.require(request.getBookingId(), driverUserId);
@@ -127,11 +155,20 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
 
             CreatePaymentLinkResponse result = payOS.paymentRequests().create(linkRequest);
+            if (result == null || result.getAmount() == null
+                    || BigDecimal.valueOf(result.getAmount()).compareTo(amount) != 0
+                    || !java.util.Objects.equals(result.getOrderCode(), orderCode)
+                    || result.getCheckoutUrl() == null || result.getCheckoutUrl().isBlank()) {
+                throw new AppException(ErrorCode.PAYMENT_FAILED,
+                        "Số tiền hoặc mã đơn PayOS không khớp booking. Chưa mở thanh toán; vui lòng thử lại hoặc liên hệ hỗ trợ.");
+            }
             String checkoutUrl = result.getCheckoutUrl();
             log.info("PayOS link created for booking {}: {}", request.getBookingId(), checkoutUrl);
             payment.setCheckoutUrl(checkoutUrl);
             paymentRepository.save(payment);
             return checkoutUrl;
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("PayOS link unavailable for booking {}", request.getBookingId());
             throw new AppException(ErrorCode.PAYMENT_FAILED, "Chưa tạo được thanh toán PayOS. Vui lòng thử lại; chưa xác nhận giữ chỗ.");
