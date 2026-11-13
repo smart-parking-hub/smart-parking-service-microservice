@@ -112,4 +112,13 @@ public class Booking extends BaseEntity {
 
     @Column(name = "refund_reference", length = 120)
     private String refundReference;
+
+    @Column(name = "physical_slot_id", length = 36)
+    private String physicalSlotId;
+
+    @Column(name = "physical_slot_code", length = 50)
+    private String physicalSlotCode;
+
+    @Column(name = "layout_publication_id", length = 36)
+    private String layoutPublicationId;
 }

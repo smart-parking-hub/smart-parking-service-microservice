@@ -15,5 +15,6 @@ public interface SlotService {
 
     // RPC methods for BookingService
     SlotHoldResponse holdSlot(Long parkingLotId, VehicleTypeEnum vehicleType, Long bookingId);
+    SlotHoldResponse holdSlot(Long parkingLotId, VehicleTypeEnum vehicleType, Long bookingId, String physicalSlotId);
     void releaseSlot(Long parkingLotId, VehicleTypeEnum vehicleType, Long bookingId);
 }

@@ -18,7 +18,7 @@ Nguyên tắc cốt lõi: **Tuyệt đối không truy cập chéo database**. M
 | Microservice | Tên Database | Danh sách Bảng sở hữu | Dữ liệu chia sẻ ra ngoài (qua API/Event) |
 | :--- | :--- | :--- | :--- |
 | **identity-service** | `smart_parking_identity_db` | `users`, `driver_profiles`, `merchant_profiles`, `refresh_tokens`, `email_otp_challenges` | `userId`, `role`, `fullName`, `phoneNumber`, `email` |
-| **parking-lot-service** | `smart_parking_lot_db` | `parking_lots`, `parking_lot_images`, `slots`, `slot_holds`, `pricing_rules` | `parkingLotId`, `slotId`, `slotCode`, `status`, `hourlyRate` |
+| **parking-lot-service** | `smart_parking_lot_db`, private layout filesystem volume (ADR 0006) | `parking_lots`, `parking_lot_images`, `slots`, `slot_holds`, `pricing_rules`, `parking_layouts`, `parking_layout_assets`, `parking_layout_publications`, `physical_parking_slots`, `current_slot_allocations` | `parkingLotId`, `slotId`, `physicalSlotId`, `slotCode`, `status`, `hourlyRate`, `publicationId`, `availability` |
 | **booking-service** | `smart_parking_booking_db` | `bookings`, `queue_entries`, `outbox_events`, `processed_events` | `bookingId`, `status`, `startTime`, `endTime`, `vehiclePlate`, `refundAmount`, `refundPercentage`, `refundStatus`, `refundPolicy` |
 | **payment-service** | `smart_parking_payment_db` | `payments`, `wallets`, `wallet_ledger_entries`, `ledger_journals`, `ledger_postings`, `settlement_batches`, `refund_requests`, `withdrawal_requests`, `disputes`, `outbox_events`, `processed_events` | `paymentId`, `transactionRef`, `status`, `amount`, `refundRequestId`, `refundStatus` |
 | **notification-service** | `smart_parking_notification_db` | `notifications`, `processed_events` | `notificationId`, `status` |
@@ -119,3 +119,15 @@ replace validation of the full Flyway chain on MySQL before deployment.
   - `payment-service` sở hữu các yêu cầu rút tiền (`withdrawal_requests`). Mỗi `WithdrawalRequest` lưu **snapshot bất biến** các thông tin ngân hàng (`bank_name`, `bank_account_number`, `account_holder_name`) tại thời điểm Merchant tạo lệnh rút.
   - Khi Merchant cập nhật `account_holder_name`, `bank_name` hoặc `bank_account_num` trong `identity-service`, các lệnh rút tiền cũ (`WithdrawalRequest`) trong `payment-service` **hoàn toàn không bị thay đổi**.
   - `payment-service` không truy vấn chéo database `smart_parking_identity_db`.
+
+### Sprint 3 Parking Layout & Physical Slot Booking (Flyway V8 PL / V8 BK, 2026-11-12)
+
+- **parking-lot-service (Flyway V8)**:
+  - Sở hữu `parking_layouts`, `parking_layout_assets`, `parking_layout_publications`, `physical_parking_slots`, `current_slot_allocations`, và `slot_holds.physical_slot_id`.
+  - Quản lý con trỏ sơ đồ nháp và bản công bố bất biến. File ảnh nguồn (`sources/`) và snapshot JSON (`revisions/`) mặc định lưu trên private filesystem volume của một host parking-lot-service; metadata/checksum và canonical JSON hiện hữu vẫn thuộc MySQL. Xem [ADR 0006](adr/0006-parking-layout-private-filesystem.md); cần backup ngoài VPS và storage chung trước khi scale nhiều host. Chỉ triển khai filesystem cho layout; provider cloud cũ đã được gỡ.
+  - Cấp phát `physicalSlotId` UUID bất biến gắn với từng vị trí ô đỗ cụ thể, liên kết 1:1 với `Slot.id` nhóm sức chứa.
+  - Sổ phân bổ `current_slot_allocations` duy trì khóa duy nhất `physical_slot_id UNIQUE` và `booking_id UNIQUE` cho các giữ chỗ còn hiệu lực.
+- **booking-service (Flyway V8)**:
+  - Sở hữu `bookings.physical_slot_id VARCHAR(36) NULL`, `physical_slot_code VARCHAR(50) NULL`, `layout_publication_id VARCHAR(36) NULL`.
+  - Lưu snapshot thông tin ô đỗ vật lý do `parking-lot-service` xác nhận tại thời điểm hold thành công. Không có cross-service SQL hay foreign key vật lý giữa hai DB.
+  - Khi booking bị hủy, hết hạn hoặc kết thúc, `booking-service` thông báo `parking-lot-service` giải phóng allocation tương ứng một cách idempotent.

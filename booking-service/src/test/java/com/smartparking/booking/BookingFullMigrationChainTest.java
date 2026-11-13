@@ -32,7 +32,8 @@ class BookingFullMigrationChainTest {
             "V4__add_parking_lot_address_to_bookings.sql",
             "V5__snapshot_booking_tariff.sql",
             "V6__booking_gate_time_precision.sql",
-            "V7__booking_refund_policy_and_processed_events.sql"
+            "V7__booking_refund_policy_and_processed_events.sql",
+            "V8__add_physical_slot_to_bookings.sql"
     };
 
     private static final String FINGERPRINT_SQL = """
@@ -77,7 +78,8 @@ class BookingFullMigrationChainTest {
                             + " AND cancelled_at IS NULL AND refund_policy IS NULL AND refund_reference IS NULL"));
             assertEquals(total, count(connection,
                     "SELECT COUNT(*) FROM bookings WHERE request_key IS NULL AND parking_lot_address IS NULL"
-                            + " AND surge_multiplier IS NULL AND overtime_penalty_multiplier IS NULL"));
+                            + " AND surge_multiplier IS NULL AND overtime_penalty_multiplier IS NULL"
+                            + " AND physical_slot_id IS NULL AND physical_slot_code IS NULL AND layout_publication_id IS NULL"));
 
             // V6: gate timestamps keep sub-second precision after migration.
             try (var st = connection.createStatement()) {
