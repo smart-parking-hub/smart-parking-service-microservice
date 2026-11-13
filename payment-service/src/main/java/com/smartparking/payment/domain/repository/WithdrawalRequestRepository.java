@@ -10,6 +10,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalRequest, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select w from WithdrawalRequest w where w.id = :id")
+    java.util.Optional<WithdrawalRequest> findForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
+
     Page<WithdrawalRequest> findByMerchantIdOrderByRequestedAtDesc(Long merchantId, Pageable pageable);
 
     Page<WithdrawalRequest> findByStatusOrderByRequestedAtAsc(WithdrawalStatusEnum status, Pageable pageable);

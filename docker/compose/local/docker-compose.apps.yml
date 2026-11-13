@@ -32,6 +32,7 @@ services:
     environment:
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
       NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       PORT: 8081
       EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true

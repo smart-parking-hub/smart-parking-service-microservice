@@ -101,7 +101,7 @@ class WithdrawalServiceImplTest {
                 .id(withdrawalId)
                 .status(WithdrawalStatusEnum.APPROVED)
                 .build();
-        when(withdrawalRequestRepository.findById(withdrawalId)).thenReturn(Optional.of(req));
+        when(withdrawalRequestRepository.findForUpdate(withdrawalId)).thenReturn(Optional.of(req));
 
         AppException ex = assertThrows(AppException.class, () ->
                 withdrawalService.processWithdrawal(1L, withdrawalId, true, "OK"));
@@ -118,7 +118,7 @@ class WithdrawalServiceImplTest {
                 .amount(new BigDecimal("50000"))
                 .status(WithdrawalStatusEnum.PENDING)
                 .build();
-        when(withdrawalRequestRepository.findById(withdrawalId)).thenReturn(Optional.of(req));
+        when(withdrawalRequestRepository.findForUpdate(withdrawalId)).thenReturn(Optional.of(req));
         when(withdrawalRequestRepository.save(any(WithdrawalRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(merchantWalletService.getWalletBalance(merchantUserId)).thenReturn(new BigDecimal("100000"));
 
@@ -128,6 +128,8 @@ class WithdrawalServiceImplTest {
         assertEquals(WithdrawalStatusEnum.REJECTED, response.getStatus());
         verify(merchantWalletService, times(1)).refundWithdrawal(eq(merchantUserId), eq(new BigDecimal("50000")), any());
         verify(withdrawalRequestRepository, times(1)).save(req);
+        verify(adminEventOutbox).enqueue(eq("withdrawal-decisions.events"), eq("withdrawal:55"),
+                argThat(event -> "WITHDRAWAL_REJECTED".equals(event.getEventType())));
     }
 
     @Test
@@ -139,7 +141,7 @@ class WithdrawalServiceImplTest {
                 .amount(new BigDecimal("50000"))
                 .status(WithdrawalStatusEnum.PENDING)
                 .build();
-        when(withdrawalRequestRepository.findById(withdrawalId)).thenReturn(Optional.of(req));
+        when(withdrawalRequestRepository.findForUpdate(withdrawalId)).thenReturn(Optional.of(req));
         when(withdrawalRequestRepository.save(any(WithdrawalRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(merchantWalletService.getWalletBalance(merchantUserId)).thenReturn(new BigDecimal("50000"));
 
@@ -149,12 +151,14 @@ class WithdrawalServiceImplTest {
         assertEquals(WithdrawalStatusEnum.APPROVED, response.getStatus());
         verify(merchantWalletService, never()).refundWithdrawal(any(), any(), any());
         verify(withdrawalRequestRepository, times(1)).save(req);
+        verify(adminEventOutbox).enqueue(eq("withdrawal-decisions.events"), eq("withdrawal:55"),
+                argThat(event -> "WITHDRAWAL_APPROVED".equals(event.getEventType())));
     }
 
     @Test
     @DisplayName("Process withdrawal throws NOT_FOUND when request does not exist")
     void testProcessWithdrawalNotFound() {
-        when(withdrawalRequestRepository.findById(999L)).thenReturn(Optional.empty());
+        when(withdrawalRequestRepository.findForUpdate(999L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () ->
                 withdrawalService.processWithdrawal(1L, 999L, true, "OK"));
@@ -199,5 +203,21 @@ class WithdrawalServiceImplTest {
         assertNotNull(page);
         assertEquals(1, page.getContent().size());
         assertEquals(new BigDecimal("70000"), page.getContent().get(0).getAvailableBalance());
+        verify(withdrawalRequestRepository).findAll(argThat((Pageable p) ->
+                p.getSort().getOrderFor("requestedAt").isDescending() && p.getSort().getOrderFor("id").isDescending()));
+    }
+
+    @Test void adminSortsAmountBeforePagination() {
+        when(withdrawalRequestRepository.findAll(any(Pageable.class))).thenReturn(org.springframework.data.domain.Page.empty());
+        withdrawalService.getAllWithdrawalsForAdmin(PageRequest.of(2, 10, org.springframework.data.domain.Sort.by("amount")));
+        verify(withdrawalRequestRepository).findAll(argThat((Pageable p) -> p.getPageNumber() == 2
+                && p.getSort().getOrderFor("amount").isAscending() && p.getSort().getOrderFor("id").isAscending()));
+    }
+
+    @Test void adminSortRejectsUnsupportedFields() {
+        when(withdrawalRequestRepository.findAll(any(Pageable.class))).thenReturn(org.springframework.data.domain.Page.empty());
+        withdrawalService.getAllWithdrawalsForAdmin(PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("bankAccountNumber")));
+        verify(withdrawalRequestRepository).findAll(argThat((Pageable p) -> p.getSort().getOrderFor("bankAccountNumber") == null
+                && p.getSort().getOrderFor("requestedAt") != null));
     }
 }

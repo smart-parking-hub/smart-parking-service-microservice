@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AdminNotificationsIntegrationTest {
     @Autowired MockMvc http;
     @Autowired AdminOperationsHandler handler;
+    @Autowired com.smartparking.notification.application.service.WithdrawalDecisionHandler decisions;
     @SpyBean NotificationRepository notifications;
     @Autowired ProcessedEventRepository processed;
     @Autowired JdbcTemplate jdbc;
@@ -129,6 +130,27 @@ class AdminNotificationsIntegrationTest {
         http.perform(put(API + "/read-all").header("Authorization", "Bearer " + jwt(101, "ADMIN")))
                 .andExpect(status().isOk());
         assertThat(notifications.countByUserIdAndReadAtIsNull(101L)).isZero();
+    }
+
+    @Test void merchantDecisionIsPrivateIdempotentAndSortable() throws Exception {
+        var approved = com.smartparking.common.event.WithdrawalDecisionEvent.builder()
+                .eventType("WITHDRAWAL_APPROVED").withdrawalId(28L).merchantId(303L)
+                .amount(new BigDecimal("100000")).currency("VND").build();
+        decisions.deliver(approved);
+        decisions.deliver(approved);
+        assertThat(notifications.count()).isEqualTo(1);
+        http.perform(get(API).header("Authorization", "Bearer " + jwt(101, "ADMIN")))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+        http.perform(get(API).header("Authorization", "Bearer " + jwt(303, "MERCHANT")))
+                .andExpect(jsonPath("$.data.content[0].targetId").value(28))
+                .andExpect(jsonPath("$.data.content[0].title").value("Yêu cầu rút tiền đã được duyệt #28"));
+        decisions.deliver(com.smartparking.common.event.WithdrawalDecisionEvent.builder()
+                .eventType("WITHDRAWAL_REJECTED").withdrawalId(29L).merchantId(303L)
+                .amount(new BigDecimal("50000")).currency("VND").build());
+        http.perform(get(API).param("sort", "createdAt,asc").header("Authorization", "Bearer " + jwt(303, "MERCHANT")))
+                .andExpect(jsonPath("$.data.content[0].targetId").value(28));
+        http.perform(get(API).param("sort", "createdAt,desc").header("Authorization", "Bearer " + jwt(303, "MERCHANT")))
+                .andExpect(jsonPath("$.data.content[0].targetId").value(29));
     }
 
     @Test void newerSnapshotRemovesRecipientsAndOldSnapshotsCannotRestoreThem() {
