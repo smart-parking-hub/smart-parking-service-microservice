@@ -26,5 +26,8 @@ public class SlotHoldResponse {
     private java.time.LocalTime surgeStartTime;
     private java.time.LocalTime surgeEndTime;
     private BigDecimal overtimePenaltyMultiplier;
+    private String physicalSlotId;
+    private String physicalSlotCode;
+    private String layoutPublicationId;
     private String message;
 }

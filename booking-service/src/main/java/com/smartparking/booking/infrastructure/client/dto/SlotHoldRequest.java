@@ -17,4 +17,5 @@ public class SlotHoldRequest {
     private VehicleTypeEnum vehicleType;
     @NotNull
     private Long bookingId;
+    private String physicalSlotId;
 }

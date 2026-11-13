@@ -44,7 +44,20 @@ public class BookingServiceImpl implements BookingService {
         String requestKey = request.getRequestId() == null ? null : driverUserId + ":" + request.getRequestId();
         if (requestKey != null) {
             var previous = bookingRepository.findByRequestKey(requestKey);
-            if (previous.isPresent()) return BookingDto.fromEntity(previous.get());
+            if (previous.isPresent()) {
+                Booking b = previous.get();
+                boolean sameLot = b.getParkingLotId().equals(request.getParkingLotId());
+                boolean sameVehicle = b.getVehicleId().equals(request.getVehicleId());
+                boolean sameType = b.getVehicleType() == request.getVehicleType();
+                boolean sameCheckIn = java.util.Objects.equals(b.getExpectedCheckInTime(), request.getExpectedCheckInTime());
+                boolean sameCheckOut = java.util.Objects.equals(b.getExpectedCheckOutTime(), request.getExpectedCheckOutTime());
+                boolean sameSlot = (request.getPhysicalSlotId() == null)
+                        || java.util.Objects.equals(request.getPhysicalSlotId(), b.getPhysicalSlotId());
+                if (!sameLot || !sameVehicle || !sameType || !sameCheckIn || !sameCheckOut || !sameSlot) {
+                    throw new AppException(ErrorCode.CONFLICT, "Yêu cầu trùng lặp nhưng nội dung đặt chỗ đã bị thay đổi");
+                }
+                return BookingDto.fromEntity(b);
+            }
         }
         LocalDateTime now = LocalDateTime.now();
         if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
@@ -70,7 +83,29 @@ public class BookingServiceImpl implements BookingService {
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
                 .build();
 
-        Booking saved = bookingRepository.saveAndFlush(booking);
+        Booking saved;
+        try {
+            saved = bookingRepository.saveAndFlush(booking);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            if (requestKey != null) {
+                var recheck = bookingRepository.findByRequestKey(requestKey);
+                if (recheck.isPresent()) {
+                    Booking b = recheck.get();
+                    boolean sameLot = b.getParkingLotId().equals(request.getParkingLotId());
+                    boolean sameVehicle = b.getVehicleId().equals(request.getVehicleId());
+                    boolean sameType = b.getVehicleType() == request.getVehicleType();
+                    boolean sameCheckIn = java.util.Objects.equals(b.getExpectedCheckInTime(), request.getExpectedCheckInTime());
+                    boolean sameCheckOut = java.util.Objects.equals(b.getExpectedCheckOutTime(), request.getExpectedCheckOutTime());
+                    boolean sameSlot = (request.getPhysicalSlotId() == null)
+                            || java.util.Objects.equals(request.getPhysicalSlotId(), b.getPhysicalSlotId());
+                    if (!sameLot || !sameVehicle || !sameType || !sameCheckIn || !sameCheckOut || !sameSlot) {
+                        throw new AppException(ErrorCode.CONFLICT, "Yêu cầu trùng lặp nhưng nội dung đặt chỗ đã bị thay đổi");
+                    }
+                    return BookingDto.fromEntity(b);
+                }
+            }
+            throw new AppException(ErrorCode.CONFLICT, "Xung đột tạo đặt chỗ đồng thời");
+        }
 
         // Call parking-lot-service to hold slot & lấy đơn giá giờ chính thức từ backend
         try {
@@ -78,6 +113,7 @@ public class BookingServiceImpl implements BookingService {
                     .parkingLotId(request.getParkingLotId())
                     .vehicleType(request.getVehicleType())
                     .bookingId(saved.getId())
+                    .physicalSlotId(request.getPhysicalSlotId())
                     .build();
 
             ApiResponse<SlotHoldResponse> holdRes = parkingLotClient.holdSlot(request.getParkingLotId(), holdReq);
@@ -91,6 +127,9 @@ public class BookingServiceImpl implements BookingService {
             saved.setParkingLotAddress(quote.getParkingLotAddress()); saved.setHourlyRate(quote.getBaseHourlyPrice());
             saved.setSurgeMultiplier(quote.getSurgeMultiplier()); saved.setSurgeStartTime(quote.getSurgeStartTime());
             saved.setSurgeEndTime(quote.getSurgeEndTime()); saved.setOvertimePenaltyMultiplier(quote.getOvertimePenaltyMultiplier());
+            saved.setPhysicalSlotId(quote.getPhysicalSlotId());
+            saved.setPhysicalSlotCode(quote.getPhysicalSlotCode());
+            saved.setLayoutPublicationId(quote.getLayoutPublicationId());
             BigDecimal estimate = com.smartparking.booking.domain.ParkingCharge.charge(request.getExpectedCheckInTime(),
                     request.getExpectedCheckOutTime(), saved.getHourlyRate(), saved.getSurgeMultiplier(), saved.getSurgeStartTime(), saved.getSurgeEndTime());
             saved.setTotalAmount(estimate); saved.setAdvanceDeposit(com.smartparking.booking.domain.ParkingCharge.deposit(estimate));

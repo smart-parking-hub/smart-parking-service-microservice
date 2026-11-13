@@ -1,0 +1,22 @@
+# Optional overlay; provision the external volume before using this file.
+# Works with the base service name parking-lot-service (local / VPS-single).
+services:
+  parking-lot-service:
+    environment:
+      APP_PARKING_LAYOUT_ENABLED: ${APP_PARKING_LAYOUT_ENABLED:-false}
+      APP_PARKING_LAYOUT_PHYSICAL_BOOKING_ENABLED: ${APP_PARKING_LAYOUT_PHYSICAL_BOOKING_ENABLED:-false}
+      APP_PARKING_LAYOUT_STORAGE_PROVIDER: filesystem
+      APP_PARKING_LAYOUT_FILESYSTEM_ROOT: /var/lib/smartparking/parking-layouts
+      APP_PARKING_LAYOUT_MAX_OBJECT_BYTES: "5242880"
+      APP_PARKING_LAYOUT_FILESYSTEM_MIN_FREE_BYTES: "67108864"
+    volumes:
+      - type: volume
+        source: parking-layout-files
+        target: /var/lib/smartparking/parking-layouts
+        volume:
+          nocopy: true
+
+volumes:
+  parking-layout-files:
+    external: true
+    name: ${PARKING_LAYOUT_VOLUME:-smartparking-layout-files}

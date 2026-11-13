@@ -164,7 +164,9 @@ public class ParkingLotController {
     public ResponseEntity<ApiResponse<SlotHoldResponse>> holdSlot(
             @PathVariable Long id,
             @Valid @RequestBody SlotHoldRequest request) {
-        SlotHoldResponse response = slotService.holdSlot(id, request.getVehicleType(), request.getBookingId());
+        SlotHoldResponse response = request.getPhysicalSlotId() != null
+                ? slotService.holdSlot(id, request.getVehicleType(), request.getBookingId(), request.getPhysicalSlotId())
+                : slotService.holdSlot(id, request.getVehicleType(), request.getBookingId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -4,7 +4,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **api-gateway** | 8080 | 8080 / 80 | Redis (Rate limit) | All services | Cửa ngõ API duy nhất, routing, CORS, kiểm tra JWT, inject Trace ID |
 | **identity-service** | 8081 | Không | `smart_parking_identity_db` | MySQL | Đăng ký, đăng nhập, cấp refresh token, quản lý hồ sơ User, Driver, Merchant |
-| **parking-lot-service**| 8082 | Không | `smart_parking_lot_db`, Redis | MySQL, Redis | Quản lý danh mục bãi xe, sơ đồ chỗ (slot), biểu phí, cache chỗ trống thời gian thực |
+| **parking-lot-service**| 8082 | Không | `smart_parking_lot_db`, Redis, private layout filesystem volume | MySQL, Redis, persistent filesystem volume | Quản lý danh mục bãi xe, sơ đồ mặt bằng (layout), chỗ đỗ vật lý (physical slots), biểu phí, cache chỗ trống |
 | **booking-service** | 8083 | Không | `smart_parking_booking_db` | MySQL, Redis, Kafka, ParkingLot, Payment | Tạo đặt chỗ, giữ chỗ tạm thời (TTL 10m), Check-in / Check-out, Transactional Outbox |
 | **payment-service** | 8084 | Không | `smart_parking_payment_db` | MySQL, Kafka, PayOS Gateway | Xử lý thanh toán PayOS/VNPay, quản lý số dư Ví, sổ cái kế toán kép (Ledger), Webhook |
 | **notification-service**| 8085 | Không | `smart_parking_notification_db`| MySQL, Kafka, SMTP | Tiêu thụ event từ Kafka, gửi email thông báo, push notification, SMS, chống nhận trùng event |

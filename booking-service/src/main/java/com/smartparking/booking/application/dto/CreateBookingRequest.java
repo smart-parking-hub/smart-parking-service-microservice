@@ -37,4 +37,5 @@ public class CreateBookingRequest {
     private Long merchantId;
     private java.math.BigDecimal totalAmount;
     private java.math.BigDecimal advanceDeposit;
+    private String physicalSlotId;
 }

@@ -49,6 +49,9 @@ public class BookingDto {
     private String refundPolicy;
     private String refundStatus;
     private String refundReference;
+    private String physicalSlotId;
+    private String physicalSlotCode;
+    private String layoutPublicationId;
     private LocalDateTime createdAt;
 
     public static BookingDto fromEntity(Booking entity) {
@@ -84,6 +87,9 @@ public class BookingDto {
                 .refundPolicy(entity.getRefundPolicy())
                 .refundStatus(entity.getRefundStatus())
                 .refundReference(entity.getRefundReference())
+                .physicalSlotId(entity.getPhysicalSlotId())
+                .physicalSlotCode(entity.getPhysicalSlotCode())
+                .layoutPublicationId(entity.getLayoutPublicationId())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

@@ -42,6 +42,15 @@ class SlotServiceImplTest {
     @Mock
     private com.smartparking.parkinglot.domain.repository.SlotHoldRepository slotHoldRepository;
 
+    @Mock
+    private com.smartparking.parkinglot.domain.repository.ParkingLayoutRepository parkingLayoutRepository;
+
+    @Mock
+    private com.smartparking.parkinglot.domain.repository.PhysicalParkingSlotRepository physicalParkingSlotRepository;
+
+    @Mock
+    private com.smartparking.parkinglot.domain.repository.CurrentSlotAllocationRepository currentSlotAllocationRepository;
+
     @InjectMocks
     private SlotServiceImpl slotService;
 

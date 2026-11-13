@@ -8,4 +8,6 @@ public class SlotHold {
     @Column(nullable = false, updatable = false) private java.time.LocalDateTime createdAt;
     @Column(nullable = false) private Long slotId;
     @Column(nullable = false) private boolean released;
+    @Column(name = "physical_slot_id") private String physicalSlotId;
+    @Column(name = "publication_id") private String publicationId;
 }

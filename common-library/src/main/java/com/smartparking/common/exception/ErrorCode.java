@@ -19,6 +19,11 @@ public enum ErrorCode {
     // Parking & Slot errors
     PARKING_LOT_NOT_FOUND("PARK_001", "Không tìm thấy bãi xe"),
     SLOT_NOT_AVAILABLE("PARK_002", "Chỗ đỗ xe đã có người giữ hoặc đang bảo trì"),
+    LAYOUT_INVALID_CAPACITY("PARK_003", "Số ô đỗ trên sơ đồ không khớp với sức chứa cấu hình của bãi"),
+    LAYOUT_NOT_PUBLISHED("PARK_004", "Bãi xe chưa công bố sơ đồ hoặc chưa được phê duyệt"),
+    LAYOUT_VERSION_CONFLICT("PARK_005", "Phiên bản sơ đồ đã thay đổi, vui lòng tải lại bản mới nhất"),
+    PHYSICAL_SLOT_NOT_FOUND("PARK_006", "Không tìm thấy vị trí đỗ xe trên sơ đồ"),
+    PHYSICAL_SLOT_ALREADY_HELD("PARK_007", "Vị trí đỗ xe này đã có người giữ chỗ"),
 
     // Booking errors
     BOOKING_NOT_FOUND("BOOK_001", "Không tìm thấy lượt đặt chỗ"),

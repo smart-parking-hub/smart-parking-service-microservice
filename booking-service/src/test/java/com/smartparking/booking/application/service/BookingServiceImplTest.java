@@ -269,4 +269,116 @@ class BookingServiceImplTest {
                 () -> bookingService.getMerchantBookingDetail(merchantUserId, nonExistentId));
         assertEquals(ErrorCode.BOOKING_NOT_FOUND, ex.getErrorCode());
     }
+
+    @Test
+    @DisplayName("AC5 & AC6: Create booking snapshots physicalSlotId, physicalSlotCode, and layoutPublicationId")
+    void testCreateBookingWithPhysicalSlotSuccess() {
+        LocalDateTime checkIn = LocalDateTime.now().plusHours(2);
+        LocalDateTime checkOut = checkIn.plusHours(2);
+
+        CreateBookingRequest req = CreateBookingRequest.builder()
+                .requestId("unique-1")
+                .parkingLotId(parkingLotId)
+                .vehicleId(10L)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .expectedCheckInTime(checkIn)
+                .expectedCheckOutTime(checkOut)
+                .physicalSlotId("ps-501")
+                .build();
+
+        Booking savedInit = Booking.builder()
+                .id(bookingId)
+                .bookingCode("BK123456")
+                .driverId(driverUserId)
+                .vehicleId(10L)
+                .parkingLotId(parkingLotId)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .status(BookingStatusEnum.PENDING_PAYMENT)
+                .build();
+
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenReturn(savedInit);
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        SlotHoldResponse holdResp = SlotHoldResponse.builder()
+                .success(true)
+                .merchantId(merchantUserId)
+                .parkingLotName("Central Lot")
+                .parkingLotAddress("123 Street")
+                .baseHourlyPrice(new BigDecimal("20000"))
+                .physicalSlotId("ps-501")
+                .physicalSlotCode("A-01")
+                .layoutPublicationId("pub-101")
+                .build();
+        when(parkingLotClient.holdSlot(eq(parkingLotId), any(SlotHoldRequest.class)))
+                .thenReturn(ApiResponse.success(holdResp));
+
+        BookingDto result = bookingService.createBooking(driverUserId, req);
+
+        assertNotNull(result);
+        assertEquals("ps-501", result.getPhysicalSlotId());
+        assertEquals("A-01", result.getPhysicalSlotCode());
+        assertEquals("pub-101", result.getLayoutPublicationId());
+        verify(parkingLotClient).holdSlot(eq(parkingLotId), argThat(h -> "ps-501".equals(h.getPhysicalSlotId())));
+    }
+
+    @Test
+    @DisplayName("AC6: Retry createBooking with same requestKey and same physicalSlotId returns existing booking")
+    void testCreateBookingIdempotentSamePhysicalSlot() {
+        CreateBookingRequest req = CreateBookingRequest.builder()
+                .requestId("idem-1")
+                .parkingLotId(parkingLotId)
+                .vehicleId(10L)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .physicalSlotId("ps-501")
+                .build();
+
+        Booking existing = Booking.builder()
+                .id(bookingId)
+                .bookingCode("BK-EXISTING")
+                .requestKey(driverUserId + ":idem-1")
+                .parkingLotId(parkingLotId)
+                .vehicleId(10L)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .physicalSlotId("ps-501")
+                .status(BookingStatusEnum.PENDING_PAYMENT)
+                .build();
+
+        when(bookingRepository.findByRequestKey(driverUserId + ":idem-1")).thenReturn(Optional.of(existing));
+
+        BookingDto result = bookingService.createBooking(driverUserId, req);
+
+        assertNotNull(result);
+        assertEquals(bookingId, result.getId());
+        assertEquals("ps-501", result.getPhysicalSlotId());
+        verify(parkingLotClient, never()).holdSlot(any(), any());
+    }
+
+    @Test
+    @DisplayName("AC6: Retry createBooking with same requestKey but altered physicalSlotId throws CONFLICT (409)")
+    void testCreateBookingConflictAlteredPhysicalSlot() {
+        CreateBookingRequest req = CreateBookingRequest.builder()
+                .requestId("idem-1")
+                .parkingLotId(parkingLotId)
+                .vehicleId(10L)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .physicalSlotId("ps-502") // Changed from ps-501
+                .build();
+
+        Booking existing = Booking.builder()
+                .id(bookingId)
+                .bookingCode("BK-EXISTING")
+                .requestKey(driverUserId + ":idem-1")
+                .parkingLotId(parkingLotId)
+                .vehicleId(10L)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .physicalSlotId("ps-501")
+                .build();
+
+        when(bookingRepository.findByRequestKey(driverUserId + ":idem-1")).thenReturn(Optional.of(existing));
+
+        AppException ex = assertThrows(AppException.class, () ->
+                bookingService.createBooking(driverUserId, req));
+        assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+        verify(parkingLotClient, never()).holdSlot(any(), any());
+    }
 }

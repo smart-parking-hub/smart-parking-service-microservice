@@ -63,6 +63,33 @@ class BookingSchemaMigrationTest {
                 statement.setString(3, "1");
                 assertEquals(1, statement.executeUpdate());
             }
+
+            // Exercise V8 migration
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource(
+                    "db/migration/V8__add_physical_slot_to_bookings.sql"));
+            try (var statement = connection.createStatement();
+                 var rows = statement.executeQuery(
+                         "SELECT physical_slot_id, physical_slot_code, layout_publication_id FROM bookings WHERE booking_code = 'BK-MIGRATION'")) {
+                assertTrue(rows.next());
+                assertNull(rows.getString(1));
+                assertNull(rows.getString(2));
+                assertNull(rows.getString(3));
+            }
+            try (var statement = connection.prepareStatement(
+                    "UPDATE bookings SET physical_slot_id = ?, physical_slot_code = ?, layout_publication_id = ? WHERE booking_code = 'BK-MIGRATION'")) {
+                statement.setString(1, "ps-101");
+                statement.setString(2, "A-01");
+                statement.setString(3, "pub-202");
+                assertEquals(1, statement.executeUpdate());
+            }
+            try (var statement = connection.createStatement();
+                 var rows = statement.executeQuery(
+                         "SELECT physical_slot_id, physical_slot_code, layout_publication_id FROM bookings WHERE booking_code = 'BK-MIGRATION'")) {
+                assertTrue(rows.next());
+                assertEquals("ps-101", rows.getString(1));
+                assertEquals("A-01", rows.getString(2));
+                assertEquals("pub-202", rows.getString(3));
+            }
         }
     }
 }
