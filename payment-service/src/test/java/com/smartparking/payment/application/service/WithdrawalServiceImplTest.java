@@ -37,6 +37,9 @@ class WithdrawalServiceImplTest {
     @Mock
     private MerchantWalletService merchantWalletService;
 
+    @Mock
+    private com.smartparking.common.messaging.TransactionalEventOutbox adminEventOutbox;
+
     @InjectMocks
     private WithdrawalServiceImpl withdrawalService;
 
@@ -56,6 +59,7 @@ class WithdrawalServiceImplTest {
                 withdrawalService.requestWithdrawal(merchantUserId, req));
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("Số dư khả dụng không đủ"));
+        verifyNoInteractions(adminEventOutbox);
     }
 
     @Test
@@ -83,6 +87,11 @@ class WithdrawalServiceImplTest {
         assertEquals(WithdrawalStatusEnum.PENDING, response.getStatus());
         assertEquals(new BigDecimal("60000"), response.getAvailableBalance());
         verify(merchantWalletService, times(1)).holdWithdrawal(eq(merchantUserId), eq(new BigDecimal("40000")), any());
+        verify(adminEventOutbox).enqueue(eq(com.smartparking.common.event.AdminOperationEvent.TOPIC), eq("withdrawal:55"),
+                argThat(event -> event instanceof com.smartparking.common.event.AdminOperationEvent operation
+                        && operation.getEventType().equals("WITHDRAWAL_REQUESTED")
+                        && operation.getTargetId().equals(55L)
+                        && operation.getAmount().compareTo(new BigDecimal("40000")) == 0));
     }
 
     @Test

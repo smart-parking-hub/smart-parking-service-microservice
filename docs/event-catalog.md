@@ -1,5 +1,19 @@
 # Event Catalog - Danh mục Sự kiện Phân tán (Kafka Topics)
 
+## Bổ sung SP-S3-UI-16 — Admin operations (2026-11-12)
+
+Status: implemented in working tree, runtime verification pending. Owner: SPH. [ADR-0005](./adr/0005-admin-operations-notification-delivery.md), [runbook/replay](./deployment/admin-notifications-runbook.md).
+
+| Topic | Producer / Consumer | Envelope / Hành vi |
+| --- | --- | --- |
+| `admin-operations.events` | Payment/Parking -> Notification group `notification-admin-operations` | DomainEvent eventId/eventType/timestamp/aggregateId + schemaVersion=1, targetId, actorId; amount/currency cho withdrawal, submissionVersion cho hồ sơ bãi. |
+| `admin-recipient-snapshots.events` | Identity -> Notification group `notification-admin-recipients` | ADMIN_RECIPIENT_SNAPSHOT; DomainEvent + schemaVersion=1, snapshotVersion tăng, recipientIds chỉ ADMIN ACTIVE. Key admin-recipients, một partition. |
+| Các topic trên + `.DLT` | Notification error handler -> operator | Retry transient 3 lần, 1s/lần; invalid envelope đi DLT; recoverer kiểm tra send result. Replay nguyên payload/key/eventId sau xử lý lỗi. |
+
+Các event nghiệp vụ mới: `WITHDRAWAL_REQUESTED`, `DISPUTE_OPENED`, `PARKING_LOT_REVIEW_REQUESTED`. Không đưa chúng vào relay payment.events cũ. Mỗi producer dùng bảng admin_event_outbox của DB mình, phát String JSON; transaction ghi outbox cùng nghiệp vụ, relay giữ FAILED sau 5 lần để replay có kiểm soát. Snapshot reconciliation quét 10s khi danh sách đổi và heartbeat 60s; Notification từ chối snapshot quá 180s hoặc rỗng khi phân phối tin. Không có truy vấn DB Identity từ Notification.
+
+Fan-out và processed marker cùng transaction, unique `(source_event_id,user_id)` chống trùng. Mỗi Admin đọc độc lập. Các listener cũ không được thay đổi và không tự nhận chính sách retry mới chỉ vì tài liệu này có mục bổ sung.
+
 Danh mục tất cả các Domain Event được xuất bản và tiêu thụ trong kiến trúc SmartParkingHub.
 
 ## 1. Topic: `booking.events`

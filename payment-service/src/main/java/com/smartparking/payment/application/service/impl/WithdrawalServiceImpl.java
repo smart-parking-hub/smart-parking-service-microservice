@@ -1,6 +1,8 @@
 package com.smartparking.payment.application.service.impl;
 
 import com.smartparking.common.dto.PageResponse;
+import com.smartparking.common.event.AdminOperationEvent;
+import com.smartparking.common.messaging.TransactionalEventOutbox;
 import com.smartparking.common.enums.WithdrawalStatusEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
@@ -27,6 +29,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
 
     private final WithdrawalRequestRepository withdrawalRequestRepository;
     private final MerchantWalletService merchantWalletService;
+    private final TransactionalEventOutbox adminEventOutbox;
 
     @Override
     @Transactional
@@ -52,6 +55,10 @@ public class WithdrawalServiceImpl implements WithdrawalService {
                 .build();
 
         WithdrawalRequest saved = withdrawalRequestRepository.save(withdrawal);
+        adminEventOutbox.enqueue(AdminOperationEvent.TOPIC, "withdrawal:" + saved.getId(),
+                AdminOperationEvent.builder().eventType(AdminOperationEvent.WITHDRAWAL_REQUESTED)
+                        .aggregateId(String.valueOf(saved.getId())).targetId(saved.getId()).actorId(merchantUserId)
+                        .amount(saved.getAmount()).currency("VND").build());
         BigDecimal remainingBalance = merchantWalletService.getWalletBalance(merchantUserId);
 
         log.info("Merchant {} submitted withdrawal request {} for amount {}",

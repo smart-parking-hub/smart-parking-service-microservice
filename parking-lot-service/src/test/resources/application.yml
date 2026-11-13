@@ -1,4 +1,7 @@
 spring:
+  kafka:
+    admin:
+      auto-create: false
   application:
     name: parking-lot-service-test
   datasource:
@@ -21,6 +24,8 @@ jwt:
   secret: smartparkingsecretkeymustbeverylongandsecure2026version
 
 app:
+  admin-operations:
+    enabled: false
   storage:
     parking-lot-images-dir: build/test-uploads
 

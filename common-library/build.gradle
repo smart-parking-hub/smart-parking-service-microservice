@@ -3,6 +3,14 @@ plugins {
 }
 
 dependencies {
+    // Optional shared outbox infrastructure. Only producer services explicitly
+    // import its configuration; their existing JDBC/Kafka starters supply runtime.
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'org.springframework:spring-jdbc'
+    compileOnly 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.boot:spring-boot-autoconfigure'
+    testImplementation 'org.springframework:spring-jdbc'
+    testImplementation 'org.springframework.kafka:spring-kafka'
     api 'com.fasterxml.jackson.core:jackson-databind'
     api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     api 'jakarta.validation:jakarta.validation-api'

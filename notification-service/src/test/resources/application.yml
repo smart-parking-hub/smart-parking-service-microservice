@@ -1,3 +1,6 @@
+app:
+  admin-operations:
+    enabled: false
 spring:
   mail:
     host: localhost
@@ -16,6 +19,10 @@ spring:
   flyway:
     enabled: false
   kafka:
+    admin:
+      auto-create: false
+    listener:
+      auto-startup: false
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

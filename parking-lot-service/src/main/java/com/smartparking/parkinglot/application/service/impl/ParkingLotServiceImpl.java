@@ -1,6 +1,8 @@
 package com.smartparking.parkinglot.application.service.impl;
 
 import com.smartparking.common.dto.PageResponse;
+import com.smartparking.common.event.AdminOperationEvent;
+import com.smartparking.common.messaging.TransactionalEventOutbox;
 import com.smartparking.common.enums.ParkingLotStatusEnum;
 import com.smartparking.common.enums.VehicleTypeEnum;
 import com.smartparking.common.exception.AppException;
@@ -41,6 +43,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     private final SlotRepository slotRepository;
     private final PricingRuleRepository pricingRuleRepository;
     private final ParkingLotImageRepository parkingLotImageRepository;
+    private final TransactionalEventOutbox adminEventOutbox;
 
     @Override
     @Transactional
@@ -60,6 +63,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 .build();
 
         ParkingLot saved = parkingLotRepository.save(lot);
+        publishReviewRequested(saved);
         log.info("Created parking lot {} for merchant {}", saved.getId(), merchantUserId);
         return toDetail(saved);
     }
@@ -67,7 +71,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     @Override
     @Transactional
     public ParkingLotDto updateParkingLot(Long merchantUserId, Long parkingLotId, CreateParkingLotRequest request) {
-        ParkingLot lot = getOwnedParkingLot(merchantUserId, parkingLotId);
+        ParkingLot lot = parkingLotRepository.findByIdForUpdate(parkingLotId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_LOT_NOT_FOUND, "Không tìm thấy bãi đỗ"));
+        if (!lot.getMerchantId().equals(merchantUserId)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền chỉnh sửa bãi đỗ này");
+        }
         if (lot.getStatus() != ParkingLotStatusEnum.REJECTED && lot.getStatus() != ParkingLotStatusEnum.CHANGES_REQUESTED) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ được chỉnh sửa hồ sơ bị từ chối hoặc được yêu cầu chỉnh sửa!");
         }
@@ -80,8 +88,17 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         lot.setReviewReason(null);
         lot.setReviewedAt(null);
         lot.setReviewedBy(null);
+        lot.setReviewSubmissionVersion(lot.getReviewSubmissionVersion() + 1);
+        ParkingLot saved = parkingLotRepository.save(lot);
+        publishReviewRequested(saved);
+        return toDetail(saved);
+    }
 
-        return toDetail(parkingLotRepository.save(lot));
+    private void publishReviewRequested(ParkingLot lot) {
+        adminEventOutbox.enqueue(AdminOperationEvent.TOPIC, "parking-lot:" + lot.getId(),
+                AdminOperationEvent.builder().eventType(AdminOperationEvent.LOT_REVIEW_REQUESTED)
+                        .aggregateId(String.valueOf(lot.getId())).targetId(lot.getId()).actorId(lot.getMerchantId())
+                        .submissionVersion(lot.getReviewSubmissionVersion()).build());
     }
 
     @Override

@@ -1,5 +1,18 @@
 # Data Ownership & Ranh giới Dữ liệu (Database per Service)
 
+## Bổ sung Admin notifications — SP-S3-UI-16 (2026-11-12)
+
+Owner: SPH; code/schema mới đang chờ kiểm chứng runtime. Các thay đổi dưới đây bổ sung cho bảng catalog hiện có, không chuyển quyền sở hữu dữ liệu:
+
+- Identity V7: `admin_event_outbox`, `admin_recipient_snapshot_cursor`; đọc users chỉ trong DB Identity để phát full snapshot ID ADMIN ACTIVE.
+- Payment V16: `admin_event_outbox` cho withdrawal/dispute; không đổi bảng/relay outbox_events dùng payment/refund.
+- Parking V7: `admin_event_outbox`, cột `parking_lots.review_submission_version` (default 1) cho lần nộp lại hợp lệ, tăng dưới row lock.
+- Notification V3: thêm `notifications.source_event_id` nullable, unique source_event_id/user_id, index user_id/created_at/id; thêm `admin_notification_recipients` và `admin_recipient_state` là projection ID/version/timestamp, không sao chép thông tin cá nhân users.
+- Không JOIN DB chéo service. Mỗi Admin có notification/readAt riêng; giữ bốn API cũ. Read lặp không cập nhật timestamp cũ.
+
+Migrations lịch sử và dữ liệu đang có được giữ; [ADR](./adr/0005-admin-operations-notification-delivery.md) và [runbook](./deployment/admin-notifications-runbook.md) ghi chính sách snapshot, retry và rollback additive.
+
+
 Nguyên tắc cốt lõi: **Tuyệt đối không truy cập chéo database**. Mọi truy cập dữ liệu giữa các domain bắt buộc phải thông qua REST API hoặc Message Broker.
 
 | Microservice | Tên Database | Danh sách Bảng sở hữu | Dữ liệu chia sẻ ra ngoài (qua API/Event) |
