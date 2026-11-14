@@ -19,8 +19,8 @@ public class NotificationOtpClient implements OtpMailSender {
     public NotificationOtpClient(@Value("${NOTIFICATION_SERVICE_URL:http://localhost:8085}") String url,
             @Value("${app.internal-service-token:}") String token, CircuitBreakerFactory<?, ?> breakers) {
         var factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(2000);
-        factory.setReadTimeout(5000);
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(12000);
         this.client = RestClient.builder().baseUrl(url).requestFactory(factory).build();
         this.token = token;
         this.breakers = breakers;
@@ -32,11 +32,20 @@ public class NotificationOtpClient implements OtpMailSender {
     public void send(String email, String code, OtpPurposeEnum purpose) {
         if (token.isBlank()) throw unavailable();
         breakers.create("otp-mail").run(() -> {
-            client.post().uri("/api/v1/internal/mail/otp")
-                    .header("X-Internal-Service-Token", token)
-                    .body(new Delivery(email, code, purpose)).retrieve().toBodilessEntity();
+            try {
+                executePost(email, code, purpose);
+            } catch (Exception ex) {
+                // Retry once for cold-start SMTP/TLS handshake
+                executePost(email, code, purpose);
+            }
             return Boolean.TRUE;
         }, failure -> { throw unavailable(); });
+    }
+
+    private void executePost(String email, String code, OtpPurposeEnum purpose) {
+        client.post().uri("/api/v1/internal/mail/otp")
+                .header("X-Internal-Service-Token", token)
+                .body(new Delivery(email, code, purpose)).retrieve().toBodilessEntity();
     }
 
     private AppException unavailable() {
