@@ -35,7 +35,16 @@ smart-parking-microservice/scripts/
 ├── 📂 trello/                      # [4] Quản Trị Task & Dashboard Trello
 │   ├── trello.bat                  # Phím tắt CLI thao tác với Trello
 │   ├── trello-cli.js               # Core Node.js xử lý Trello API
-│   └── export-dashboard-data.js    # Xuất dữ liệu snapshot sang file JSON
+│   ├── export-dashboard-data.js    # Xuất dữ liệu snapshot sang file JSON
+│   ├── trello-client.mjs           # Module nạp cấu hình & kết nối Trello API dùng chung
+│   ├── .trello.env.example         # File mẫu cấu hình Trello API credentials
+│   ├── check-list-pos.mjs          # Kiểm tra thứ tự vị trí các danh sách trên Board
+│   ├── check-sprint.mjs            # Đối soát danh sách thẻ và thành viên trong Sprint
+│   ├── check-sprint-lists.mjs      # Quét chi tiết thẻ theo từng cột Sprint
+│   ├── find-sprint3-cards.mjs      # Lọc toàn bộ thẻ thuộc Sprint 03
+│   ├── inspect-unfinished.mjs      # Kiểm tra các thẻ chưa hoàn thành trong Sprint 03
+│   ├── create-defect-cards.mjs     # Tự động tạo thẻ lỗi / cải tiến UI/UX lên Board
+│   └── migrate-to-sprint4.mjs      # Tự động chuyển thẻ tồn đọng sang Sprint 04 Backlog
 │
 └── 📂 git/                         # [5] Quản Trị Nhánh, Kiểm Toán & Checkout Thông Minh
     ├── git-tool.bat                # Phím tắt thao tác Git nhanh trên Windows
@@ -65,4 +74,20 @@ File [`smart-parking-microservice/menu.bat`](file:///d:/Documents/JAVA%20WEB%20S
 
 # Thao tác Trello:
 .\scripts\trello\trello.bat members
+```
+
+### 3. Cấu Hình & Tự Động Hóa Trello:
+```bash
+# 1. Sao chép file cấu hình mẫu:
+cp scripts/trello/.trello.env.example .trello.env
+
+# 2. Điền TRELLO_API_KEY, TRELLO_API_TOKEN, TRELLO_ACTIVE_BOARD_ID vào .trello.env
+
+# 3. Chạy các kịch bản kiểm toán & tự động hóa Sprint:
+node scripts/trello/check-list-pos.mjs            # Xem vị trí các cột
+node scripts/trello/find-sprint3-cards.mjs        # Quét thẻ Sprint 03
+node scripts/trello/inspect-unfinished.mjs        # Kiểm tra thẻ chưa xong
+node scripts/trello/check-risks-improvements.mjs  # Quét rủi ro & cải tiến
+node scripts/trello/create-defect-cards.mjs       # Tạo các thẻ defect/UX lên Trello
+node scripts/trello/migrate-to-sprint4.mjs        # Chuyển task sang Sprint 04
 ```

@@ -61,6 +61,8 @@ services:
       DB_URL: jdbc:mysql://116.118.6.107:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: ${IDENTITY_DB_USERNAME:-identity_svc}
       DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-SP_SecUser_Iden2026_xM3!}
+      NOTIFICATION_SERVICE_URL: http://116.118.6.107:8085
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:?APP_INTERNAL_SERVICE_TOKEN is required}
     logging:
       driver: "json-file"
       options:
