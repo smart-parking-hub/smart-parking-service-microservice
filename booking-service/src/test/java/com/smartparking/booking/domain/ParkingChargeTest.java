@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import static org.junit.jupiter.api.Assertions.*;
 class ParkingChargeTest {
     @Test void serverDepositIsTwentyPercentRoundedToDong() {
+        assertEquals(new BigDecimal("4000"), ParkingCharge.deposit(new BigDecimal("20000")));
         assertEquals(new BigDecimal("20000"), ParkingCharge.deposit(new BigDecimal("100000")));
         assertEquals(new BigDecimal("20001"), ParkingCharge.deposit(new BigDecimal("100003")));
     }
