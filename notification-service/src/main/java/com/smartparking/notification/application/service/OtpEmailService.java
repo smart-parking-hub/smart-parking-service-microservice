@@ -16,17 +16,25 @@ import org.springframework.stereotype.Service;
 public class OtpEmailService {
     private final JavaMailSender sender;
     private final String from;
+    private final String frontendUrl;
 
-    public OtpEmailService(JavaMailSender sender, @Value("${app.mail.from:}") String from) {
+    public OtpEmailService(JavaMailSender sender,
+            @Value("${app.mail.from:}") String from,
+            @Value("${app.frontend.url:https://smart-parking-app-v2.vercel.app}") String frontendUrl) {
         this.sender = sender;
         this.from = from;
+        this.frontendUrl = frontendUrl;
     }
 
     public void send(String email, String code, OtpPurposeEnum purpose) {
         if (from.isBlank()) throw unavailable();
-        String html = OtpEmailTemplate.html(code, purpose);
+        String html = OtpEmailTemplate.html(code, purpose, email, frontendUrl);
         String action = purpose == OtpPurposeEnum.REGISTER ? "xác thực email đăng ký" : "đặt lại mật khẩu";
+        String path = purpose == OtpPurposeEnum.REGISTER ? "/register" : "/forgot-password";
+        String base = (frontendUrl == null || frontendUrl.isBlank()) ? "https://smart-parking-app-v2.vercel.app" : frontendUrl.replaceAll("/+$", "");
+        String magicLink = base + path + "?email=" + email + "&otpCode=" + code + "&autoVerify=true";
         String plainText = "Mã " + action + " của bạn là: " + code
+                + "\n\nHoặc mở liên kết sau để tự động xác thực và tiếp tục:\n" + magicLink
                 + "\n\nMã có hiệu lực 5 phút, chỉ sử dụng một lần. Không chia sẻ mã với bất kỳ ai."
                 + "\nNếu bạn không yêu cầu mã này, hãy bỏ qua email.\n\nSmart Parking Hub";
         try {
