@@ -15,8 +15,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,14 +29,18 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 class EmailOtpIntegrationTest {
     @Autowired AuthService auth;
     @Autowired OtpChallengeRepository challenges;
     @Autowired UserRepository users;
     @Autowired PasswordEncoder encoder;
     @Autowired ObjectMapper json;
+    @Autowired MockMvc http;
     @MockBean OtpMailSender mail;
     String email;
 
@@ -96,7 +104,79 @@ class EmailOtpIntegrationTest {
         var response = auth.sendRegisterOtp(r);
         verify(mail).send(eq(email), matches("[0-9]{6}"), eq(OtpPurposeEnum.REGISTER));
         assertFalse(json.writeValueAsString(response).contains("otpCode"));
-        assertNotEquals("123456", challenge().getCodeHash());
+        var code = ArgumentCaptor.forClass(String.class);
+        verify(mail).send(eq(email), code.capture(), eq(OtpPurposeEnum.REGISTER));
+        assertNotEquals(code.getValue(), challenge().getCodeHash());
+        assertTrue(encoder.matches(code.getValue(), challenge().getCodeHash()));
+    }
+
+    private void assertPublicMetadata(MvcResult result) throws Exception {
+        var body = json.readTree(result.getResponse().getContentAsString());
+        assertTrue(body.path("success").asBoolean());
+        assertEquals(json.readTree("{\"expiresInSeconds\":300,\"resendAfterSeconds\":60}"), body.get("data"));
+        assertFalse(result.getResponse().getContentAsString().contains("otpCode"));
+    }
+
+    @Test void publicRegisterSendReturnsOnlyMetadataAndDeliversCodeToBackendMail() throws Exception {
+        var result = http.perform(post("/api/v1/auth/otp/send").contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(request())))
+                .andExpect(status().isOk()).andReturn();
+        assertPublicMetadata(result);
+        var code = ArgumentCaptor.forClass(String.class);
+        verify(mail).send(eq(email), code.capture(), eq(OtpPurposeEnum.REGISTER));
+        assertTrue(code.getValue().matches("[0-9]{6}"));
+        assertFalse(result.getResponse().getContentAsString().contains(code.getValue()));
+        assertTrue(encoder.matches(code.getValue(), challenge().getCodeHash()));
+        http.perform(post("/api/v1/auth/otp/send").contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(request())))
+                .andExpect(status().isConflict());
+        verify(mail, times(1)).send(eq(email), anyString(), any());
+    }
+
+    @Test void publicForgotSendHasSameMetadataForExistingUnknownAndCooldown() throws Exception {
+        auth.register(registration(send()));
+        clearInvocations(mail);
+        var known = new ForgotPasswordSendOtpRequest(); known.setEmail(email);
+        var unknown = new ForgotPasswordSendOtpRequest(); unknown.setEmail("unknown-" + email);
+        var first = http.perform(post("/api/v1/auth/forgot-password/otp").contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(known)))
+                .andExpect(status().isOk()).andReturn();
+        assertPublicMetadata(first);
+        for (var input : java.util.List.of(known, unknown)) {
+            var result = http.perform(post("/api/v1/auth/forgot-password/otp").contentType(MediaType.APPLICATION_JSON)
+                            .content(json.writeValueAsString(input)))
+                    .andExpect(status().isOk()).andReturn();
+            assertPublicMetadata(result);
+            assertEquals(json.readTree(first.getResponse().getContentAsString()).get("message"),
+                    json.readTree(result.getResponse().getContentAsString()).get("message"));
+        }
+        var code = ArgumentCaptor.forClass(String.class);
+        verify(mail).send(eq(email), code.capture(), eq(OtpPurposeEnum.RESET_PASSWORD));
+        verifyNoMoreInteractions(mail);
+        assertFalse(first.getResponse().getContentAsString().contains(code.getValue()));
+    }
+
+    @Test void publicSendRejectsInvalidEmailsWithoutDelivery() throws Exception {
+        for (String endpoint : java.util.List.of("/otp/send", "/forgot-password/otp")) {
+            for (String invalid : java.util.List.of("{}", "{\"email\":\"\"}", "{\"email\":\"invalid\"}")) {
+                http.perform(post("/api/v1/auth" + endpoint).contentType(MediaType.APPLICATION_JSON).content(invalid))
+                        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.success").value(false));
+            }
+        }
+        verifyNoInteractions(mail);
+    }
+
+    @Test void verificationRequestsStillRequireUserSuppliedOtpCode() throws Exception {
+        var register = registration(null);
+        var reset = new ForgotPasswordResetRequest(); reset.setEmail(email); reset.setNewPassword("NewPassword123");
+        var inputs = java.util.Map.of("/register", register, "/otp/verify", verification(null), "/forgot-password/reset", reset);
+        for (var input : inputs.entrySet()) {
+            http.perform(post("/api/v1/auth" + input.getKey()).contentType(MediaType.APPLICATION_JSON)
+                            .content(json.writeValueAsString(input.getValue())))
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.success").value(false));
+        }
+        assertFalse(users.existsByEmailIgnoreCase(email));
+        verifyNoInteractions(mail);
     }
 
     @Test void enforcesCooldownAndReplacesChallengeAfterCooldown() {
