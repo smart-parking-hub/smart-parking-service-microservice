@@ -32,7 +32,7 @@ public class BookingExpirationScheduler {
     @Transactional
     public void expireUnpaidBookings() {
         // Thêm 3 phút Grace Period tránh race condition khi webhook thanh toán PayOS đến trễ
-        LocalDateTime threshold = LocalDateTime.now().minusMinutes(3);
+        LocalDateTime threshold = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).minusMinutes(3);
         List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(
                 BookingStatusEnum.PENDING_PAYMENT, threshold);
 
@@ -79,7 +79,7 @@ public class BookingExpirationScheduler {
     @Scheduled(cron = "30 * * * * *")
     @Transactional
     public void expireNoShowBookings() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
         List<Booking> noShowBookings = bookingRepository.findByStatusAndExpiresAtBefore(
                 BookingStatusEnum.PENDING_CHECKIN, now);
 

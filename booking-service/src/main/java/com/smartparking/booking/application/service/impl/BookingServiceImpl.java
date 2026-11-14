@@ -59,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
                 return BookingDto.fromEntity(b);
             }
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
         if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
             throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào phải ở tương lai và giờ ra phải sau giờ vào");
         var vehicle = ownedVehicleClient.require(request.getVehicleId());
@@ -80,7 +80,7 @@ public class BookingServiceImpl implements BookingService {
                 .status(BookingStatusEnum.PENDING_PAYMENT)
                 .expectedCheckInTime(request.getExpectedCheckInTime())
                 .expectedCheckOutTime(request.getExpectedCheckOutTime())
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .expiresAt(now.plusMinutes(15))
                 .build();
 
         Booking saved;

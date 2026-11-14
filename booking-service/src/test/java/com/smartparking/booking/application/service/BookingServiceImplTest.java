@@ -31,6 +31,28 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class BookingServiceImplTest {
 
+    @Test
+    void paymentDeadlineUsesVietnamTimeOnUtcHost() {
+        java.util.TimeZone original = java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+            LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+            var request = CreateBookingRequest.builder().parkingLotId(100L).vehicleId(10L)
+                    .vehicleType(VehicleTypeEnum.CONTAINER).expectedCheckInTime(now.plusHours(1))
+                    .expectedCheckOutTime(now.plusHours(3)).build();
+            when(bookingRepository.saveAndFlush(any())).thenAnswer(inv -> { Booking b = inv.getArgument(0); b.setId(1L); return b; });
+            when(bookingRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(parkingLotClient.holdSlot(eq(100L), any())).thenReturn(ApiResponse.success(
+                    SlotHoldResponse.builder().success(true).merchantId(800L).baseHourlyPrice(new BigDecimal("20000")).build()));
+            var result = bookingService.createBooking(500L, request);
+            assertFalse(result.getExpiresAt().isBefore(now.plusMinutes(15)));
+            assertTrue(result.getExpiresAt().isBefore(now.plusMinutes(16)));
+            assertEquals(0, new BigDecimal("8000").compareTo(result.getAdvanceDeposit()));
+        } finally {
+            java.util.TimeZone.setDefault(original);
+        }
+    }
+
     @Mock
     private BookingRepository bookingRepository;
 

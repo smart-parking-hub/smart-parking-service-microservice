@@ -30,6 +30,23 @@ class BookingExpirationSchedulerTest {
     @Mock OutboxPublisherService events;
     @InjectMocks BookingExpirationScheduler scheduler;
 
+    @Test
+    void expiryQueriesUseVietnamTimeOnUtcHost() {
+        java.util.TimeZone original = java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+            LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+            scheduler.expireUnpaidBookings();
+            scheduler.expireNoShowBookings();
+            verify(repository).findByStatusAndExpiresAtBefore(eq(BookingStatusEnum.PENDING_PAYMENT),
+                    argThat(time -> !time.isBefore(now.minusMinutes(3)) && time.isBefore(now.minusMinutes(2))));
+            verify(repository).findByStatusAndExpiresAtBefore(eq(BookingStatusEnum.PENDING_CHECKIN),
+                    argThat(time -> !time.isBefore(now) && time.isBefore(now.plusMinutes(1))));
+        } finally {
+            java.util.TimeZone.setDefault(original);
+        }
+    }
+
     private Booking candidate() {
         return Booking.builder().id(1L).bookingCode("BK-EXPIRY").parkingLotId(2L)
                 .vehicleType(VehicleTypeEnum.SEDAN_SUV).status(BookingStatusEnum.PENDING_PAYMENT)
