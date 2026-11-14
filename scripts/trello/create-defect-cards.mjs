@@ -1,24 +1,4 @@
-import fs from 'node:fs';
-
-const envContent = fs.readFileSync('smart-parking-microservice/.trello.env', 'utf-8');
-const env = {};
-for (const line of envContent.split('\n')) {
-  const trimmed = line.trim();
-  if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
-    const idx = trimmed.indexOf('=');
-    env[trimmed.substring(0, idx).trim()] = trimmed.substring(idx + 1).trim();
-  }
-}
-const key = env.TRELLO_API_KEY;
-const token = env.TRELLO_API_TOKEN;
-const boardId = env.TRELLO_ACTIVE_BOARD_ID || env.TRELLO_SPH_BOARD_ID;
-
-const MEMBERS = {
-  HUY: '69016d7a8c58ffe25753e224',
-  TUNG: '6930e5b55d3528613be81a82',
-  LOC: '68f0354b7e270498cfc5666a',
-  KHAI: '6a6b571e2274ff581eb61742'
-};
+import { key, token, boardId, MEMBERS } from './trello-client.mjs';
 
 const NEW_CARDS = [
   {
