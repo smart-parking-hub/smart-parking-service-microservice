@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,7 +37,7 @@ class BookingExpirationSchedulerTest {
         java.util.TimeZone original = java.util.TimeZone.getDefault();
         try {
             java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
-            LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+            LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
             scheduler.expireUnpaidBookings();
             scheduler.expireNoShowBookings();
             verify(repository).findByStatusAndExpiresAtBefore(eq(BookingStatusEnum.PENDING_PAYMENT),

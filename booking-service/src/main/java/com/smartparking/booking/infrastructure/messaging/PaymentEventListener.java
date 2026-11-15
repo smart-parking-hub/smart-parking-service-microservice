@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -68,7 +70,8 @@ public class PaymentEventListener {
 
             bookingRepository.findByIdForUpdate(event.getBookingId()).ifPresent(booking -> {
                 if (booking.getStatus() == BookingStatusEnum.PENDING_PAYMENT && "DEPOSIT".equals(event.getPaymentType())) {
-                    if (booking.getExpiresAt() == null || !booking.getExpiresAt().isAfter(LocalDateTime.now())) {
+                    LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+                    if (booking.getExpiresAt() == null || !booking.getExpiresAt().isAfter(now)) {
                         log.error("Paid event arrived after hold expiry; reconciliation required: booking={}", booking.getId());
                         return;
                     }
@@ -78,10 +81,10 @@ public class PaymentEventListener {
                     }
                     booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
 
-                    // QR code is valid until expectedCheckInTime + 60 minutes (or at least 2 hours from now)
+                    // QR code is valid until expectedCheckInTime + 60 minutes (or 2 hours from now if absent)
                     LocalDateTime deadline = booking.getExpectedCheckInTime() != null
                             ? booking.getExpectedCheckInTime().plusMinutes(60)
-                            : LocalDateTime.now().plusHours(2);
+                            : now.plusHours(2);
                     booking.setExpiresAt(deadline);
                     bookingRepository.save(booking);
                     log.info("Booking {} transitioned to PENDING_CHECKIN after deposit payment, expiresAt={}", booking.getBookingCode(), deadline);
