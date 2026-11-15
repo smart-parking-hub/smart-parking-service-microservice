@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -52,7 +54,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái chờ check-in!");
         }
 
-        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         if (com.smartparking.booking.domain.BookingTimePolicy.tooEarly(now, booking.getExpectedCheckInTime(), checkInEarlyMinutes)) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + com.smartparking.booking.domain.BookingTimePolicy.earlyMinutes(checkInEarlyMinutes) + " phút)!");
         }
@@ -87,7 +89,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái đang đỗ!");
         }
 
-        LocalDateTime checkOutTime = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDateTime checkOutTime = LocalDateTime.now(BUSINESS_ZONE);
         booking.setCheckOutTime(checkOutTime);
 
         long minutes = Math.max(0, Duration.between(

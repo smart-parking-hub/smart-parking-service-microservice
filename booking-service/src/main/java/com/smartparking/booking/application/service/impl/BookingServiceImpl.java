@@ -27,6 +27,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -62,7 +64,7 @@ public class BookingServiceImpl implements BookingService {
                 return BookingDto.fromEntity(b);
             }
         }
-        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         holdRateLimiter.acquire(driverUserId, now);
         if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
             throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào phải ở tương lai và giờ ra phải sau giờ vào");
@@ -86,7 +88,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
         holdPolicy.check(driverUserId, request.getVehicleId(), request.getParkingLotId(),
-                LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
+                LocalDateTime.now(BUSINESS_ZONE));
         String bookingCode = "BK" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
         Booking booking = Booking.builder()

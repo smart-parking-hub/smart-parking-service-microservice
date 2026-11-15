@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -33,7 +35,7 @@ public class BookingExpirationScheduler {
     @Transactional
     public void expireUnpaidBookings() {
         // Thêm 3 phút Grace Period tránh race condition khi webhook thanh toán PayOS đến trễ
-        LocalDateTime threshold = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).minusMinutes(3);
+        LocalDateTime threshold = LocalDateTime.now(BUSINESS_ZONE).minusMinutes(3);
         List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(
                 BookingStatusEnum.PENDING_PAYMENT, threshold);
 
@@ -81,7 +83,7 @@ public class BookingExpirationScheduler {
     @Scheduled(cron = "30 * * * * *")
     @Transactional
     public void expireNoShowBookings() {
-        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         List<Booking> noShowBookings = bookingRepository.findByStatusAndExpiresAtBefore(
                 BookingStatusEnum.PENDING_CHECKIN, now);
 

@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
 @RestController @RequiredArgsConstructor
 @RequestMapping("/api/v1/internal/bookings")
 public class InternalPaymentConfirmationController {
@@ -29,7 +30,7 @@ public class InternalPaymentConfirmationController {
             if (request.amount() == null || request.amount().compareTo(booking.getAdvanceDeposit()) != 0)
                 throw new AppException(ErrorCode.BAD_REQUEST, "Số tiền cọc không khớp");
             if (booking.getStatus() == BookingStatusEnum.PENDING_CHECKIN || booking.getStatus() == BookingStatusEnum.PARKING || booking.getStatus() == BookingStatusEnum.COMPLETED) return ApiResponse.ok(true);
-            if (booking.getStatus() != BookingStatusEnum.PENDING_PAYMENT || booking.getExpiresAt() == null || !booking.getExpiresAt().isAfter(LocalDateTime.now())) return ApiResponse.ok(false);
+            if (booking.getStatus() != BookingStatusEnum.PENDING_PAYMENT || booking.getExpiresAt() == null || !booking.getExpiresAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))) return ApiResponse.ok(false);
             booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
             booking.setExpiresAt(booking.getExpectedCheckInTime().plusMinutes(60));
             repository.save(booking);

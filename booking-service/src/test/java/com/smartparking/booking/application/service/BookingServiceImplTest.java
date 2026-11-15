@@ -23,6 +23,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,7 +38,7 @@ class BookingServiceImplTest {
         java.util.TimeZone original = java.util.TimeZone.getDefault();
         try {
             java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
-            LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+            LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
             var request = CreateBookingRequest.builder().parkingLotId(100L).vehicleId(10L)
                     .vehicleType(VehicleTypeEnum.CONTAINER).expectedCheckInTime(now.plusHours(1))
                     .expectedCheckOutTime(now.plusHours(3)).build();
