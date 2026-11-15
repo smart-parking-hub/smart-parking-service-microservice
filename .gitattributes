@@ -1,0 +1,2 @@
+# Released local migration resources are byte-verified on every platform.
+payment-service/src/main/resources/db/local-v6-v7-history/*.sql text eol=lf

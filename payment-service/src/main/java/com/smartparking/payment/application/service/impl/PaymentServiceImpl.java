@@ -53,6 +53,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PayOS payOS;
     private final PayOSConfig payOSConfig;
     private final PaymentRepository paymentRepository;
+    private final com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
     private final MerchantWalletService merchantWalletService;
     private final OutboxPublisherService outboxPublisherService;
     private final ObjectMapper objectMapper;
@@ -63,116 +64,118 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${app.demo-payment-enabled:false}")
     private boolean demoPaymentEnabled;
 
+    @Value("${app.payos-recovery-enabled:true}")
+    private boolean payosRecoveryEnabled = true;
+
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = AppException.class)
     public String createPaymentLink(Long driverUserId, CreatePaymentRequest request) {
         PaymentTypeEnum type;
         try { type = PaymentTypeEnum.valueOf(request.getPaymentType()); }
         catch (RuntimeException failure) { throw new AppException(ErrorCode.BAD_REQUEST, "Loại thanh toán không hợp lệ"); }
-        String key = "booking:" + request.getBookingId() + ":" + type.name();
-        var previous = paymentRepository.findByIdempotencyKey(key);
-        if (previous.isPresent()) {
-            Payment old = previous.get();
+        attemptGuard.lock(request.getBookingId(), type);
+        List<Payment> attempts = attempts(request.getBookingId(), type);
+        for (Payment old : attempts) {
             if (!driverUserId.equals(old.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
-            if (old.getStatus() == PaymentStatusEnum.SUCCESS) return appendQueryParam(payOSConfig.getReturnUrl(), "bookingId", old.getBookingId().toString());
-            if (old.getCheckoutUrl() != null && old.getStatus() == PaymentStatusEnum.PENDING
-                    && (old.getBookingExpiresAt() == null || old.getBookingExpiresAt().isAfter(java.time.LocalDateTime.now()))) {
-                var quote = bookingPaymentVerifier.require(request.getBookingId(), driverUserId);
-                BigDecimal expectedAmount = quote.payable(type);
-                if (expectedAmount == null || expectedAmount.signum() <= 0 || old.getAmount() == null
-                        || old.getAmount().compareTo(expectedAmount) != 0
-                        || !java.util.Objects.equals(old.getMerchantId(), quote.merchantId())
-                        || !java.util.Objects.equals(old.getParkingLotId(), quote.parkingLotId())) {
-                    throw new AppException(ErrorCode.CONFLICT,
-                            "Link thanh toán cũ không khớp số tiền booking hiện tại. Chưa mở thanh toán; vui lòng kiểm tra lại booking hoặc liên hệ hỗ trợ.");
-                }
-                try {
-                    PaymentLink link = old.getOrderCode() == null ? null : payOS.paymentRequests().get(old.getOrderCode());
-                    if (link == null || link.getAmount() == null
-                            || BigDecimal.valueOf(link.getAmount()).compareTo(expectedAmount) != 0
-                            || !java.util.Objects.equals(link.getOrderCode(), old.getOrderCode())
-                            || link.getStatus() != vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING) {
-                        throw new AppException(ErrorCode.CONFLICT,
-                                "Link PayOS không khớp số tiền hoặc không còn chờ thanh toán. Vui lòng kiểm tra trạng thái giao dịch trước khi tiếp tục.");
-                    }
-                } catch (AppException failure) {
-                    throw failure;
-                } catch (Exception failure) {
-                    log.warn("Could not verify existing PayOS checkout for booking {}", request.getBookingId());
-                    throw new AppException(ErrorCode.PAYMENT_FAILED,
-                            "Chưa xác minh được số tiền trên PayOS. Vui lòng thử lại; chưa mở thanh toán.");
-                }
-                return old.getCheckoutUrl();
-            }
-            throw new AppException(ErrorCode.BAD_REQUEST, "Giao dịch đã hết hạn hoặc cần đối soát; không tạo thêm khoản thu");
+            if (old.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW || old.getStatus() == PaymentStatusEnum.REFUNDED)
+                throw new AppException(ErrorCode.CONFLICT, "Giao dịch cần kiểm tra; không tạo thêm khoản thu");
         }
+        if (attempts.stream().anyMatch(p -> p.getStatus() == PaymentStatusEnum.SUCCESS))
+            return appendQueryParam(payOSConfig.getReturnUrl(), "bookingId", request.getBookingId().toString());
+
         var quote = bookingPaymentVerifier.require(request.getBookingId(), driverUserId);
         BigDecimal amount = quote.payable(type);
         if (amount == null || amount.signum() <= 0) throw new AppException(ErrorCode.BAD_REQUEST, "Booking không có số tiền cần thanh toán");
-        long orderCode = Math.addExact(Math.multiplyExact(request.getBookingId(), 10L), type.ordinal() + 1L);
-        String description = "Booking " + request.getBookingId();
-
-        Payment payment = Payment.builder()
-                .bookingId(request.getBookingId())
-                .driverId(driverUserId)
-                .merchantId(quote.merchantId())
-                .parkingLotId(quote.parkingLotId())
-                .gateway(PaymentGatewayEnum.PAYOS)
-                .transactionCode(String.valueOf(orderCode))
-                .orderCode(orderCode)
-                .amount(amount)
-                .paymentType(type)
-                .status(PaymentStatusEnum.PENDING)
-                .idempotencyKey(key).bookingExpiresAt(type == PaymentTypeEnum.DEPOSIT ? quote.expiresAt() : null)
-                .build();
-
-        paymentRepository.saveAndFlush(payment);
-
-        String baseReturn = (payOSConfig.getReturnUrl() != null && !payOSConfig.getReturnUrl().isBlank())
-                ? payOSConfig.getReturnUrl()
-                : "http://localhost:3000/payment/return";
-        String baseCancel = (payOSConfig.getCancelUrl() != null && !payOSConfig.getCancelUrl().isBlank())
-                ? payOSConfig.getCancelUrl()
-                : "http://localhost:3000/payment/cancel";
-
-        String returnUrl = appendQueryParam(baseReturn, "bookingId", String.valueOf(request.getBookingId()));
-        String cancelUrl = appendQueryParam(baseCancel, "bookingId", String.valueOf(request.getBookingId()));
-
-        try {
-            PaymentLinkItem item = PaymentLinkItem.builder()
-                    .name(description)
-                    .quantity(1)
-                    .price(amount.longValue())
-                    .build();
-
-            CreatePaymentLinkRequest linkRequest = CreatePaymentLinkRequest.builder()
-                    .orderCode(orderCode)
-                    .amount(amount.longValueExact())
-                    .description(description)
-                    .items(List.of(item))
-                    .returnUrl(java.util.Objects.requireNonNull(returnUrl, "returnUrl must not be null"))
-                    .cancelUrl(java.util.Objects.requireNonNull(cancelUrl, "cancelUrl must not be null"))
-                    .build();
-
-            CreatePaymentLinkResponse result = payOS.paymentRequests().create(linkRequest);
-            if (result == null || result.getAmount() == null
-                    || BigDecimal.valueOf(result.getAmount()).compareTo(amount) != 0
-                    || !java.util.Objects.equals(result.getOrderCode(), orderCode)
-                    || result.getCheckoutUrl() == null || result.getCheckoutUrl().isBlank()) {
-                throw new AppException(ErrorCode.PAYMENT_FAILED,
-                        "Số tiền hoặc mã đơn PayOS không khớp booking. Chưa mở thanh toán; vui lòng thử lại hoặc liên hệ hỗ trợ.");
+        Payment latest = attempts.isEmpty() ? null : attempts.getFirst();
+        // Revalidate EVERY older order before issuing another one. An ambiguous provider result blocks recovery.
+        for (Payment old : attempts) {
+            if (!matchesQuote(old, quote, amount)) throw new AppException(ErrorCode.CONFLICT,
+                    "Link thanh toán cũ không khớp số tiền booking hiện tại. Vui lòng kiểm tra lại booking hoặc liên hệ hỗ trợ.");
+            PaymentLink link = verifiedLink(old);
+            if (link.getAmountPaid() == null || link.getAmountPaid() < 0)
+                throw new AppException(ErrorCode.PAYMENT_FAILED, "Chưa xác minh được khoản tiền trên PayOS. Vui lòng kiểm tra lại.");
+            if (link.getAmountPaid() > 0 || link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PAID) {
+                if (old == latest && link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PAID
+                        && BigDecimal.valueOf(link.getAmountPaid()).compareTo(amount) == 0) applyPaidPayment(old);
+                else markReview(old, "Giao dịch cũ có tiền nhận; cần đối soát trước khi thanh toán thêm");
+                throw new AppException(ErrorCode.CONFLICT, "Đã ghi nhận thông tin chuyển tiền. Vui lòng kiểm tra vé trước khi thanh toán tiếp.");
             }
-            String checkoutUrl = result.getCheckoutUrl();
-            log.info("PayOS link created for booking {}: {}", request.getBookingId(), checkoutUrl);
-            payment.setCheckoutUrl(checkoutUrl);
-            paymentRepository.save(payment);
-            return checkoutUrl;
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            log.warn("PayOS link unavailable for booking {}", request.getBookingId());
-            throw new AppException(ErrorCode.PAYMENT_FAILED, "Chưa tạo được thanh toán PayOS. Vui lòng thử lại; chưa xác nhận giữ chỗ.");
+            if (link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING
+                    && old == latest && old.getStatus() == PaymentStatusEnum.PENDING && old.getCheckoutUrl() != null) {
+                // Older attempts must all be terminal before the latest pending order may be reused.
+                continue;
+            }
+            if (link.getStatus() != vn.payos.model.v2.paymentRequests.PaymentLinkStatus.CANCELLED)
+                throw new AppException(ErrorCode.CONFLICT, "Giao dịch đang xử lý hoặc chưa xác định. Vui lòng kiểm tra lại; chưa tạo khoản thu mới.");
+            old.setStatus(PaymentStatusEnum.FAILED);
+            paymentRepository.save(old);
         }
+        if (latest != null && latest.getStatus() == PaymentStatusEnum.PENDING && latest.getCheckoutUrl() != null)
+            return latest.getCheckoutUrl();
+        if (!attempts.isEmpty() && !payosRecoveryEnabled)
+            throw new AppException(ErrorCode.CONFLICT, "Thanh toán lại đang tạm dừng. Vui lòng xem vé hoặc liên hệ hỗ trợ.");
+
+        long orderCode = attemptGuard.nextOrderCode();
+        String key = "booking:" + request.getBookingId() + ":" + type.name();
+        Payment payment = Payment.builder().bookingId(request.getBookingId()).driverId(driverUserId)
+                .merchantId(quote.merchantId()).parkingLotId(quote.parkingLotId()).gateway(PaymentGatewayEnum.PAYOS)
+                .transactionCode(String.valueOf(orderCode)).orderCode(orderCode).amount(amount).paymentType(type)
+                .status(PaymentStatusEnum.PENDING).idempotencyKey(attempts.isEmpty() ? key : key + ":attempt:" + orderCode)
+                .bookingExpiresAt(type == PaymentTypeEnum.DEPOSIT ? quote.expiresAt() : null).build();
+        // Persist the reservation even if PayOS times out (noRollbackFor above). Never lose an ambiguous order.
+        paymentRepository.saveAndFlush(payment);
+        String returnUrl = appendQueryParam(payOSConfig.getReturnUrl(), "bookingId", request.getBookingId().toString());
+        String cancelUrl = appendQueryParam(payOSConfig.getCancelUrl(), "bookingId", request.getBookingId().toString());
+        try {
+            var item = PaymentLinkItem.builder().name("Booking " + request.getBookingId()).quantity(1).price(amount.longValueExact()).build();
+            var builder = CreatePaymentLinkRequest.builder().orderCode(orderCode).amount(amount.longValueExact())
+                    .description("Booking " + request.getBookingId()).items(List.of(item)).returnUrl(returnUrl).cancelUrl(cancelUrl);
+            if (type == PaymentTypeEnum.DEPOSIT) builder.expiredAt(quote.expiresAt().atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toEpochSecond());
+            CreatePaymentLinkResponse response = payOS.paymentRequests().create(builder.build());
+            if (response == null || response.getAmount() == null || BigDecimal.valueOf(response.getAmount()).compareTo(amount) != 0
+                    || !java.util.Objects.equals(response.getOrderCode(), orderCode)
+                    || response.getCheckoutUrl() == null || response.getCheckoutUrl().isBlank()) {
+                throw new AppException(ErrorCode.PAYMENT_FAILED, "Số tiền hoặc mã đơn PayOS không khớp booking. Chưa mở thanh toán; vui lòng kiểm tra lại.");
+            }
+            payment.setCheckoutUrl(response.getCheckoutUrl());
+            paymentRepository.save(payment);
+            return response.getCheckoutUrl();
+        } catch (AppException failure) { throw failure; }
+        catch (Exception failure) {
+            log.warn("PayOS checkout outcome unavailable for booking {} order {}", request.getBookingId(), orderCode);
+            throw new AppException(ErrorCode.PAYMENT_FAILED, "Chưa xác minh được phiên PayOS. Vui lòng kiểm tra trạng thái; chưa tạo thêm khoản thu.");
+        }
+    }
+
+    private List<Payment> attempts(Long bookingId, PaymentTypeEnum type) {
+        return paymentRepository.findAttemptsForUpdate(bookingId, type).stream()
+                .filter(p -> p.getPaymentType() == type).sorted(Comparator.comparing(Payment::getId).reversed()).toList();
+    }
+
+    private boolean matchesQuote(Payment p, com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote quote, BigDecimal amount) {
+        return p.getAmount() != null && p.getAmount().compareTo(amount) == 0
+                && java.util.Objects.equals(p.getMerchantId(), quote.merchantId())
+                && java.util.Objects.equals(p.getParkingLotId(), quote.parkingLotId());
+    }
+
+    private PaymentLink verifiedLink(Payment payment) {
+        try {
+            PaymentLink link = payOS.paymentRequests().get(payment.getOrderCode());
+            if (link == null || link.getAmount() == null || payment.getAmount() == null
+                    || BigDecimal.valueOf(link.getAmount()).compareTo(payment.getAmount()) != 0
+                    || !java.util.Objects.equals(link.getOrderCode(), payment.getOrderCode()))
+                throw new AppException(ErrorCode.CONFLICT, "Link PayOS không khớp số tiền hoặc mã đơn. Vui lòng kiểm tra giao dịch.");
+            return link;
+        } catch (AppException failure) { throw failure; }
+        catch (Exception failure) {
+            throw new AppException(ErrorCode.PAYMENT_FAILED, "Chưa xác minh được giao dịch PayOS. Vui lòng kiểm tra lại.");
+        }
+    }
+
+    private void markReview(Payment payment, String reason) {
+        payment.setStatus(PaymentStatusEnum.REQUIRES_REVIEW);
+        payment.setReviewReason(reason);
+        paymentRepository.save(payment);
     }
 
     @Override
@@ -189,8 +192,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         Long bookingId = request.getBookingId();
+        attemptGuard.lock(bookingId, PaymentTypeEnum.DEPOSIT);
         String key = "booking:" + bookingId + ":DEPOSIT";
-        var previous = paymentRepository.findByIdempotencyKey(key);
+        var group = attempts(bookingId, PaymentTypeEnum.DEPOSIT);
+        var previous = group.isEmpty() ? paymentRepository.findByIdempotencyKey(key) : java.util.Optional.of(group.getFirst());
         if (previous.isPresent()) {
             Payment prevPayment = previous.get();
             if (!driverUserId.equals(prevPayment.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
@@ -201,7 +206,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
         var quote = bookingPaymentVerifier.require(bookingId, driverUserId);
         BigDecimal amount = quote.payable(PaymentTypeEnum.DEPOSIT);
-        long orderCode = Math.addExact(Math.multiplyExact(bookingId, 10L), 1L);
+        long orderCode = attemptGuard.nextOrderCode();
 
         Payment payment = Payment.builder()
                 .bookingId(bookingId)
@@ -227,43 +232,62 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentDto syncPayOSPayment(Long driverUserId, Long orderCode, Long bookingId, String paymentLinkId) {
-        Payment payment = null;
+        Payment selected;
         if (orderCode != null) {
-            payment = paymentRepository.findByOrderCode(orderCode).orElse(null);
+            selected = paymentRepository.findByOrderCode(orderCode)
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy giao dịch thanh toán"));
+            if (bookingId != null && !bookingId.equals(selected.getBookingId()))
+                throw new AppException(ErrorCode.BAD_REQUEST, "Mã giao dịch không thuộc vé đặt chỗ");
+        } else {
+            selected = paymentRepository.findByBookingId(bookingId).stream().max(Comparator.comparing(Payment::getId))
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy giao dịch thanh toán để đồng bộ"));
         }
-        if (payment == null && bookingId != null) {
-            payment = paymentRepository.findByBookingId(bookingId).stream()
-                    .sorted(Comparator.comparing(Payment::getId).reversed())
-                    .findFirst()
-                    .orElseGet(() -> paymentRepository.findByBookingId(bookingId).stream()
-                            .max(java.util.Comparator.comparing(Payment::getId)).orElse(null));
-        }
-
-        if (payment == null) {
-            throw new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy giao dịch thanh toán để đồng bộ");
-        }
-
-        payment = paymentRepository.findByIdForUpdate(payment.getId()).orElseThrow();
-        if (!driverUserId.equals(payment.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
+        if (!driverUserId.equals(selected.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
+        attemptGuard.lock(selected.getBookingId(), selected.getPaymentType());
+        List<Payment> group = attempts(selected.getBookingId(), selected.getPaymentType());
+        Payment current = group.isEmpty() ? selected : group.getFirst();
+        // An old return link must reflect the current attempt; any reconciliation blocks further charges.
+        current = group.stream().filter(p -> p.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW).findFirst().orElse(current);
+        Payment payment = paymentRepository.findByIdForUpdate(current.getId()).orElseThrow();
         if (payment.getStatus() == PaymentStatusEnum.SUCCESS) {
             outboxPublisherService.publishPaymentCompleted(payment);
             return PaymentDto.fromEntity(payment);
         }
-
+        if (payment.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW || payment.getStatus() == PaymentStatusEnum.REFUNDED)
+            return PaymentDto.fromEntity(payment);
+        boolean retry = false;
+        boolean resume = false;
         try {
-            PaymentLink link = payOS.paymentRequests().get(payment.getOrderCode());
-            if (link != null && link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PAID) {
-                if (link.getAmountPaid() == null || BigDecimal.valueOf(link.getAmountPaid()).compareTo(payment.getAmount()) != 0) {
-                    payment.setStatus(PaymentStatusEnum.REQUIRES_REVIEW);
-                    payment.setReviewReason("Số tiền PayOS đã thu không khớp giao dịch; cần đối soát");
+            PaymentLink link = verifiedLink(payment);
+            if (link.getAmountPaid() == null || link.getAmountPaid() < 0) return PaymentDto.fromEntity(payment);
+            if (link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PAID) {
+                if (BigDecimal.valueOf(link.getAmountPaid()).compareTo(payment.getAmount()) != 0)
+                    markReview(payment, "Số tiền PayOS đã thu không khớp giao dịch; cần đối soát");
+                else applyPaidPayment(payment);
+            } else if (link.getAmountPaid() > 0) {
+                markReview(payment, "Giao dịch chưa hoàn tất nhưng có tiền nhận; cần đối soát");
+            } else {
+                if (link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.CANCELLED) {
+                    payment.setStatus(PaymentStatusEnum.FAILED);
                     paymentRepository.save(payment);
-                } else applyPaidPayment(payment);
+                }
+                try {
+                    var quote = bookingPaymentVerifier.require(payment.getBookingId(), driverUserId);
+                    boolean payable = matchesQuote(payment, quote, quote.payable(payment.getPaymentType()));
+                    retry = payosRecoveryEnabled && payable && link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.CANCELLED;
+                    resume = payable && payment.getStatus() == PaymentStatusEnum.PENDING && payment.getCheckoutUrl() != null
+                            && link.getStatus() == vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING;
+                } catch (AppException failure) {
+                    // Expired booking or unavailable ownership proof grants no recovery action.
+                    log.debug("Payment recovery unavailable for booking {}", payment.getBookingId());
+                }
             }
-        } catch (Exception ex) {
-            log.warn("Could not query PayOS link for orderCode={}: {}", payment.getOrderCode(), ex.getMessage());
+        } catch (Exception failure) {
+            log.warn("Could not verify PayOS outcome for order {}", payment.getOrderCode());
         }
-
-        return PaymentDto.fromEntity(payment);
+        PaymentDto dto = PaymentDto.fromEntity(payment);
+        dto.setCanRetry(retry); dto.setCanResume(resume);
+        return dto;
     }
 
     @Override
@@ -282,8 +306,10 @@ public class PaymentServiceImpl implements PaymentService {
             log.info("Webhook verified: orderCode={} code={}", orderCodeStr, code);
 
             paymentRepository.findByOrderCode(webhookData.getOrderCode()).ifPresent(found -> {
+                attemptGuard.lock(found.getBookingId(), found.getPaymentType());
                 Payment payment = paymentRepository.findByIdForUpdate(found.getId()).orElseThrow();
-                if (payment.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW || payment.getStatus() == PaymentStatusEnum.SUCCESS) {
+                if (payment.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW || payment.getStatus() == PaymentStatusEnum.SUCCESS
+                        || payment.getStatus() == PaymentStatusEnum.REFUNDED) {
                     log.warn("Webhook duplicate skipped for orderCode: {}", orderCodeStr);
                     return;
                 }
@@ -318,7 +344,15 @@ public class PaymentServiceImpl implements PaymentService {
 
     private void applyPaidPayment(Payment payment) {
         payment = paymentRepository.findByIdForUpdate(payment.getId()).orElseThrow();
-        if (payment.getStatus() == PaymentStatusEnum.SUCCESS || payment.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW) return;
+        if (payment.getStatus() == PaymentStatusEnum.SUCCESS || payment.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW
+                || payment.getStatus() == PaymentStatusEnum.REFUNDED) return;
+        final Long currentId = payment.getId();
+        if (attempts(payment.getBookingId(), payment.getPaymentType()).stream().anyMatch(other ->
+                !other.getId().equals(currentId) && (other.getStatus() == PaymentStatusEnum.SUCCESS
+                || other.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW || other.getId() > currentId))) {
+            markReview(payment, "Giao dịch cũ hoặc trùng lần thanh toán; cần đối soát, không ghi nhận tiền hai lần");
+            return;
+        }
         if (!bookingPaymentVerifier.confirm(payment)) {
             payment.setStatus(PaymentStatusEnum.REQUIRES_REVIEW);
             payment.setReviewReason("Thanh toán đến sau hạn giữ chỗ; cần đối soát, không tự cấp lại slot");

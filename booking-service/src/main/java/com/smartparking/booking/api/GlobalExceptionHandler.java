@@ -18,6 +18,25 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(com.smartparking.booking.domain.HoldRestrictionException.class)
+    public ResponseEntity<ApiResponse<com.smartparking.booking.domain.HoldRestrictionException.Details>> handleHoldRestriction(
+            com.smartparking.booking.domain.HoldRestrictionException ex) {
+        var details=ex.getDetails();
+        HttpStatus status=switch(details.reason()) {
+            case COOLDOWN, RATE_LIMIT -> HttpStatus.TOO_MANY_REQUESTS;
+            case PAYMENT_CHECK_PENDING -> HttpStatus.SERVICE_UNAVAILABLE;
+            default -> HttpStatus.CONFLICT;
+        };
+        var response=ResponseEntity.status(status);
+        if (details.retryAt()!=null) {
+            long seconds=Math.max(1,java.time.Duration.between(
+                    java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")),details.retryAt()).getSeconds());
+            response.header("Retry-After",Long.toString(seconds));
+        }
+        return response.body(ApiResponse.<com.smartparking.booking.domain.HoldRestrictionException.Details>builder()
+                .success(false).code(ex.getCode()).message(ex.getMessage()).data(details).build());
+    }
+
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         log.warn("Application exception: [{}] {}", ex.getErrorCode().getCode(), ex.getMessage());

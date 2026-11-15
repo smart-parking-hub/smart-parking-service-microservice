@@ -67,11 +67,17 @@ class BookingServiceImplTest {
     @Mock
     private com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
 
+    @Mock private com.smartparking.booking.application.service.UnpaidHoldPolicy holdPolicy;
+    @Mock private com.smartparking.booking.application.service.HoldRateLimiter holdRateLimiter;
+    @Mock private com.smartparking.booking.application.service.BookingCreationTransaction creationTransaction;
+    @Mock private com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
+
     @InjectMocks
     private BookingServiceImpl bookingService;
 
     @org.junit.jupiter.api.BeforeEach
     void verifiedVehicle() {
+        lenient().when(creationTransaction.run(any())).thenAnswer(call -> ((java.util.function.Supplier<?>)call.getArgument(0)).get());
         lenient().when(ownedVehicleClient.require(any(Long.class))).thenAnswer(inv -> new com.smartparking.booking.infrastructure.client.OwnedVehicleClient.Vehicle(inv.getArgument(0), "51C-TEST", VehicleTypeEnum.CONTAINER, "ACTIVE"));
     }
     private final Long driverUserId = 500L;

@@ -1,0 +1,7 @@
+# Only for the retained local Payment database that already applied V6/V7.
+# Use after the copy-validation checks in docs/api-contracts/payos-local-lineage.md.
+# Canonical/fresh databases must keep the default db/migration location.
+services:
+  payment-service:
+    environment:
+      SPRING_FLYWAY_LOCATIONS: classpath:db/local-v6-v7-compatible

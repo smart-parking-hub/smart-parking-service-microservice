@@ -50,6 +50,23 @@ services:
   payment:
     url: ${PAYMENT_SERVICE_URL:http://localhost:8084}
 
+app:
+  booking:
+    hold-policy:
+      enabled: ${BOOKING_HOLD_POLICY_ENABLED:true}
+      max-pending-per-account: ${BOOKING_HOLD_MAX_PENDING:3}
+      abandonment-threshold: ${BOOKING_HOLD_ABANDONMENT_THRESHOLD:2}
+      window-minutes: ${BOOKING_HOLD_WINDOW_MINUTES:60}
+      cooldown-minutes: ${BOOKING_HOLD_COOLDOWN_MINUTES:30}
+      rate-limit: ${BOOKING_HOLD_RATE_LIMIT:10}
+      rate-window-seconds: ${BOOKING_HOLD_RATE_WINDOW_SECONDS:60}
+
+resilience4j:
+  timelimiter:
+    instances:
+      unpaid-hold-assessment:
+        timeout-duration: 8s
+
 management:
   endpoints:
     web:

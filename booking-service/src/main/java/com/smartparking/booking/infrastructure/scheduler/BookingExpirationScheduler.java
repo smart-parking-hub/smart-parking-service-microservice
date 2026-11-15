@@ -21,6 +21,7 @@ import java.util.List;
 public class BookingExpirationScheduler {
 
     private final BookingRepository bookingRepository;
+    private final com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
     private final ParkingLotClient parkingLotClient;
     private final QueueService queueService;
     private final com.smartparking.booking.application.service.OutboxPublisherService outboxPublisherService;
@@ -48,6 +49,7 @@ public class BookingExpirationScheduler {
                 if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_PAYMENT || !booking.getExpiresAt().isBefore(threshold)) continue;
                 booking.setStatus(BookingStatusEnum.EXPIRED);
                 bookingRepository.save(booking);
+                holdPolicyStore.recordRelease(booking, "EXPIRED", LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
 
                 try {
                     // Release held slot back to parking lot

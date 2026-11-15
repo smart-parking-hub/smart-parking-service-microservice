@@ -33,13 +33,16 @@ import java.util.UUID;
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
+    private final com.smartparking.booking.application.service.UnpaidHoldPolicy holdPolicy;
+    private final com.smartparking.booking.application.service.HoldRateLimiter holdRateLimiter;
+    private final com.smartparking.booking.application.service.BookingCreationTransaction creationTransaction;
+    private final com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
     private final com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
     private final ParkingLotClient parkingLotClient;
     private final OutboxPublisherService outboxPublisherService;
     private final com.smartparking.booking.application.service.QueueService queueService;
 
     @Override
-    @Transactional
     public BookingDto createBooking(Long driverUserId, CreateBookingRequest request) {
         String requestKey = request.getRequestId() == null ? null : driverUserId + ":" + request.getRequestId();
         if (requestKey != null) {
@@ -60,11 +63,30 @@ public class BookingServiceImpl implements BookingService {
             }
         }
         LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        holdRateLimiter.acquire(driverUserId, now);
         if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
             throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào phải ở tương lai và giờ ra phải sau giờ vào");
         var vehicle = ownedVehicleClient.require(request.getVehicleId());
         if (vehicle.vehicleType() != request.getVehicleType())
             throw new AppException(ErrorCode.BAD_REQUEST, "Loại xe không khớp phương tiện đã đăng ký");
+        return creationTransaction.run(() -> {
+        holdPolicy.lock(driverUserId, request.getVehicleId());
+        if (requestKey != null) {
+            var concurrent = bookingRepository.findByRequestKeyForUpdate(requestKey);
+            if (concurrent.isPresent()) {
+                Booking b = concurrent.get();
+                if (!java.util.Objects.equals(b.getParkingLotId(), request.getParkingLotId())
+                        || !java.util.Objects.equals(b.getVehicleId(), request.getVehicleId())
+                        || b.getVehicleType() != request.getVehicleType()
+                        || !java.util.Objects.equals(b.getExpectedCheckInTime(), request.getExpectedCheckInTime())
+                        || !java.util.Objects.equals(b.getExpectedCheckOutTime(), request.getExpectedCheckOutTime())
+                        || (request.getPhysicalSlotId()!=null && !java.util.Objects.equals(b.getPhysicalSlotId(), request.getPhysicalSlotId())))
+                    throw new AppException(ErrorCode.CONFLICT, "Yêu cầu trùng lặp nhưng nội dung đặt chỗ đã bị thay đổi");
+                return BookingDto.fromEntity(b);
+            }
+        }
+        holdPolicy.check(driverUserId, request.getVehicleId(), request.getParkingLotId(),
+                LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
         String bookingCode = "BK" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
         Booking booking = Booking.builder()
@@ -163,6 +185,7 @@ public class BookingServiceImpl implements BookingService {
         log.info("Booking created: code={} driver={} lot={}", saved.getBookingCode(), driverUserId, request.getParkingLotId());
 
         return BookingDto.fromEntity(saved);
+        });
     }
 
     private void releaseFailedHold(CreateBookingRequest request, Long bookingId) {
@@ -239,6 +262,7 @@ public class BookingServiceImpl implements BookingService {
                         LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE)
                 );
 
+        boolean wasUnpaid = booking.getStatus() == BookingStatusEnum.PENDING_PAYMENT;
         String reason = request != null ? request.getReason() : null;
         booking.setStatus(BookingStatusEnum.CANCELLED);
         booking.setCancelledAt(refundDecision.cancelledAt());
@@ -248,6 +272,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setRefundPolicy(refundDecision.refundPolicy());
         booking.setRefundStatus(refundDecision.refundStatus());
         bookingRepository.save(booking);
+        if (wasUnpaid) holdPolicyStore.recordRelease(booking, "DRIVER_CANCELLED", refundDecision.cancelledAt());
         outboxPublisherService.publishBookingCancelled(booking, reason);
 
         // Notify parking-lot-service to release slot

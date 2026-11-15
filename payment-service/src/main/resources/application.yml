@@ -59,5 +59,6 @@ resilience4j:
         timeout-duration: 9s
 
 app:
+  payos-recovery-enabled: ${PAYOS_RECOVERY_ENABLED:true}
   storage:
     dispute-evidence-dir: ${DISPUTE_EVIDENCE_DIR:uploads/dispute-evidence}

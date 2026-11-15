@@ -2,6 +2,20 @@ plugins {
     id 'org.springframework.boot'
 }
 
+// Opt-in compatibility for the retained local database that already applied V6/V7.
+// Preserve those released scripts byte-for-byte. V6 already creates the same outbox
+// as canonical V16, so that one duplicate CREATE must not execute in this lineage.
+// The canonical migration location and all its historical scripts stay unchanged.
+tasks.named('processResources') {
+    from('src/main/resources/db/migration') {
+        into 'db/local-v6-v7-compatible'
+        exclude 'V16__admin_operations_outbox.sql'
+    }
+    from('src/main/resources/db/local-v6-v7-history') {
+        into 'db/local-v6-v7-compatible'
+    }
+}
+
 dependencies {
     implementation project(':common-library')
 

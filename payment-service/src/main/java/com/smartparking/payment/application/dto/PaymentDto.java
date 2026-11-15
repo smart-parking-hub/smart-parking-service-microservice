@@ -29,6 +29,9 @@ public class PaymentDto {
     private PaymentTypeEnum type;
     private PaymentStatusEnum status;
     private LocalDateTime createdAt;
+    // Populated only by an authoritative sync; URL return flags never grant retry permission.
+    private boolean canRetry;
+    private boolean canResume;
 
     public static PaymentDto fromEntity(Payment entity) {
         return PaymentDto.builder()
