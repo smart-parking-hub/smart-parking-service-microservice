@@ -19,7 +19,7 @@ Nguyên tắc cốt lõi: **Tuyệt đối không truy cập chéo database**. M
 | :--- | :--- | :--- | :--- |
 | **identity-service** | `smart_parking_identity_db` | `users`, `driver_profiles`, `merchant_profiles`, `refresh_tokens`, `email_otp_challenges` | `userId`, `role`, `fullName`, `phoneNumber`, `email` |
 | **parking-lot-service** | `smart_parking_lot_db`, private layout filesystem volume (ADR 0006) | `parking_lots`, `parking_lot_images`, `slots`, `slot_holds`, `pricing_rules`, `parking_layouts`, `parking_layout_assets`, `parking_layout_publications`, `physical_parking_slots`, `current_slot_allocations` | `parkingLotId`, `slotId`, `physicalSlotId`, `slotCode`, `status`, `hourlyRate`, `publicationId`, `availability` |
-| **booking-service** | `smart_parking_booking_db` | `bookings`, `queue_entries`, `outbox_events`, `processed_events` | `bookingId`, `status`, `startTime`, `endTime`, `vehiclePlate`, `refundAmount`, `refundPercentage`, `refundStatus`, `refundPolicy` |
+| **booking-service** | `smart_parking_booking_db` | `bookings`, `queue_entries`, `outbox_events`, `processed_events`, `booking_hold_policy_locks`, `booking_hold_rate_windows`, `booking_unpaid_hold_releases` | `bookingId`, `status`, `startTime`, `endTime`, `vehiclePlate`, `refundAmount`, `refundPercentage`, `refundStatus`, `refundPolicy` |
 | **payment-service** | `smart_parking_payment_db` | `payments`, `wallets`, `wallet_ledger_entries`, `ledger_journals`, `ledger_postings`, `settlement_batches`, `refund_requests`, `withdrawal_requests`, `disputes`, `outbox_events`, `processed_events` | `paymentId`, `transactionRef`, `status`, `amount`, `refundRequestId`, `refundStatus` |
 | **notification-service** | `smart_parking_notification_db` | `notifications`, `processed_events` | `notificationId`, `status` |
 | **ai-service** | *(Stateless Vision & Copilot)* | Không lưu bảng DB riêng; xác thực ảnh PNG/JPEG và schema JSON trực tiếp trên bộ nhớ | `grid`, `cells` (`0-based`), `overallConfidence`, `needsHumanReview` |
@@ -131,3 +131,15 @@ replace validation of the full Flyway chain on MySQL before deployment.
   - Sở hữu `bookings.physical_slot_id VARCHAR(36) NULL`, `physical_slot_code VARCHAR(50) NULL`, `layout_publication_id VARCHAR(36) NULL`.
   - Lưu snapshot thông tin ô đỗ vật lý do `parking-lot-service` xác nhận tại thời điểm hold thành công. Không có cross-service SQL hay foreign key vật lý giữa hai DB.
   - Khi booking bị hủy, hết hạn hoặc kết thúc, `booking-service` thông báo `parking-lot-service` giải phóng allocation tương ứng một cách idempotent.
+
+
+### Payment recovery attempts (V18, 2026-11-15)
+
+Payment-service exclusively owns additive `payment_attempt_groups` (booking/type serialization key) and `payment_order_codes` (monotonic unique PayOS order allocation). Each attempt remains a separate `payments` row; all historical order codes, idempotency keys and ledger links remain unchanged. V18 seeds the allocator beyond historical order codes and inserts group keys for existing payments. No database is queried across service boundaries; payable ownership/amount/expiry still come from booking-service. See [PayOS recovery contract](./api-contracts/payos-payment-recovery.md) for retry eligibility, lock order, late-payment reconciliation and rollback.
+
+
+Retained local lineage update (2026-11-15): the local database can opt into the byte-preserved V6/V7-compatible migration location, described in [local Payment lineage](./api-contracts/payos-local-lineage.md). This adds no new ownership or money rule, keeps canonical migrations unchanged, and preserves every applied old history row. The local service is now UP at V18 after copy verification.
+
+### Unpaid hold policy (Booking V9, 2026-11-15)
+
+Booking exclusively owns `booking_hold_policy_locks`, `booking_hold_rate_windows` and `booking_unpaid_hold_releases`. Releases are idempotent by booking ID, retain their original time, and are not backfilled from historical terminal bookings. Payment owns all deposit-attempt/provider evidence; it exposes UNPAID/PROTECTED/UNKNOWN via an authenticated internal RPC without creating ledger entries. Booking derives quota/cooldown from its own persisted state. See [unpaid hold contract](./api-contracts/unpaid-hold-policy.md) for limits, locking, late-payment protection, configuration and rollback. Local Booking is at V9; local Payment remains at V18 after preserved-data copy verification.

@@ -51,3 +51,20 @@ jobs:
 
       - name: Run Unit & Integration Tests
         run: ./gradlew test --no-daemon
+
+      - name: Verify payment recovery and hold policy on MySQL
+        env:
+          MYSQL_PWD: ${{ env.DB_PASSWORD }}
+          HOLD_POLICY_MYSQL_TEST_PASSWORD: ${{ env.DB_PASSWORD }}
+          PAYMENT_RECOVERY_MYSQL_TEST_PASSWORD: ${{ env.DB_PASSWORD }}
+          HOLD_POLICY_MYSQL_TEST_URL: jdbc:mysql://127.0.0.1:3306/booking_hold_policy_it?useSSL=false&allowPublicKeyRetrieval=true
+          HOLD_MIGRATION_MYSQL_TEST_URL: jdbc:mysql://127.0.0.1:3306/booking_hold_migration_it?useSSL=false&allowPublicKeyRetrieval=true
+          PAYMENT_RECOVERY_MYSQL_TEST_URL: jdbc:mysql://127.0.0.1:3306/payment_payos_recovery_it?useSSL=false&allowPublicKeyRetrieval=true
+          PAYMENT_RECOVERY_MYSQL_MIGRATION_URL: jdbc:mysql://127.0.0.1:3306/payment_payos_migration_it?useSSL=false&allowPublicKeyRetrieval=true
+        run: |
+          mysql --protocol=TCP --host=127.0.0.1 --user=root -e '
+            CREATE DATABASE booking_hold_policy_it;
+            CREATE DATABASE booking_hold_migration_it;
+            CREATE DATABASE payment_payos_recovery_it;
+            CREATE DATABASE payment_payos_migration_it;'
+          ./gradlew :booking-service:test --tests '*UnpaidHoldPolicyIntegrationTest' --tests '*UnpaidHoldMigrationTest' :payment-service:test --tests '*PaymentRecoveryIntegrationTest' --tests '*PaymentAttemptMigrationTest' --no-daemon --max-workers=2

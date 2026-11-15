@@ -66,6 +66,7 @@ class PaymentServiceImplTest {
     @Mock
     private com.smartparking.payment.infrastructure.client.BookingPaymentVerifier bookingPaymentVerifier;
 
+    @Mock private com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
     @InjectMocks
     private PaymentServiceImpl paymentService;
 

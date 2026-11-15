@@ -35,6 +35,9 @@ jwt:
 app:
   booking:
     check-in-early-minutes: 30
+    hold-policy:
+      recheck-enabled: false
+      rate-limit: 1000
 
 eureka:
   client:

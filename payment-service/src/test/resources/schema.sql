@@ -4,3 +4,5 @@ CREATE TABLE IF NOT EXISTS admin_event_outbox (
  status VARCHAR(20) NOT NULL DEFAULT 'PENDING', attempts INT NOT NULL DEFAULT 0,
  created_at TIMESTAMP(6) NOT NULL, next_attempt_at TIMESTAMP(6) NOT NULL, published_at TIMESTAMP(6)
 );
+CREATE TABLE IF NOT EXISTS payment_attempt_groups (group_key VARCHAR(100) PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS payment_order_codes (id BIGINT AUTO_INCREMENT PRIMARY KEY);

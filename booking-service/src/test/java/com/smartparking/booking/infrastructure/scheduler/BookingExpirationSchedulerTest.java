@@ -30,6 +30,7 @@ class BookingExpirationSchedulerTest {
     @Mock ParkingLotClient lots;
     @Mock QueueService queue;
     @Mock OutboxPublisherService events;
+    @Mock com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
     @InjectMocks BookingExpirationScheduler scheduler;
 
     @Test

@@ -142,6 +142,10 @@ class BookingCancellationPolicyAndOutboxTest {
                 outboxEventRepository, kafkaTemplate, failingMapper);
         BookingServiceImpl bookingService = new BookingServiceImpl(
                 bookingRepository,
+                mock(com.smartparking.booking.application.service.UnpaidHoldPolicy.class),
+                mock(com.smartparking.booking.application.service.HoldRateLimiter.class),
+                mock(com.smartparking.booking.application.service.BookingCreationTransaction.class),
+                mock(com.smartparking.booking.infrastructure.persistence.HoldPolicyStore.class),
                 ownedVehicleClient,
                 parkingLotClient,
                 realOutboxPublisher,
@@ -175,6 +179,10 @@ class BookingCancellationPolicyAndOutboxTest {
         OutboxPublisherService mockOutbox = mock(OutboxPublisherService.class);
         BookingServiceImpl bookingService = new BookingServiceImpl(
                 bookingRepository,
+                mock(com.smartparking.booking.application.service.UnpaidHoldPolicy.class),
+                mock(com.smartparking.booking.application.service.HoldRateLimiter.class),
+                mock(com.smartparking.booking.application.service.BookingCreationTransaction.class),
+                mock(com.smartparking.booking.infrastructure.persistence.HoldPolicyStore.class),
                 ownedVehicleClient,
                 parkingLotClient,
                 mockOutbox,
