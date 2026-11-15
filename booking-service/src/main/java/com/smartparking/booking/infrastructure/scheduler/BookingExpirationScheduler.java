@@ -21,6 +21,7 @@ import java.util.List;
 public class BookingExpirationScheduler {
 
     private final BookingRepository bookingRepository;
+    private final com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
     private final ParkingLotClient parkingLotClient;
     private final QueueService queueService;
     private final com.smartparking.booking.application.service.OutboxPublisherService outboxPublisherService;
@@ -32,7 +33,7 @@ public class BookingExpirationScheduler {
     @Transactional
     public void expireUnpaidBookings() {
         // Thêm 3 phút Grace Period tránh race condition khi webhook thanh toán PayOS đến trễ
-        LocalDateTime threshold = LocalDateTime.now().minusMinutes(3);
+        LocalDateTime threshold = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).minusMinutes(3);
         List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(
                 BookingStatusEnum.PENDING_PAYMENT, threshold);
 
@@ -48,6 +49,7 @@ public class BookingExpirationScheduler {
                 if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_PAYMENT || !booking.getExpiresAt().isBefore(threshold)) continue;
                 booking.setStatus(BookingStatusEnum.EXPIRED);
                 bookingRepository.save(booking);
+                holdPolicyStore.recordRelease(booking, "EXPIRED", LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
 
                 try {
                     // Release held slot back to parking lot
@@ -79,7 +81,7 @@ public class BookingExpirationScheduler {
     @Scheduled(cron = "30 * * * * *")
     @Transactional
     public void expireNoShowBookings() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
         List<Booking> noShowBookings = bookingRepository.findByStatusAndExpiresAtBefore(
                 BookingStatusEnum.PENDING_CHECKIN, now);
 

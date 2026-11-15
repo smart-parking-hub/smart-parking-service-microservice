@@ -49,4 +49,13 @@ public class BookingPaymentVerifier {
         return result != null && Boolean.TRUE.equals(result.getData());
     }
 
+    public record HoldState(Long bookingId, Long driverId, String status, boolean unpaidReleaseCandidate) {}
+    public HoldState holdState(Long bookingId) {
+        if (serviceToken==null || serviceToken.isBlank()) throw new AppException(ErrorCode.FORBIDDEN,"Thiếu xác thực nội bộ");
+        var response=client.get().uri("/api/v1/internal/bookings/{id}/unpaid-hold-state",bookingId)
+                .header("X-Internal-Service-Token",serviceToken).retrieve()
+                .body(new ParameterizedTypeReference<ApiResponse<HoldState>>() {});
+        return response==null ? null : response.getData();
+    }
+
 }

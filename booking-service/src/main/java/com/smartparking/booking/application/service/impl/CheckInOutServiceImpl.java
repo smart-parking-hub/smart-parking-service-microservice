@@ -87,7 +87,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái đang đỗ!");
         }
 
-        LocalDateTime checkOutTime = LocalDateTime.now();
+        LocalDateTime checkOutTime = LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
         booking.setCheckOutTime(checkOutTime);
 
         long minutes = Math.max(0, Duration.between(

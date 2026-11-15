@@ -42,6 +42,7 @@ class PaymentAmountConsistencyTest {
     @Mock private WithdrawalRequestRepository withdrawalRequestRepository;
     @Mock private DisputeRepository disputeRepository;
     @Mock private WalletLedgerEntryRepository walletLedgerEntryRepository;
+    @Mock private com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
     @InjectMocks private PaymentServiceImpl service;
 
     private static final long BOOKING_ID = 41L;
@@ -51,6 +52,7 @@ class PaymentAmountConsistencyTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(attemptGuard.nextOrderCode()).thenReturn(ORDER_CODE);
         lenient().when(bookingPaymentVerifier.require(BOOKING_ID, DRIVER_ID)).thenReturn(
                 new BookingPaymentVerifier.Quote(BOOKING_ID, DRIVER_ID, 9L, 3L,
                         "PENDING_PAYMENT", new BigDecimal("4000.00"), new BigDecimal("20000"),
@@ -125,9 +127,10 @@ class PaymentAmountConsistencyTest {
     }
 
     @Test
-    void blocksCancelledHostedLink() {
+    void blocksCancelledHostedLinkWithoutVerifiedPaidAmount() {
         givenCachedPayment(new BigDecimal("4000"));
         givenHostedLink(4000L, PaymentLinkStatus.CANCELLED);
+        when(payOS.paymentRequests().get(ORDER_CODE).getAmountPaid()).thenReturn(null);
         assertThrows(AppException.class, () -> service.createPaymentLink(DRIVER_ID, request()));
     }
 
@@ -173,14 +176,14 @@ class PaymentAmountConsistencyTest {
                 .paymentType(PaymentTypeEnum.DEPOSIT).status(PaymentStatusEnum.PENDING)
                 .amount(amount).orderCode(ORDER_CODE).checkoutUrl(CHECKOUT)
                 .bookingExpiresAt(LocalDateTime.now().plusMinutes(15)).build();
-        when(paymentRepository.findByIdempotencyKey("booking:" + BOOKING_ID + ":DEPOSIT"))
-                .thenReturn(Optional.of(previous));
+        when(paymentRepository.findAttemptsForUpdate(BOOKING_ID, PaymentTypeEnum.DEPOSIT)).thenReturn(java.util.List.of(previous));
         return previous;
     }
 
     private void givenHostedLink(Long amount, PaymentLinkStatus status) {
         var link = mock(PaymentLink.class);
         lenient().when(link.getAmount()).thenReturn(amount);
+        lenient().when(link.getAmountPaid()).thenReturn(0L);
         lenient().when(link.getOrderCode()).thenReturn(ORDER_CODE);
         lenient().when(link.getStatus()).thenReturn(status);
         when(payOS.paymentRequests().get(ORDER_CODE)).thenReturn(link);
