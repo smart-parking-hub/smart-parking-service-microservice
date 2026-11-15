@@ -18,6 +18,8 @@ The isolated checkout passed the full affected Booking/Payment suites: 286 cases
 
 The frontend companion passed 758 unit/integration tests, build/typecheck and all 44 distinct selected browser scenarios after three stale compact-view assertions were corrected. Secrets/build artifacts/live snapshots are excluded by the explicit delivery manifest.
 
+The first GitHub run exposed a UTC-host regression in legacy JDBC timestamp conversion. It was reproduced locally under `-Duser.timezone=UTC`: each rate-window read could shift the stored business wall-clock value. Both rate-window and release reads now use JDBC 4.2 `LocalDateTime` directly. Boundary assertions verify the original minute/30-minute deadlines rather than accepting a shifted deadline.
+
 ## Deployment / rollback
 
 Deploy this backend before the frontend companion. Both services require the same `APP_INTERNAL_SERVICE_TOKEN`. Keep each environment's real DB/Flyway configuration. Apply the additive migrations through normal startup; use the compatibility location only for databases with the matching released V6/V7 lineage. Existing local copy-verification/rollback-image evidence is documented separately; it is not a production rollout.

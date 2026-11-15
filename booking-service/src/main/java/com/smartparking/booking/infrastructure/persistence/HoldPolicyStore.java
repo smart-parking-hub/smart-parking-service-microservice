@@ -17,9 +17,10 @@ public class HoldPolicyStore {
     public record Release(Long bookingId, Long driverId, Long vehicleId, Long parkingLotId,
                           LocalDateTime releasedAt, String assessment) {}
     public record RateWindow(LocalDateTime startedAt, int count) {}
+    // DATETIME stores business wall-clock values. Avoid java.sql.Timestamp's JVM-zone conversion.
     private static final RowMapper<Release> RELEASE = (row, index) -> new Release(row.getLong("booking_id"),
             row.getLong("driver_id"), row.getLong("vehicle_id"), row.getLong("parking_lot_id"),
-            row.getTimestamp("released_at").toLocalDateTime(), row.getString("assessment"));
+            row.getObject("released_at", LocalDateTime.class), row.getString("assessment"));
 
     /** Caller must own a transaction; the lock survives until its completion. */
     public void lock(String key) {
@@ -36,7 +37,7 @@ public class HoldPolicyStore {
     }
     public Optional<RateWindow> rateWindow(Long driverId) {
         return jdbc.query("SELECT window_started_at,request_count FROM booking_hold_rate_windows WHERE driver_id=? FOR UPDATE",
-                (row,index) -> new RateWindow(row.getTimestamp(1).toLocalDateTime(),row.getInt(2)),driverId).stream().findFirst();
+                (row,index) -> new RateWindow(row.getObject(1, LocalDateTime.class),row.getInt(2)),driverId).stream().findFirst();
     }
     public void setRateWindow(Long driverId, LocalDateTime start, int count) {
         jdbc.update("INSERT INTO booking_hold_rate_windows (driver_id,window_started_at,request_count) VALUES (?,?,?) "

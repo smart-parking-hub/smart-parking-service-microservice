@@ -122,9 +122,12 @@ class UnpaidHoldPolicyIntegrationTest {
     }
     @Test void twoUnpaidCancellationsBlockSameLotAcrossVehiclesWithoutExtendingCooldown() {
         cancelTwice();
+        var releasedAt=now().minusMinutes(2);
+        jdbc.update("UPDATE booking_unpaid_hold_releases SET released_at=?",releasedAt);
         var first=assertThrows(HoldRestrictionException.class,()->service.createBooking(7L,request(15,5)));
         var retry=assertThrows(HoldRestrictionException.class,()->service.createBooking(7L,request(16,5)));
         assertEquals(COOLDOWN,first.getDetails().reason());
+        assertEquals(releasedAt.plusMinutes(30),first.getDetails().retryAt());
         assertEquals(first.getDetails().retryAt(),retry.getDetails().retryAt());
         service.createBooking(7L,request(15,6)); // Scoped to the abused lot.
         verify(lots,times(3)).holdSlot(anyLong(),any());
@@ -156,7 +159,8 @@ class UnpaidHoldPolicyIntegrationTest {
         var time=now();var template=new TransactionTemplate(transactions);
         for(int i=0;i<10;i++) template.executeWithoutResult(status->{rate.acquire(7L,time);status.setRollbackOnly();});
         var blocked=assertThrows(HoldRestrictionException.class,()->rate.acquire(7L,time.plusSeconds(59)));
-        assertEquals(RATE_LIMIT,blocked.getDetails().reason());assertEquals(time.plusSeconds(60),blocked.getDetails().retryAt());
+        assertEquals(RATE_LIMIT,blocked.getDetails().reason());
+        assertEquals(time.plusSeconds(60),blocked.getDetails().retryAt(),"The persisted wall-clock window must not change with the JVM timezone");
         assertDoesNotThrow(()->rate.acquire(7L,time.plusSeconds(60)));
     }
     @Test void failedSlotCreationDoesNotRecordAnAbandonedHold() {
