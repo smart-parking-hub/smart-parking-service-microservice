@@ -105,11 +105,18 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 ? booking.getExpectedCheckOutTime() : chargeUntil;
         BigDecimal regular = com.smartparking.booking.domain.ParkingCharge.charge(start, regularEnd,
                 booking.getHourlyRate(), booking.getSurgeMultiplier(), booking.getSurgeStartTime(), booking.getSurgeEndTime());
+        // Settle at least the full reserved fee at checkout, even for late arrival or early departure.
+        if (booking.getExpectedCheckInTime() != null && booking.getExpectedCheckOutTime() != null) {
+            BigDecimal reserved = com.smartparking.booking.domain.ParkingCharge.charge(
+                    booking.getExpectedCheckInTime(), booking.getExpectedCheckOutTime(),
+                    booking.getHourlyRate(), booking.getSurgeMultiplier(), booking.getSurgeStartTime(), booking.getSurgeEndTime());
+            regular = regular.max(reserved);
+        }
         BigDecimal overtime = BigDecimal.ZERO;
         if (booking.getExpectedCheckOutTime() != null && chargeUntil.isAfter(booking.getExpectedCheckOutTime())) {
             LocalDateTime overtimeStart = start.isAfter(booking.getExpectedCheckOutTime()) ? start : booking.getExpectedCheckOutTime();
             BigDecimal penalty = booking.getOvertimePenaltyMultiplier() != null ? booking.getOvertimePenaltyMultiplier() : BigDecimal.ONE;
-            overtime = com.smartparking.booking.domain.ParkingCharge.charge(overtimeStart, chargeUntil,
+            overtime = com.smartparking.booking.domain.ParkingCharge.chargeOvertime(overtimeStart, chargeUntil,
                     booking.getHourlyRate().multiply(penalty), booking.getSurgeMultiplier(), booking.getSurgeStartTime(), booking.getSurgeEndTime());
         }
         BigDecimal totalAmount = regular.add(overtime);

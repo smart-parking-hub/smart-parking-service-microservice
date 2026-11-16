@@ -59,8 +59,8 @@ class GoldenPathCheckInTest {
         b.setOvertimePenaltyMultiplier(new BigDecimal("2"));
         when(repository.findByBookingCodeForUpdate("BK-TEST")).thenReturn(Optional.of(b));
         var result = service.checkOut(7L,"BK-TEST",8L);
-        // 70 minutes regular = 2 x 20k; 20 minutes overtime = 1 x 20k x 2.
-        assertEquals(0, new BigDecimal("80000").compareTo(result.getTotalAmount()));
-        assertEquals(0, new BigDecimal("70000").compareTo(result.getAmountDue()));
+        // 70 minutes regular = 2 x 20k; 20 minutes overtime = 0.5 x 20k x 2.
+        assertEquals(0, new BigDecimal("60000").compareTo(result.getTotalAmount()));
+        assertEquals(0, new BigDecimal("50000").compareTo(result.getAmountDue()));
     }
 }

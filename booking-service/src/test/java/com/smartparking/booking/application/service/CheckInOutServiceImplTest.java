@@ -13,18 +13,22 @@ import com.smartparking.common.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
 
 @ExtendWith(MockitoExtension.class)
 class CheckInOutServiceImplTest {
@@ -47,6 +51,113 @@ class CheckInOutServiceImplTest {
     private final Long merchantUserId = 888L;
     private final String bookingCode = "BK-INOUT-123";
     private final Long parkingLotId = 50L;
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 0, 40000", "0, 10, 40000", "30, 40, 40000", "0, 60, 40000", "0, 120, 40000",
+            "90, 125, 55000", "90, 155, 70000", "-30, 120, 60000"
+    })
+    void checkoutCollectsFullReservedFeeEvenForShortStay(int entryMinutes, int exitMinutes, String expectedTotal) {
+        LocalDateTime reservedStart = LocalDateTime.of(2026, 11, 17, 8, 0);
+        LocalDateTime exit = reservedStart.plusMinutes(exitMinutes);
+        Booking booking = Booking.builder().id(1L).bookingCode(bookingCode)
+                .merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PARKING)
+                .expectedCheckInTime(reservedStart).expectedCheckOutTime(reservedStart.plusHours(2))
+                .checkInTime(reservedStart.plusMinutes(entryMinutes))
+                .hourlyRate(new BigDecimal("20000")).overtimePenaltyMultiplier(new BigDecimal("1.5"))
+                .totalAmount(new BigDecimal("40000")).advanceDeposit(new BigDecimal("8000")).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(exit);
+            CheckOutResponse response = checkInOutService.checkOut(merchantUserId, bookingCode, parkingLotId);
+
+            assertEquals(new BigDecimal(expectedTotal), response.getTotalAmount());
+            assertEquals(new BigDecimal(expectedTotal).subtract(new BigDecimal("8000")), response.getAmountDue());
+            assertEquals(exitMinutes - entryMinutes, response.getParkingMinutes());
+            assertEquals(exit, booking.getCheckOutTime());
+            assertEquals(response.getTotalAmount(), booking.getTotalAmount());
+            assertEquals(BookingStatusEnum.AWAITING_FINAL_PAYMENT, booking.getStatus());
+            verify(parkingLotClient, never()).releaseSlot(any(), any());
+        }
+    }
+
+    @Test
+    void earlyCheckoutIncludesReservedPeakHoursAndSubtractsDepositOnce() {
+        LocalDateTime reservedStart = LocalDateTime.of(2026, 11, 17, 8, 0);
+        LocalDateTime exit = reservedStart.plusMinutes(10);
+        Booking booking = Booking.builder().id(1L).bookingCode(bookingCode)
+                .merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PARKING).checkInTime(reservedStart)
+                .expectedCheckInTime(reservedStart).expectedCheckOutTime(reservedStart.plusHours(2))
+                .hourlyRate(new BigDecimal("20000")).surgeMultiplier(new BigDecimal("2"))
+                .surgeStartTime(LocalTime.of(9, 0)).surgeEndTime(LocalTime.of(10, 0))
+                .totalAmount(new BigDecimal("60000")).advanceDeposit(new BigDecimal("12000")).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(exit);
+            CheckOutResponse response = checkInOutService.checkOut(merchantUserId, bookingCode, parkingLotId);
+
+            assertEquals(new BigDecimal("60000"), response.getTotalAmount());
+            assertEquals(new BigDecimal("48000"), response.getAmountDue());
+            assertEquals(10, response.getParkingMinutes());
+        }
+    }
+
+    @Test
+    void earlyCheckoutCompletesWhenFullReservedFeeIsAlreadyCovered() {
+        LocalDateTime reservedStart = LocalDateTime.of(2026, 11, 17, 8, 0);
+        LocalDateTime exit = reservedStart.plusMinutes(10);
+        Booking booking = Booking.builder().id(1L).bookingCode(bookingCode)
+                .merchantId(merchantUserId).parkingLotId(parkingLotId).vehicleType(VehicleTypeEnum.CONTAINER)
+                .status(BookingStatusEnum.PARKING).checkInTime(reservedStart)
+                .expectedCheckInTime(reservedStart).expectedCheckOutTime(reservedStart.plusHours(2))
+                .hourlyRate(new BigDecimal("20000")).advanceDeposit(new BigDecimal("40000")).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(exit);
+            CheckOutResponse response = checkInOutService.checkOut(merchantUserId, bookingCode, parkingLotId);
+
+            assertEquals(new BigDecimal("40000"), response.getTotalAmount());
+            assertEquals(BigDecimal.ZERO, response.getAmountDue());
+            assertEquals(BookingStatusEnum.COMPLETED, booking.getStatus());
+            verify(parkingLotClient).releaseSlot(eq(parkingLotId), any(SlotHoldRequest.class));
+            verify(queueService).promoteNextInQueue(parkingLotId, VehicleTypeEnum.CONTAINER);
+            verify(outboxPublisherService).publishBookingCompleted(booking);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 40000", "1, 55000", "300, 55000", "1800, 55000",
+            "1801, 70000", "2100, 70000", "3600, 70000", "3601, 85000"
+    })
+    void checkoutRoundsOvertimeUpToThirtyMinuteBlocks(long overtimeSeconds, String expectedTotal) {
+        LocalDateTime expectedEnd = LocalDateTime.of(2026, 11, 17, 10, 0);
+        LocalDateTime exit = expectedEnd.plusSeconds(overtimeSeconds);
+        Booking booking = Booking.builder().id(1L).bookingCode(bookingCode)
+                .merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PARKING)
+                .expectedCheckInTime(expectedEnd.minusHours(2))
+                .checkInTime(expectedEnd.minusMinutes(90)).expectedCheckOutTime(expectedEnd)
+                .hourlyRate(new BigDecimal("20000")).overtimePenaltyMultiplier(new BigDecimal("1.5"))
+                .advanceDeposit(new BigDecimal("8000")).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(exit);
+            CheckOutResponse response = checkInOutService.checkOut(merchantUserId, bookingCode, parkingLotId);
+
+            assertEquals(new BigDecimal(expectedTotal), response.getTotalAmount());
+            assertEquals(new BigDecimal(expectedTotal).subtract(new BigDecimal("8000")), response.getAmountDue());
+            assertEquals(90 + overtimeSeconds / 60, response.getParkingMinutes());
+            assertEquals(BookingStatusEnum.AWAITING_FINAL_PAYMENT, booking.getStatus());
+            verify(bookingRepository).save(booking);
+        }
+    }
 
     @Test
     @DisplayName("Check-in fails when booking not found")
