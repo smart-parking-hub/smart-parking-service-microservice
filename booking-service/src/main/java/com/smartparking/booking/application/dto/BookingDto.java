@@ -48,6 +48,7 @@ public class BookingDto {
     private Integer refundPercentage;
     private String refundPolicy;
     private String refundStatus;
+    private String refundChannel;
     private String refundReference;
     private String physicalSlotId;
     private String physicalSlotCode;
@@ -86,6 +87,7 @@ public class BookingDto {
                 .refundPercentage(entity.getRefundPercentage())
                 .refundPolicy(entity.getRefundPolicy())
                 .refundStatus(entity.getRefundStatus())
+                .refundChannel(entity.getRefundChannel())
                 .refundReference(entity.getRefundReference())
                 .physicalSlotId(entity.getPhysicalSlotId())
                 .physicalSlotCode(entity.getPhysicalSlotCode())

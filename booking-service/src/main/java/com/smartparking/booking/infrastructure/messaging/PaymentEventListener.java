@@ -122,6 +122,7 @@ public class PaymentEventListener {
         }
         bookingRepository.findByIdForUpdate(event.getBookingId()).ifPresent(booking -> {
             booking.setRefundStatus(event.getRefundStatus());
+            if (event.getRefundChannel() != null) booking.setRefundChannel(event.getRefundChannel());
             if (event.getTransactionReference() != null && !event.getTransactionReference().isBlank()) {
                 booking.setRefundReference(event.getTransactionReference());
             }

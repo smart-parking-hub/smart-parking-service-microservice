@@ -44,6 +44,10 @@ public class UnpaidHoldAssessmentService {
         }
         boolean unknown=false;
         for (Payment payment:attempts) {
+            if (payment.getGateway()==PaymentGatewayEnum.WALLET) {
+                if (payment.getStatus()==PaymentStatusEnum.FAILED) continue;
+                return Outcome.PROTECTED;
+            }
             if (payment.getGateway()!=PaymentGatewayEnum.PAYOS || payment.getOrderCode()==null) { unknown=true; continue; }
             try {
                 PaymentLink link=payOS.paymentRequests().get(payment.getOrderCode());

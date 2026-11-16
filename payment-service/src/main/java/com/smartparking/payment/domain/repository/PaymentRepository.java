@@ -18,6 +18,11 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
+    java.util.List<Payment> findByGatewayAndStatusAndIdGreaterThanOrderByIdAsc(com.smartparking.common.enums.PaymentGatewayEnum gateway, PaymentStatusEnum status, Long id, org.springframework.data.domain.Pageable pageable);
+
+    Page<Payment> findByPaymentType(PaymentTypeEnum type, Pageable pageable);
+    Page<Payment> findByMerchantIdAndPaymentType(Long merchantId, PaymentTypeEnum type, Pageable pageable);
+
     Optional<Payment> findByIdempotencyKey(String idempotencyKey);
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Payment p WHERE p.id = :id")
@@ -63,6 +68,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findSuccessfulPaymentsInWindow(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p FROM Payment p WHERE p.gateway = 'WALLET' AND p.paymentType = 'DEPOSIT' " +
+           "AND p.status = 'SUCCESS' AND p.merchantId IS NOT NULL AND p.createdAt < :before " +
+           "AND NOT EXISTS (SELECT j.id FROM LedgerJournal j WHERE j.paymentId = p.id " +
+           "AND j.journalType = 'SETTLEMENT_CREDIT') ORDER BY p.id ASC")
+    List<Payment> findUnsettledWalletDepositsBefore(@Param("before") LocalDateTime before);
+
+    Optional<Payment> findFirstByDriverIdAndBookingIdAndGatewayOrderByIdDesc(
+            Long driverId, Long bookingId, com.smartparking.common.enums.PaymentGatewayEnum gateway);
 
     List<Payment> findByMerchantIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long merchantId,

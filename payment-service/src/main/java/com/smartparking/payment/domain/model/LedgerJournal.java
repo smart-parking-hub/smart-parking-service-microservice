@@ -46,6 +46,9 @@ public class LedgerJournal {
     @Column(name = "merchant_id", updatable = false)
     private Long merchantId;
 
+    @Column(name = "driver_id", updatable = false)
+    private Long driverId;
+
     @Column(name = "booking_id", updatable = false)
     private Long bookingId;
 
@@ -100,6 +103,13 @@ public class LedgerJournal {
                 .createdAt(this.createdAt != null ? this.createdAt : LocalDateTime.now())
                 .build();
         this.postings.add(posting);
+    }
+
+    public void addDriverPosting(LedgerAccountCode account, Long owner, PostingDirection direction, BigDecimal amount) {
+        addPosting(account, null, direction, amount);
+        postings.removeLast();
+        postings.add(LedgerPosting.builder().journal(this).accountCode(account).driverId(owner)
+                .direction(direction).amount(amount).currency(currency).build());
     }
 
     public void validateAndSeal() {

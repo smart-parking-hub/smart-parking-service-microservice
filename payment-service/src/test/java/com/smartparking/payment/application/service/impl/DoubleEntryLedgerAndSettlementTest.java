@@ -51,6 +51,21 @@ class DoubleEntryLedgerAndSettlementTest {
     private MerchantWalletServiceImpl merchantWalletService;
     private DailySettlementServiceImpl dailySettlementService;
 
+    private void persistSettlementJournalsInMockRepository() {
+        // Batch reopening relies on journals, so emulate persisted unique keys rather than always
+        // returning "missing" even after creditSettlement saved a journal.
+        var stored = new java.util.HashMap<String, LedgerJournal>();
+        when(ledgerJournalRepository.findByJournalKey(anyString()))
+                .thenAnswer(inv -> Optional.ofNullable(stored.get(inv.getArgument(0))));
+        when(ledgerJournalRepository.existsByJournalKey(anyString()))
+                .thenAnswer(inv -> stored.containsKey(inv.getArgument(0)));
+        when(ledgerJournalRepository.save(any(LedgerJournal.class))).thenAnswer(inv -> {
+            LedgerJournal journal = inv.getArgument(0);
+            stored.put(journal.getJournalKey(), journal);
+            return journal;
+        });
+    }
+
     @BeforeEach
     void setUp() {
         merchantWalletService = new MerchantWalletServiceImpl(walletRepository, ledgerRepository, paymentRepository);
@@ -208,9 +223,9 @@ class DoubleEntryLedgerAndSettlementTest {
         when(paymentRepository.findSuccessfulPaymentsInWindow(dateBefore.atStartOfDay(), dateBefore.plusDays(1).atStartOfDay()))
                 .thenReturn(List.of(pFullRefundBefore, pHalfRefundBefore));
         when(refundRequestRepository.findByBookingId(701L)).thenReturn(Optional.of(
-                RefundRequest.builder().bookingId(701L).refundAmount(new BigDecimal("100000.00")).status("REQUESTED").build()));
+                RefundRequest.builder().paymentId(601L).bookingId(701L).refundAmount(new BigDecimal("100000.00")).status("REQUESTED").build()));
         when(refundRequestRepository.findByBookingId(702L)).thenReturn(Optional.of(
-                RefundRequest.builder().bookingId(702L).refundAmount(new BigDecimal("50000.00")).status("REQUESTED").build()));
+                RefundRequest.builder().paymentId(602L).bookingId(702L).refundAmount(new BigDecimal("50000.00")).status("REQUESTED").build()));
         when(settlementBatchRepository.findByBusinessDateAndMerchantId(dateBefore, merchantId)).thenReturn(Optional.empty());
         when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -330,6 +345,7 @@ class DoubleEntryLedgerAndSettlementTest {
         when(refundRequestRepository.findByBookingId(2002L)).thenReturn(Optional.of(
                 RefundRequest.builder()
                         .bookingId(2002L)
+                        .paymentId(1002L)
                         .refundAmount(new BigDecimal("40000.00"))
                         .status("REQUESTED")
                         .build()
@@ -344,6 +360,7 @@ class DoubleEntryLedgerAndSettlementTest {
         when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // First run: settles 100,000 + (80,000 - 40,000) = 140,000 gross -> 14,000 fee (10%) -> 126,000 net
+        persistSettlementJournalsInMockRepository();
         List<SettlementBatch> firstRun = dailySettlementService.runDailySettlement(businessDate);
         assertEquals(1, firstRun.size());
         SettlementBatch batch = firstRun.get(0);
@@ -424,14 +441,13 @@ class DoubleEntryLedgerAndSettlementTest {
 
         when(settlementBatchRepository.findByBusinessDateAndMerchantId(businessDate, merchantId))
                 .thenReturn(Optional.empty());
-        when(ledgerJournalRepository.findByJournalKey("SETTLE:PAYMENT:" + paymentId))
-                .thenReturn(Optional.empty());
         when(ledgerJournalRepository.existsByJournalKey(anyString())).thenReturn(false);
         when(walletRepository.findByMerchantIdForUpdate(merchantId)).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
         when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Step 3: Run daily settlement for business date
+        persistSettlementJournalsInMockRepository();
         List<SettlementBatch> batches = dailySettlementService.runDailySettlement(businessDate);
         assertEquals(1, batches.size());
         SettlementBatch batch = batches.get(0);
@@ -454,4 +470,18 @@ class DoubleEntryLedgerAndSettlementTest {
         assertEquals(0, new BigDecimal("45000.00").compareTo(wallet.getBalance()),
                 "Duplicate settlement invocation must preserve idempotency and not double-credit wallet");
     }
+    @Test
+    void unverifiedRefundKeepsDepositEscrowAndNeverSubtractsFromFinalPayment() {
+        when(refundRequestRepository.findByBookingId(9901L)).thenReturn(Optional.of(RefundRequest.builder()
+                .bookingId(9901L).refundAmount(new BigDecimal("8000")).status("REQUIRES_RECONCILIATION").build()));
+        Payment deposit=Payment.builder().id(9902L).bookingId(9901L).amount(new BigDecimal("16000"))
+                .paymentType(com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT).build();
+        Payment finalPayment=Payment.builder().id(9903L).bookingId(9901L).amount(new BigDecimal("16000"))
+                .paymentType(com.smartparking.common.enums.PaymentTypeEnum.FINAL_PAYMENT).build();
+        BigDecimal held=ReflectionTestUtils.invokeMethod(dailySettlementService,"computeSettleableGross",deposit);
+        BigDecimal finalGross=ReflectionTestUtils.invokeMethod(dailySettlementService,"computeSettleableGross",finalPayment);
+        assertEquals(0,BigDecimal.ZERO.compareTo(held));
+        assertEquals(0,new BigDecimal("16000").compareTo(finalGross));
+    }
+
 }

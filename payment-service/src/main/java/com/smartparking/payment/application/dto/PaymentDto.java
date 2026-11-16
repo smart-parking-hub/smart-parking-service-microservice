@@ -29,6 +29,10 @@ public class PaymentDto {
     private PaymentTypeEnum type;
     private PaymentStatusEnum status;
     private LocalDateTime createdAt;
+    private BigDecimal refundAmount;
+    private String refundStatus;
+    private String refundChannel;
+    private String refundReference;
     // Populated only by an authoritative sync; URL return flags never grant retry permission.
     private boolean canRetry;
     private boolean canResume;

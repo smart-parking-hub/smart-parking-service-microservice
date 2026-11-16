@@ -64,6 +64,9 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${app.demo-payment-enabled:false}")
     private boolean demoPaymentEnabled;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartparking.payment.domain.repository.RefundRequestRepository refundRequests;
+
     @Value("${app.payos-recovery-enabled:true}")
     private boolean payosRecoveryEnabled = true;
 
@@ -75,6 +78,9 @@ public class PaymentServiceImpl implements PaymentService {
         catch (RuntimeException failure) { throw new AppException(ErrorCode.BAD_REQUEST, "Loại thanh toán không hợp lệ"); }
         attemptGuard.lock(request.getBookingId(), type);
         List<Payment> attempts = attempts(request.getBookingId(), type);
+        if (attempts.stream().anyMatch(p -> p.getGateway() == PaymentGatewayEnum.WALLET && p.getStatus() == PaymentStatusEnum.PENDING))
+            throw new AppException(ErrorCode.CONFLICT, "Thanh toán ví đang xử lý; vui lòng kiểm tra kết quả");
+        attempts = attempts.stream().filter(p -> p.getGateway() != PaymentGatewayEnum.WALLET || p.getStatus() != PaymentStatusEnum.FAILED).toList();
         for (Payment old : attempts) {
             if (!driverUserId.equals(old.getDriverId())) throw new AppException(ErrorCode.FORBIDDEN, "Giao dịch không thuộc tài khoản");
             if (old.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW || old.getStatus() == PaymentStatusEnum.REFUNDED)
@@ -249,6 +255,7 @@ public class PaymentServiceImpl implements PaymentService {
         // An old return link must reflect the current attempt; any reconciliation blocks further charges.
         current = group.stream().filter(p -> p.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW).findFirst().orElse(current);
         Payment payment = paymentRepository.findByIdForUpdate(current.getId()).orElseThrow();
+        if (payment.getGateway() == PaymentGatewayEnum.WALLET) return PaymentDto.fromEntity(payment);
         if (payment.getStatus() == PaymentStatusEnum.SUCCESS) {
             outboxPublisherService.publishPaymentCompleted(payment);
             return PaymentDto.fromEntity(payment);
@@ -337,13 +344,20 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PaymentDto> getMyPayments(Long driverUserId, Long bookingId, Pageable pageable) {
-        Page<Payment> page;
-        if (bookingId != null) {
-            page = paymentRepository.findByDriverIdAndBookingId(driverUserId, bookingId, pageable);
-        } else {
-            page = paymentRepository.findByDriverId(driverUserId, pageable);
+        Page<Payment> payments = bookingId == null
+                ? paymentRepository.findByDriverId(driverUserId, pageable)
+                : paymentRepository.findByDriverIdAndBookingId(driverUserId, bookingId, pageable);
+        Page<PaymentDto> page = payments.map(PaymentDto::fromEntity);
+        if (refundRequests != null && !page.isEmpty()) {
+            var byPayment = refundRequests.findByPaymentIdIn(page.getContent().stream().map(PaymentDto::getId).toList()).stream()
+                    .collect(java.util.stream.Collectors.toMap(com.smartparking.payment.domain.model.RefundRequest::getPaymentId, r -> r));
+            page.forEach(dto -> {
+                var refund = byPayment.get(dto.getId());
+                if (refund != null) { dto.setRefundAmount(refund.getRefundAmount()); dto.setRefundStatus(refund.getStatus());
+                    dto.setRefundChannel(refund.getRefundChannel()); dto.setRefundReference(refund.getTransactionReference()); }
+            });
         }
-        return new PageResponse<>(page.map(PaymentDto::fromEntity));
+        return new PageResponse<>(page);
     }
 
     private void applyPaidPayment(Payment payment) {

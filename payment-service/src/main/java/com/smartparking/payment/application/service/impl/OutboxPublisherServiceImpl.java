@@ -86,6 +86,7 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .refundAmount(refundRequest.getRefundAmount())
                 .refundPercentage(refundRequest.getRefundPercentage())
                 .refundStatus(refundRequest.getStatus())
+                .refundChannel(refundRequest.getRefundChannel())
                 .policyCode(refundRequest.getPolicyCode())
                 .transactionReference(refundRequest.getTransactionReference())
                 .reason(refundRequest.getVerificationNote() != null

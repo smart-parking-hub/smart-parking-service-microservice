@@ -19,7 +19,14 @@ public class PaymentAttemptGuard {
     private final JdbcTemplate jdbc;
 
     public void lock(Long bookingId, PaymentTypeEnum type) {
-        String key = "booking:" + bookingId + ":" + type.name();
+        lockKey("booking:" + bookingId + ":" + type.name());
+    }
+
+    public void lockSettlementDate(java.time.LocalDate businessDate) {
+        lockKey("settlement:" + businessDate);
+    }
+
+    private void lockKey(String key) {
         // The unique-key upsert takes an exclusive InnoDB row lock until transaction completion.
         jdbc.update("INSERT INTO payment_attempt_groups (group_key) VALUES (?) "
                 + "ON DUPLICATE KEY UPDATE group_key = group_key", key);

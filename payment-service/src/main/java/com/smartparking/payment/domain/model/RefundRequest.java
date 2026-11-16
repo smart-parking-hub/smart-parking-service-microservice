@@ -68,6 +68,10 @@ public class RefundRequest extends BaseEntity {
     @Builder.Default
     private String status = "REQUESTED";
 
+    @Column(name = "refund_channel", nullable = false, length = 30)
+    @Builder.Default
+    private String refundChannel = "BANK_MANUAL";
+
     @Column(name = "cancellation_reason", length = 500)
     private String cancellationReason;
 

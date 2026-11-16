@@ -265,6 +265,7 @@ public class BookingServiceImpl implements BookingService {
                         LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE)
                 );
 
+        booking.setRefundChannel(request != null && request.isAcceptWalletRefund() ? "WALLET" : "BANK_MANUAL");
         boolean wasUnpaid = booking.getStatus() == BookingStatusEnum.PENDING_PAYMENT;
         String reason = request != null ? request.getReason() : null;
         booking.setStatus(BookingStatusEnum.CANCELLED);

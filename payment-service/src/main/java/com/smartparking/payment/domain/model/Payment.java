@@ -62,4 +62,6 @@ public class Payment extends BaseEntity {
     private java.time.LocalDateTime bookingExpiresAt;
     @Column(name = "review_reason", length = 255)
     private String reviewReason;
+    @Column(name = "wallet_refund", nullable = false)
+    private boolean walletRefund;
 }

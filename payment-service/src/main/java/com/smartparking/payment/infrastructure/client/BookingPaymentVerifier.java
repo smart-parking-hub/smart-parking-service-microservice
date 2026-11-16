@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @Component
 public class BookingPaymentVerifier {
     private final RestClient client;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory<?, ?> breakers;
     @Value("${app.internal-service-token:}") private String serviceToken;
     public BookingPaymentVerifier(@Value("${services.booking.url:${BOOKING_SERVICE_URL:http://localhost:8083}}") String url) {
         var factory = new SimpleClientHttpRequestFactory(); factory.setConnectTimeout(3000); factory.setReadTimeout(5000);
@@ -23,7 +25,7 @@ public class BookingPaymentVerifier {
     public record Quote(Long id, Long driverId, Long merchantId, Long parkingLotId, String status,
                         BigDecimal advanceDeposit, BigDecimal totalAmount, LocalDateTime expiresAt) {
         public BigDecimal payable(PaymentTypeEnum type) {
-            if (type == PaymentTypeEnum.DEPOSIT && "PENDING_PAYMENT".equals(status) && expiresAt != null && expiresAt.isAfter(LocalDateTime.now())) return advanceDeposit;
+            if (type == PaymentTypeEnum.DEPOSIT && "PENDING_PAYMENT".equals(status) && expiresAt != null && expiresAt.isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")))) return advanceDeposit;
             if (type == PaymentTypeEnum.FINAL_PAYMENT && "AWAITING_FINAL_PAYMENT".equals(status)) return totalAmount.subtract(advanceDeposit).max(BigDecimal.ZERO);
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không còn ở trạng thái được thanh toán");
         }
@@ -47,6 +49,20 @@ public class BookingPaymentVerifier {
                         "amount", payment.getAmount(), "paymentType", payment.getPaymentType().name()))
                 .retrieve().body(new ParameterizedTypeReference<ApiResponse<Boolean>>() {});
         return result != null && Boolean.TRUE.equals(result.getData());
+    }
+
+    public boolean confirmWallet(com.smartparking.payment.domain.model.Payment payment) {
+        return breakers.create("wallet-booking-confirm").run(() -> confirmWalletRequest(payment));
+    }
+    private boolean confirmWalletRequest(com.smartparking.payment.domain.model.Payment payment) {
+        if (serviceToken == null || serviceToken.isBlank()) throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Thiếu cấu hình xác nhận nội bộ");
+        var result = client.post().uri("/api/v1/internal/bookings/{id}/confirm-wallet-payment", payment.getBookingId())
+                .header("X-Internal-Service-Token", serviceToken)
+                .body(java.util.Map.of("paymentId", payment.getId(), "driverId", payment.getDriverId(),
+                        "merchantId", payment.getMerchantId(), "amount", payment.getAmount()))
+                .retrieve().body(new ParameterizedTypeReference<ApiResponse<Boolean>>() {});
+        if (result == null || result.getData() == null) throw new IllegalStateException("Chưa xác định kết quả xác nhận ví");
+        return result.getData();
     }
 
     public record HoldState(Long bookingId, Long driverId, String status, boolean unpaidReleaseCandidate) {}

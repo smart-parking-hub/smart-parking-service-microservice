@@ -60,6 +60,7 @@ public class BookingEvent {
         private Integer refundPercentage;
         private Boolean refundRequested;
         private String refundStatus;
+        private String refundChannel;
         private String refundPolicy;
         private String currency;
         private Instant cancelledAt;

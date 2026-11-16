@@ -106,6 +106,9 @@ public class Booking extends BaseEntity {
     @Column(name = "refund_policy", length = 60)
     private String refundPolicy;
 
+    @Column(name = "refund_channel", length = 30)
+    private String refundChannel;
+
     @Column(name = "refund_status", nullable = false, length = 40)
     @Builder.Default
     private String refundStatus = "NONE";
