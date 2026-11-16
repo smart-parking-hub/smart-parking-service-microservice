@@ -243,6 +243,33 @@ class CheckInOutServiceImplTest {
     }
 
     @Test
+    @DisplayName("Check-out is idempotent when already in AWAITING_FINAL_PAYMENT")
+    void testCheckOutIdempotentWhenAlreadyAwaitingFinalPayment() {
+        Booking booking = Booking.builder()
+                .id(1L)
+                .bookingCode(bookingCode)
+                .merchantId(merchantUserId)
+                .parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .checkInTime(LocalDateTime.now().minusMinutes(120))
+                .checkOutTime(LocalDateTime.now())
+                .totalAmount(new BigDecimal("40000"))
+                .advanceDeposit(new BigDecimal("8000"))
+                .build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        CheckOutResponse response = checkInOutService.checkOut(merchantUserId, bookingCode, parkingLotId);
+
+        assertNotNull(response);
+        assertEquals(new BigDecimal("40000"), response.getTotalAmount());
+        assertEquals(new BigDecimal("8000"), response.getAdvanceDeposit());
+        assertEquals(new BigDecimal("32000"), response.getAmountDue());
+        assertEquals("AWAITING_FINAL_PAYMENT", response.getBookingStatus());
+        verify(parkingLotClient, never()).releaseSlot(any(), any());
+        verify(outboxPublisherService, never()).publishBookingCompleted(any());
+    }
+
+    @Test
     @DisplayName("Check-out completes directly when parking fee is within deposit")
     void testCheckOutCompletedWithinDeposit() {
         // Checked in 1 hour ago: 1 hour * 20,000 = 20,000 VND. Deposit = 50,000 -> amountDue = 0
@@ -266,5 +293,144 @@ class CheckInOutServiceImplTest {
         assertEquals(BookingStatusEnum.COMPLETED, booking.getStatus());
         verify(outboxPublisherService, times(1)).publishBookingCompleted(booking);
         verify(parkingLotClient, times(1)).releaseSlot(eq(parkingLotId), any(SlotHoldRequest.class));
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment succeeds, updates status to COMPLETED, releases slot, promotes queue and publishes outbox event")
+    void testConfirmCashPayment_Success() {
+        // Arrange
+        Booking booking = Booking.builder()
+                .id(1L)
+                .bookingCode(bookingCode)
+                .merchantId(merchantUserId)
+                .parkingLotId(parkingLotId)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .totalAmount(new BigDecimal("60000"))
+                .advanceDeposit(new BigDecimal("50000"))
+                .build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        // Act
+        checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, new BigDecimal("10000"));
+
+        // Assert
+        assertEquals(BookingStatusEnum.COMPLETED, booking.getStatus());
+        verify(bookingRepository, times(1)).save(booking);
+        verify(parkingLotClient, times(1)).releaseSlot(eq(parkingLotId), any(SlotHoldRequest.class));
+        verify(queueService, times(1)).promoteNextInQueue(parkingLotId, VehicleTypeEnum.CONTAINER);
+        verify(outboxPublisherService, times(1)).publishBookingCompleted(booking);
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment throws BOOKING_NOT_FOUND when booking does not exist")
+    void testConfirmCashPayment_BookingNotFound() {
+        // Arrange
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class, () ->
+                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+
+        assertEquals(ErrorCode.BOOKING_NOT_FOUND, ex.getErrorCode());
+        assertEquals("Booking không tồn tại!", ex.getMessage());
+        verify(bookingRepository, never()).save(any());
+        verify(outboxPublisherService, never()).publishBookingCompleted(any());
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment throws BOOKING_STATUS_INVALID when booking is not AWAITING_FINAL_PAYMENT")
+    void testConfirmCashPayment_InvalidStatus() {
+        // Arrange
+        Booking booking = Booking.builder()
+                .id(1L)
+                .bookingCode(bookingCode)
+                .merchantId(merchantUserId)
+                .parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PARKING)
+                .build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class, () ->
+                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+
+        assertEquals(ErrorCode.BOOKING_STATUS_INVALID, ex.getErrorCode());
+        assertEquals("Booking không ở trạng thái chờ thanh toán phụ phí!", ex.getMessage());
+        verify(bookingRepository, never()).save(any());
+        verify(outboxPublisherService, never()).publishBookingCompleted(any());
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment throws BAD_REQUEST when parkingLotId does not match booking")
+    void testConfirmCashPayment_MismatchedParkingLot() {
+        // Arrange
+        Long differentLotId = 999L;
+        Booking booking = Booking.builder()
+                .id(1L)
+                .bookingCode(bookingCode)
+                .merchantId(merchantUserId)
+                .parkingLotId(differentLotId)
+                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class, () ->
+                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+
+        assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
+        assertEquals("Mã đặt chỗ này thuộc về bãi đỗ xe khác!", ex.getMessage());
+        verify(bookingRepository, never()).save(any());
+        verify(outboxPublisherService, never()).publishBookingCompleted(any());
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment throws FORBIDDEN when merchantUserId does not match booking owner")
+    void testConfirmCashPayment_ForbiddenMerchant() {
+        // Arrange
+        Long differentMerchantId = 777L;
+        Booking booking = Booking.builder()
+                .id(1L)
+                .bookingCode(bookingCode)
+                .merchantId(differentMerchantId)
+                .parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class, () ->
+                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+
+        assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
+        assertEquals("Bạn không có quyền xác nhận thu tiền cho bãi xe này!", ex.getMessage());
+        verify(bookingRepository, never()).save(any());
+        verify(outboxPublisherService, never()).publishBookingCompleted(any());
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment throws INTERNAL_SERVER_ERROR when slot release fails")
+    void testConfirmCashPayment_ReleaseSlotFails() {
+        // Arrange
+        Booking booking = Booking.builder()
+                .id(1L)
+                .bookingCode(bookingCode)
+                .merchantId(merchantUserId)
+                .parkingLotId(parkingLotId)
+                .vehicleType(VehicleTypeEnum.CONTAINER)
+                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+        doThrow(new RuntimeException("Feign client connection failed"))
+                .when(parkingLotClient).releaseSlot(eq(parkingLotId), any(SlotHoldRequest.class));
+
+        // Act & Assert
+        AppException ex = assertThrows(AppException.class, () ->
+                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+
+        assertEquals(ErrorCode.INTERNAL_SERVER_ERROR, ex.getErrorCode());
+        assertEquals("Chưa giải phóng được chỗ đỗ. Vui lòng thử lại.", ex.getMessage());
+        verify(outboxPublisherService, never()).publishBookingCompleted(any());
     }
 }
