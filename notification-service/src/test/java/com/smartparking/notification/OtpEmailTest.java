@@ -35,7 +35,7 @@ class OtpEmailTest {
         return result;
     }
     @Test void sendsBrandedEmailWithExpiryAndBothPurposes() throws Exception {
-        var sender = sender(); var service = new OtpEmailService(sender, "sender@example.test", "https://smart-parking-app-v2.vercel.app");
+        var sender = sender(); var service = new OtpEmailService(sender, "sender@example.test");
         service.send("driver@example.test", "123456", OtpPurposeEnum.REGISTER);
         service.send("driver@example.test", "654321", OtpPurposeEnum.RESET_PASSWORD);
         var captured = ArgumentCaptor.forClass(MimeMessage.class); verify(sender, times(2)).send(captured.capture());
@@ -60,9 +60,7 @@ class OtpEmailTest {
         assertNotNull(plain); assertTrue(plain.contains("123456")); assertTrue(plain.contains("5 phút"));
         assertNotNull(html); assertTrue(html.contains("123456")); assertTrue(html.contains("Xác thực email của bạn"));
         assertTrue(html.contains("cid:smart-parking-logo")); assertFalse(html.contains("{{"));
-        assertTrue(html.contains("smart-parking-app-v2.vercel.app/register?email=driver%40example.test"));
-        assertTrue(html.contains("Xác thực Email & Đặt mật khẩu"));
-        assertFalse(html.contains("localhost")); assertTrue(logo);
+        assertFalse(html.contains("localhost")); assertFalse(html.contains("https://")); assertTrue(logo);
         assertTrue(messages.getLast().getSubject().contains("đặt lại mật khẩu"));
         boolean resetCopy = false;
         for (var part : leaves(messages.getLast())) {
@@ -72,11 +70,11 @@ class OtpEmailTest {
     }
     @Test void rejectsMissingSenderAndDoesNotLeakSmtpException() {
         var emptySender = mock(JavaMailSender.class);
-        assertThrows(AppException.class, () -> new OtpEmailService(emptySender, "", "https://smart-parking-app-v2.vercel.app").send("a@b.test", "123456", OtpPurposeEnum.REGISTER));
+        assertThrows(AppException.class, () -> new OtpEmailService(emptySender, "").send("a@b.test", "123456", OtpPurposeEnum.REGISTER));
         verifyNoInteractions(emptySender);
         var sender = sender();
         doThrow(new MailSendException("secret provider detail 123456")).when(sender).send(any(MimeMessage.class));
-        var error = assertThrows(AppException.class, () -> new OtpEmailService(sender, "s@b.test", "https://smart-parking-app-v2.vercel.app").send("a@b.test", "123456", OtpPurposeEnum.REGISTER));
+        var error = assertThrows(AppException.class, () -> new OtpEmailService(sender, "s@b.test").send("a@b.test", "123456", OtpPurposeEnum.REGISTER));
         assertFalse(error.getMessage().contains("123456"));
     }
     @Test void preventsUntrustedHtmlContentInTemplate() {
