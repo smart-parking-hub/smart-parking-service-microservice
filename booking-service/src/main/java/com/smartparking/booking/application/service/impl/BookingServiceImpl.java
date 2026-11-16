@@ -198,8 +198,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<BookingDto> getMyBookings(Long driverUserId, Pageable pageable) {
-        Page<BookingDto> page = bookingRepository.findByDriverIdOrderByCreatedAtDesc(driverUserId, pageable)
+    public PageResponse<BookingDto> getMyBookings(Long driverUserId, String search, com.smartparking.common.enums.BookingStatusEnum status, java.time.LocalDateTime fromTime, java.time.LocalDateTime toTime, Pageable pageable) {
+        String cleanSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+        Page<BookingDto> page = bookingRepository.searchDriverBookings(driverUserId, status, cleanSearch, fromTime, toTime, pageable)
                 .map(BookingDto::fromEntity);
         return new PageResponse<>(page);
     }

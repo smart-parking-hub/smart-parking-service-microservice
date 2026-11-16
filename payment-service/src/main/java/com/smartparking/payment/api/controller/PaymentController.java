@@ -67,8 +67,9 @@ public class PaymentController {
     @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<ApiResponse<PageResponse<PaymentDto>>> getMyPayments(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(value = "bookingId", required = false) Long bookingId,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(paymentService.getMyPayments(user.getId(), pageable)));
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getMyPayments(user.getId(), bookingId, pageable)));
     }
 
     @PostMapping("/webhook")

@@ -336,10 +336,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PaymentDto> getMyPayments(Long driverUserId, Pageable pageable) {
-        Page<PaymentDto> page = paymentRepository.findByDriverId(driverUserId, pageable)
-                .map(PaymentDto::fromEntity);
-        return new PageResponse<>(page);
+    public PageResponse<PaymentDto> getMyPayments(Long driverUserId, Long bookingId, Pageable pageable) {
+        Page<Payment> page;
+        if (bookingId != null) {
+            page = paymentRepository.findByDriverIdAndBookingId(driverUserId, bookingId, pageable);
+        } else {
+            page = paymentRepository.findByDriverId(driverUserId, pageable);
+        }
+        return new PageResponse<>(page.map(PaymentDto::fromEntity));
     }
 
     private void applyPaidPayment(Payment payment) {

@@ -34,6 +34,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Page<Booking> findByDriverIdOrderByCreatedAtDesc(Long driverId, Pageable pageable);
 
+    @Query("SELECT b FROM Booking b WHERE b.driverId = :driverId " +
+           "AND (:status IS NULL OR b.status = :status) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(b.bookingCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(b.vehiclePlate) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(b.parkingLotName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (CAST(:fromTime AS java.time.LocalDateTime) IS NULL OR b.expectedCheckInTime >= :fromTime) " +
+           "AND (CAST(:toTime AS java.time.LocalDateTime) IS NULL OR b.expectedCheckInTime <= :toTime) " +
+           "ORDER BY b.createdAt DESC")
+    Page<Booking> searchDriverBookings(
+            @Param("driverId") Long driverId,
+            @Param("status") BookingStatusEnum status,
+            @Param("search") String search,
+            @Param("fromTime") LocalDateTime fromTime,
+            @Param("toTime") LocalDateTime toTime,
+            Pageable pageable);
+
     Page<Booking> findByMerchantIdOrderByCreatedAtDesc(Long merchantId, Pageable pageable);
 
     Page<Booking> findByMerchantIdAndParkingLotIdOrderByCreatedAtDesc(Long merchantId, Long parkingLotId, Pageable pageable);

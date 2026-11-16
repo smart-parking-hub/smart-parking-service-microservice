@@ -33,6 +33,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Page<Payment> findByDriverId(Long driverId, Pageable pageable);
 
+    Page<Payment> findByDriverIdAndBookingId(Long driverId, Long bookingId, Pageable pageable);
+
     boolean existsByBookingIdAndPaymentTypeAndStatus(
             Long bookingId,
             PaymentTypeEnum paymentType,
