@@ -4,6 +4,7 @@ import com.smartparking.booking.api.controller.MerchantCheckInOutController;
 import com.smartparking.booking.application.dto.BookingDto;
 import com.smartparking.booking.application.dto.CheckInRequest;
 import com.smartparking.booking.application.dto.CheckOutResponse;
+import com.smartparking.booking.application.dto.ConfirmCashRequest;
 import com.smartparking.booking.application.service.BookingService;
 import com.smartparking.booking.application.service.CheckInOutService;
 import com.smartparking.booking.infrastructure.security.AuthenticatedUser;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -103,5 +105,46 @@ class MerchantCheckInOutControllerTest {
         assertNotNull(response.getBody());
         assertEquals("BK-99", response.getBody().getData().getBookingCode());
         verify(bookingService, times(1)).getMerchantBookingDetail(200L, bookingId);
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment with amount delegates to checkInOutService and returns 200 OK")
+    void testConfirmCashPayment_WithAmount() {
+        // Arrange
+        ConfirmCashRequest req = ConfirmCashRequest.builder()
+                .bookingCode("BK-12345")
+                .parkingLotId(10L)
+                .amount(new BigDecimal("60000"))
+                .build();
+
+        // Act
+        ResponseEntity<ApiResponse<Void>> response = controller.confirmCashPayment(user, req);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Xác nhận thu tiền mặt và trả chỗ thành công!", response.getBody().getMessage());
+        assertNull(response.getBody().getData());
+        verify(checkInOutService, times(1)).confirmCashPayment(200L, "BK-12345", 10L, new BigDecimal("60000"));
+    }
+
+    @Test
+    @DisplayName("confirmCashPayment without amount delegates to checkInOutService with null amount and returns 200 OK")
+    void testConfirmCashPayment_WithoutAmount() {
+        // Arrange
+        ConfirmCashRequest req = ConfirmCashRequest.builder()
+                .bookingCode("BK-12345")
+                .parkingLotId(10L)
+                .build();
+
+        // Act
+        ResponseEntity<ApiResponse<Void>> response = controller.confirmCashPayment(user, req);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Xác nhận thu tiền mặt và trả chỗ thành công!", response.getBody().getMessage());
+        assertNull(response.getBody().getData());
+        verify(checkInOutService, times(1)).confirmCashPayment(200L, "BK-12345", 10L, null);
     }
 }

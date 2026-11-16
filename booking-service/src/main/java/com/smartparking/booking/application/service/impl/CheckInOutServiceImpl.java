@@ -85,6 +85,24 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền check-out cho đơn đặt chỗ của bãi xe này!");
         }
 
+        if (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT) {
+            BigDecimal totalAmount = booking.getTotalAmount() != null ? booking.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal deposit = booking.getAdvanceDeposit() != null ? booking.getAdvanceDeposit() : BigDecimal.ZERO;
+            BigDecimal amountDue = totalAmount.subtract(deposit).max(BigDecimal.ZERO);
+            long minutes = Math.max(0, Duration.between(
+                    booking.getCheckInTime() != null ? booking.getCheckInTime() : LocalDateTime.now(BUSINESS_ZONE).minusHours(1),
+                    booking.getCheckOutTime() != null ? booking.getCheckOutTime() : LocalDateTime.now(BUSINESS_ZONE)).toMinutes());
+
+            return CheckOutResponse.builder()
+                    .bookingCode(bookingCode)
+                    .totalAmount(totalAmount)
+                    .advanceDeposit(deposit)
+                    .amountDue(amountDue)
+                    .parkingMinutes(minutes)
+                    .bookingStatus(booking.getStatus().name())
+                    .build();
+        }
+
         if (booking.getStatus() != BookingStatusEnum.PARKING && booking.getStatus() != BookingStatusEnum.OVERTIME) {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái đang đỗ!");
         }
@@ -158,7 +176,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
 
     @Override
     @Transactional
-    public void confirmCashPayment(Long merchantUserId, String bookingCode, Long parkingLotId) {
+    public void confirmCashPayment(Long merchantUserId, String bookingCode, Long parkingLotId, BigDecimal amount) {
         Booking booking = bookingRepository.findByBookingCodeForUpdate(bookingCode)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
@@ -190,6 +208,6 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         }
 
         outboxPublisherService.publishBookingCompleted(booking);
-        log.info("Booking {} completed via cash payment at gate by merchant {}", bookingCode, merchantUserId);
+        log.info("Booking {} completed via cash payment at gate by merchant {}. Amount={}", bookingCode, merchantUserId, amount);
     }
 }

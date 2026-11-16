@@ -3,6 +3,7 @@ package com.smartparking.booking.api.controller;
 import com.smartparking.booking.application.dto.BookingDto;
 import com.smartparking.booking.application.dto.CheckInRequest;
 import com.smartparking.booking.application.dto.CheckOutResponse;
+import com.smartparking.booking.application.dto.ConfirmCashRequest;
 import com.smartparking.booking.application.service.BookingService;
 import com.smartparking.booking.application.service.CheckInOutService;
 import com.smartparking.booking.infrastructure.security.AuthenticatedUser;
@@ -47,8 +48,8 @@ public class MerchantCheckInOutController {
     @PreAuthorize("hasRole('MERCHANT')")
     public ResponseEntity<ApiResponse<Void>> confirmCashPayment(
             @AuthenticationPrincipal AuthenticatedUser user,
-            @Valid @RequestBody CheckInRequest request) {
-        checkInOutService.confirmCashPayment(user.getId(), request.getBookingCode(), request.getParkingLotId());
+            @Valid @RequestBody ConfirmCashRequest request) {
+        checkInOutService.confirmCashPayment(user.getId(), request.getBookingCode(), request.getParkingLotId(), request.getAmount());
         return ResponseEntity.ok(ApiResponse.success(null, "Xác nhận thu tiền mặt và trả chỗ thành công!"));
     }
 
