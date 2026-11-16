@@ -189,3 +189,5 @@ uploads/
 # Python cache
 __pycache__/
 *.pyc
+scripts/trello
+docs/pr-reviews
