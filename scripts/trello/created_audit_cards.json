@@ -1,0 +1,146 @@
+[
+  {
+    "code": "AUTH-01",
+    "id": "6afa5bd4c7e403562c807463",
+    "shortUrl": "https://trello.com/c/G5JMamjK",
+    "name": "[SP-AUTH-01] Chuẩn hóa và validate số điện thoại đăng ký (khoảng trắng, đầu số +84/0) (2 STP)"
+  },
+  {
+    "code": "AUTH-02",
+    "id": "6afa5bd5621ea1853fdb91b2",
+    "shortUrl": "https://trello.com/c/inm3WwFw",
+    "name": "[SP-AUTH-02] Sửa cơ chế \"Nhớ tôi\" (Remember Me) phân tách giữa lưu session và nhớ số điện thoại (2 STP)"
+  },
+  {
+    "code": "AUTH-03",
+    "id": "6afa5bd6f5642fa16d95e593",
+    "shortUrl": "https://trello.com/c/LPVFCiv2",
+    "name": "[SP-AUTH-03] Bổ sung kiểm tra trùng CCCD/CMND trước khi lưu chủ bãi xe (tránh lỗi SQL 500) (2 STP)"
+  },
+  {
+    "code": "AUTH-04",
+    "id": "6afa5bd7049e03948be43174",
+    "shortUrl": "https://trello.com/c/fy6ZxuAh",
+    "name": "[SP-AUTH-04] Chuẩn hóa kiểm tra trùng số điện thoại ngay từ bước gửi OTP (2 STP)"
+  },
+  {
+    "code": "AUTH-05",
+    "id": "6afa5bd8621ea1853fdb9b3a",
+    "shortUrl": "https://trello.com/c/9n1rUR7V",
+    "name": "[SP-AUTH-05] Xóa dữ liệu tạm form và lỗi validate sau đăng ký thành công hoặc khi đổi vai trò (2 STP)"
+  },
+  {
+    "code": "UI-01",
+    "id": "6afa5bda2f286759c734a4df",
+    "shortUrl": "https://trello.com/c/L1jVVlu6",
+    "name": "[SP-UI-01] Thống nhất nhãn hiển thị và luồng chuyển trạng thái \"Chờ check-in\" (bỏ \"Chờ vào bãi\") (1 STP)"
+  },
+  {
+    "code": "UI-02",
+    "id": "6afa5bdb029826bf7a4776d9",
+    "shortUrl": "https://trello.com/c/0Bxtkdcm",
+    "name": "[SP-UI-02] Ẩn Footer trên màn hình tìm bãi bản đồ và các trang tác vụ toàn màn hình (1 STP)"
+  },
+  {
+    "code": "MAP-01",
+    "id": "6afa5bdd4519920dea1f71a5",
+    "shortUrl": "https://trello.com/c/LBZ7Do9I",
+    "name": "[SP-MAP-01] Bật tính năng phóng to/thu nhỏ bản đồ bằng con lăn chuột (Scroll Wheel Zoom) (1 STP)"
+  },
+  {
+    "code": "MAP-02",
+    "id": "6afa5bde4680fc764e6903f7",
+    "shortUrl": "https://trello.com/c/mg9V5mm1",
+    "name": "[SP-MAP-02] Đánh giá và thay thế nhà cung cấp tile bản đồ (giảm lỗi timeout OSM public tile) (3 STP)"
+  },
+  {
+    "code": "UI-03",
+    "id": "6afa5bdf722789c70fb25543",
+    "shortUrl": "https://trello.com/c/XXCxKvXR",
+    "name": "[SP-UI-03] Rà soát và vô hiệu hóa nút thanh toán khi xe đang đỗ thực tế (PARKING) (2 STP)"
+  },
+  {
+    "code": "NOTI-01",
+    "id": "6afa5be0e87470c27a2a3d74",
+    "shortUrl": "https://trello.com/c/8snRehaD",
+    "name": "[SP-NOTI-01] Sửa nội dung thông báo \"Đặt chỗ thành công\" trước khi nộp cọc và route điều hướng (3 STP)"
+  },
+  {
+    "code": "LOT-01",
+    "id": "6afa5be1883eda2ebf758086",
+    "shortUrl": "https://trello.com/c/YxLNCutr",
+    "name": "[SP-LOT-01] Khôi phục nút kích hoạt AI sinh mô tả bãi xe, nội quy PCCC và lộ trình (3 STP)"
+  },
+  {
+    "code": "MEDIA-01",
+    "id": "6afa5be3c4beabdc2361b3ff",
+    "shortUrl": "https://trello.com/c/vlEcZ4Mn",
+    "name": "[SP-MEDIA-01] Sửa giới hạn cho phép tải tối đa 6 ảnh bãi xe (hiện tại bị chặn ở ảnh thứ 5) (1 STP)"
+  },
+  {
+    "code": "VEH-01",
+    "id": "6afa5be444539197421cd4ec",
+    "shortUrl": "https://trello.com/c/VsvHCne8",
+    "name": "[SP-VEH-01] Thêm ràng buộc và validate dải tải trọng hợp lệ theo từng loại phương tiện (2 STP)"
+  },
+  {
+    "code": "VEH-02",
+    "id": "6afa5be59e351e50ae75907b",
+    "shortUrl": "https://trello.com/c/Hyy9BLUA",
+    "name": "[SP-VEH-02] Chặn xóa/ngừng sử dụng phương tiện khi đang có lượt đỗ hoạt động hoặc nợ cước (3 STP)"
+  },
+  {
+    "code": "VEH-03",
+    "id": "6afa5be75d08bf563185f317",
+    "shortUrl": "https://trello.com/c/Vg1Mcbsm",
+    "name": "[SP-VEH-03] Nghiên cứu bổ sung tải lên ảnh giấy tờ xe (đăng kiểm, cà vẹt) (3 STP)"
+  },
+  {
+    "code": "BOOK-01",
+    "id": "6afa5be8889ae066b03ec4f3",
+    "shortUrl": "https://trello.com/c/GVOiJQiO",
+    "name": "[SP-BOOK-01] Chặn xe đang đỗ tại bãi tiếp tục đặt chỗ mới gây xung đột slot (3 STP)"
+  },
+  {
+    "code": "TICKET-01",
+    "id": "6afa5be9c177c7e7b1dd192b",
+    "shortUrl": "https://trello.com/c/zlvkov96",
+    "name": "[SP-TICKET-01] Chặn sinh và hiển thị mã QR Barie khi chưa hoàn tất thanh toán cọc (2 STP)"
+  },
+  {
+    "code": "PAY-01",
+    "id": "6afa5beb4519920dea1f8753",
+    "shortUrl": "https://trello.com/c/pYW6qXvP",
+    "name": "[SP-PAY-01] Minh bạch cơ chế tính phí sàn trên tiền cọc và luồng quyết toán hoàn tiền (3 STP)"
+  },
+  {
+    "code": "CHECKOUT-01",
+    "id": "6afa5bedb209c6970b421d4e",
+    "shortUrl": "https://trello.com/c/qzZ2eufY",
+    "name": "[SP-CHECKOUT-01] Khắc phục lỗi tính trùng cước giờ ranh giới giữa giờ quy định và giờ quá hạn (3 STP)"
+  },
+  {
+    "code": "CHECKOUT-02",
+    "id": "6afa5bee20e2e811523bf57f",
+    "shortUrl": "https://trello.com/c/Bs8boar6",
+    "name": "[SP-CHECKOUT-02] Triển khai bộ đếm thời gian đỗ xe thực tế từ checkInTime thay cho text hardcode (2 STP)"
+  },
+  {
+    "code": "CHECKOUT-03",
+    "id": "6afa5bef496451df5156dc02",
+    "shortUrl": "https://trello.com/c/NpbOYboV",
+    "name": "[SP-CHECKOUT-03] Xử lý số tiền còn lại phải trả tại cổng (khấu trừ cọc) và hoàn tiền cọc thừa (3 STP)"
+  },
+  {
+    "code": "CHECKOUT-04",
+    "id": "6afa5bf02c76f842df495bc3",
+    "shortUrl": "https://trello.com/c/xRjzM7pR",
+    "name": "[SP-CHECKOUT-04] Hiển thị chi tiết dòng phạt quá hạn, hệ số nhân và công thức trên vé checkout (2 STP)"
+  },
+  {
+    "code": "WITHDRAW-01",
+    "id": "6afa5bf2d4ec5f6d310311dc",
+    "shortUrl": "https://trello.com/c/vfaqsghy",
+    "name": "[SP-WITHDRAW-01] Tách bước Duyệt yêu cầu và Xác nhận đã chuyển khoản thực tế có mã tham chiếu (5 STP)"
+  }
+]
