@@ -34,15 +34,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Page<Booking> findByDriverIdOrderByCreatedAtDesc(Long driverId, Pageable pageable);
 
-    @Query("SELECT b FROM Booking b WHERE b.driverId = :driverId " +
+    @Query(value = "SELECT b FROM Booking b WHERE b.driverId = :driverId " +
            "AND (:status IS NULL OR b.status = :status) " +
            "AND (:search IS NULL OR :search = '' OR " +
+           "     CONCAT('', b.id) LIKE CONCAT('%', :search, '%') OR " +
            "     LOWER(b.bookingCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(b.vehiclePlate) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(b.parkingLotName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "AND (CAST(:fromTime AS java.time.LocalDateTime) IS NULL OR b.expectedCheckInTime >= :fromTime) " +
-           "AND (CAST(:toTime AS java.time.LocalDateTime) IS NULL OR b.expectedCheckInTime <= :toTime) " +
-           "ORDER BY b.createdAt DESC")
+           "AND (:fromTime IS NULL OR b.expectedCheckInTime >= :fromTime) " +
+           "AND (:toTime IS NULL OR b.expectedCheckInTime <= :toTime) " +
+           "ORDER BY b.createdAt DESC",
+           countQuery = "SELECT count(b) FROM Booking b WHERE b.driverId = :driverId " +
+           "AND (:status IS NULL OR b.status = :status) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     CONCAT('', b.id) LIKE CONCAT('%', :search, '%') OR " +
+           "     LOWER(b.bookingCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(b.vehiclePlate) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(b.parkingLotName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:fromTime IS NULL OR b.expectedCheckInTime >= :fromTime) " +
+           "AND (:toTime IS NULL OR b.expectedCheckInTime <= :toTime)")
     Page<Booking> searchDriverBookings(
             @Param("driverId") Long driverId,
             @Param("status") BookingStatusEnum status,
