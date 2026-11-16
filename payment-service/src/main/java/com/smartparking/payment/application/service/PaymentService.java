@@ -14,7 +14,10 @@ public interface PaymentService {
     PaymentDto confirmDemoDeposit(Long driverUserId, DemoPaymentRequest request);
     PaymentDto syncPayOSPayment(Long driverUserId, Long orderCode, Long bookingId, String paymentLinkId);
     void handleWebhook(String webhookBody);
-    PageResponse<PaymentDto> getMyPayments(Long driverUserId, Pageable pageable);
+    PageResponse<PaymentDto> getMyPayments(Long driverUserId, Long bookingId, Pageable pageable);
+    default PageResponse<PaymentDto> getMyPayments(Long driverUserId, Pageable pageable) {
+        return getMyPayments(driverUserId, null, pageable);
+    }
 
     PageResponse<AdminTransactionResponse> getAllTransactionsForAdmin(Pageable pageable);
     AdminTransactionResponse getTransactionForAdmin(Long id);

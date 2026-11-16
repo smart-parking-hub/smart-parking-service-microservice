@@ -39,8 +39,12 @@ public class BookingController {
     @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<ApiResponse<PageResponse<BookingDto>>> getMyBookings(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "status", required = false) com.smartparking.common.enums.BookingStatusEnum status,
+            @RequestParam(value = "from", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime from,
+            @RequestParam(value = "to", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime to,
             @PageableDefault(size = 20) Pageable pageable) {
-        PageResponse<BookingDto> page = bookingService.getMyBookings(user.getId(), pageable);
+        PageResponse<BookingDto> page = bookingService.getMyBookings(user.getId(), search, status, from, to, pageable);
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
