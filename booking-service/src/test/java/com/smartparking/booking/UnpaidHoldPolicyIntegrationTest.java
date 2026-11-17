@@ -73,8 +73,8 @@ class UnpaidHoldPolicyIntegrationTest {
     }
     private CreateBookingRequest request(long vehicle, long lot) {
         return CreateBookingRequest.builder().requestId(UUID.randomUUID().toString()).vehicleId(vehicle).parkingLotId(lot)
-                .vehicleType(VehicleTypeEnum.LIGHT_TRUCK).expectedCheckInTime(now().plusHours(1))
-                .expectedCheckOutTime(now().plusHours(3)).build();
+                .vehicleType(VehicleTypeEnum.LIGHT_TRUCK).expectedCheckInTime(now().withMinute(0).withSecond(0).withNano(0).plusHours(1))
+                .expectedCheckOutTime(now().withMinute(0).withSecond(0).withNano(0).plusHours(3)).build();
     }
     private List<Object> concurrent(IntFunction<Object> action) throws Exception {
         var start=new CountDownLatch(1);
@@ -168,6 +168,45 @@ class UnpaidHoldPolicyIntegrationTest {
         assertThrows(RuntimeException.class,()->service.createBooking(7L,request(11,5)));
         assertEquals(0,bookings.count());
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM booking_unpaid_hold_releases",Integer.class));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM booking_hold_rate_windows WHERE driver_id=7",Integer.class));
+    }
+    @Test void futureRateWindowRecoversAndPersistsANewShortWindow() {
+        var time=now();
+        jdbc.update("INSERT INTO booking_hold_rate_windows (driver_id,window_started_at,request_count) VALUES (?,?,?)",
+                7L,time.plusDays(1),10);
+        for(int i=0;i<10;i++) rate.acquire(7L,time);
+        assertEquals(time,jdbc.queryForObject("SELECT window_started_at FROM booking_hold_rate_windows WHERE driver_id=7",LocalDateTime.class));
+        for(int seconds:new int[]{1,30,59}) {
+            var blocked=assertThrows(HoldRestrictionException.class,()->rate.acquire(7L,time.plusSeconds(seconds)));
+            assertEquals(time.plusSeconds(60),blocked.getDetails().retryAt());
+        }
+        assertEquals(10,jdbc.queryForObject("SELECT request_count FROM booking_hold_rate_windows WHERE driver_id=7",Integer.class));
+        assertDoesNotThrow(()->rate.acquire(7L,time.plusSeconds(60)));
         assertEquals(1,jdbc.queryForObject("SELECT request_count FROM booking_hold_rate_windows WHERE driver_id=7",Integer.class));
+    }
+    @Test void concurrentRateRequestsCannotExceedTheThreshold() throws Exception {
+        var time=now();
+        for(int i=0;i<8;i++) rate.acquire(7L,time);
+        var results=concurrent(i->{rate.acquire(7L,time);return Boolean.TRUE;});
+        assertEquals(2,results.stream().filter(Boolean.TRUE::equals).count());
+        assertEquals(6,results.stream().filter(HoldRestrictionException.class::isInstance).count());
+        assertEquals(10,jdbc.queryForObject("SELECT request_count FROM booking_hold_rate_windows WHERE driver_id=7",Integer.class));
+    }
+    @Test void bookingCreationIgnoresAnExhaustedFutureRateWindowAndAllowsImmediateRetry() {
+        var future=now().plusDays(1);
+        jdbc.update("INSERT INTO booking_hold_rate_windows (driver_id,window_started_at,request_count) VALUES (?,?,?)",7L,future,1000);
+        when(lots.holdSlot(anyLong(),any())).thenReturn(ApiResponse.ok(SlotHoldResponse.builder().success(false).message("Full").build()));
+        for(int i=0;i<12;i++) {
+            var failure=assertThrows(com.smartparking.common.exception.AppException.class,()->service.createBooking(7L,request(11,5)));
+            assertEquals(com.smartparking.common.exception.ErrorCode.SLOT_NOT_AVAILABLE,failure.getErrorCode());
+        }
+        when(lots.holdSlot(anyLong(),any())).thenReturn(ApiResponse.ok(SlotHoldResponse.builder().success(true)
+                .merchantId(99L).baseHourlyPrice(new BigDecimal("20000")).build()));
+        var intent=request(11,5);
+        var created=service.createBooking(7L,intent);
+        assertEquals(created.getId(),service.createBooking(7L,intent).getId());
+        assertEquals(1,bookings.count());
+        assertEquals(1000,jdbc.queryForObject("SELECT request_count FROM booking_hold_rate_windows WHERE driver_id=7",Integer.class));
+        assertEquals(future,jdbc.queryForObject("SELECT window_started_at FROM booking_hold_rate_windows WHERE driver_id=7",LocalDateTime.class));
     }
 }

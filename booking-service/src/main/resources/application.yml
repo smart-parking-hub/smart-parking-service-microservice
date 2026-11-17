@@ -64,6 +64,8 @@ app:
 resilience4j:
   timelimiter:
     instances:
+      parking-lot-rpc:
+        timeout-duration: 8s
       unpaid-hold-assessment:
         timeout-duration: 8s
 

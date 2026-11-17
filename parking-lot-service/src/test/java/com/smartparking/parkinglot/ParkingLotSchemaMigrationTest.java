@@ -93,6 +93,7 @@ class ParkingLotSchemaMigrationTest {
             // Apply the existing V7 before the new additive layout migration.
             ScriptUtils.executeSqlScript(connection, new ClassPathResource("db/migration/V7__admin_operations_outbox.sql"));
             ScriptUtils.executeSqlScript(connection, new ClassPathResource("db/migration/V8__parking_layout_and_physical_slots.sql"));
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource("db/migration/V9__time_slot_reservations.sql"));
 
             // Verify tables and columns exist
             try (var statement = connection.createStatement()) {

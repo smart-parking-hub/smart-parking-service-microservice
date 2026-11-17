@@ -155,3 +155,11 @@ Booking exclusively owns `booking_hold_policy_locks`, `booking_hold_rate_windows
 ## Gate final payment (Booking V11, Payment V20)
 
 Booking owns nullable final_payment_method/reference/amount on bookings, recording the one accepted final tender. Payment owns cash_checkout_receipts keyed by booking_id with merchant/lot/amount/status/update time and recovery index. Cash receipts coordinate collection but are not gateway money or merchant wallet credit. Service-authenticated callbacks join the workflow without cross-database queries. See [gate final payment contract](api-contracts/gate-final-payment.md).
+
+
+## Time-based reservations — 2026-11-17
+
+- Parking V9 owns `slot_reservations` (booking reference, group/physical slot reference, exact reservation and protection windows, hold deadline, lifecycle state, actual checkout, occupation attempt token, legacy import staging state and policy version). There is no cross-database FK. `current_slot_allocations` now represents actual scheduled occupancy; existing `slot_holds` remains the legacy idempotent ledger.
+- Booking V12 owns nullable `bookings.schedule_policy_version` and `schedule_queue_notified_at`. Null preserves the legacy path; 0 is an explicitly adopted legacy booking; 1 is a new half-hour-grid booking with a 30-minute gap and no early entry.
+- No historical timestamp or monetary amount is backfilled by a SQL migration. Legacy adoption uses authenticated per-booking RPC and staged activation after the Booking commit.
+- See [ADR 0010](adr/0010-time-based-parking-reservations.md), [API](api-contracts/booking-schedule.md) and [rollout](deployment/booking-schedule-rollout.md).

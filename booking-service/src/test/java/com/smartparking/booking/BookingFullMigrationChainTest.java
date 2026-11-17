@@ -33,7 +33,11 @@ class BookingFullMigrationChainTest {
             "V5__snapshot_booking_tariff.sql",
             "V6__booking_gate_time_precision.sql",
             "V7__booking_refund_policy_and_processed_events.sql",
-            "V8__add_physical_slot_to_bookings.sql"
+            "V8__add_physical_slot_to_bookings.sql",
+            "V9__unpaid_hold_policy.sql",
+            "V10__wallet_payment_receipts.sql",
+            "V11__final_payment_decision.sql",
+            "V12__booking_schedule_policy.sql"
     };
 
     private static final String FINGERPRINT_SQL = """
@@ -68,6 +72,7 @@ class BookingFullMigrationChainTest {
             }
 
             assertEquals(statusCountsAfterSeed, statusCounts(connection));
+            assertEquals(0, count(connection, "SELECT COUNT(*) FROM bookings WHERE schedule_policy_version IS NOT NULL OR schedule_queue_notified_at IS NOT NULL"));
             assertEquals(queues, count(connection, "SELECT COUNT(*) FROM queues"));
             assertEquals(reviews, count(connection, "SELECT COUNT(*) FROM reviews"));
 

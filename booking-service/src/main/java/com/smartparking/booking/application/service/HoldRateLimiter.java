@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class HoldRateLimiter {
+    private static final int MAX_RATE_WINDOW_SECONDS = 60;
     private final HoldPolicyStore store;
     private final HoldPolicyProperties properties;
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
@@ -20,8 +21,12 @@ public class HoldRateLimiter {
         if (!properties.isEnabled()) return;
         store.lock("RATE:" + driverId);
         var window=store.rateWindow(driverId).orElse(new HoldPolicyStore.RateWindow(now,0));
-        LocalDateTime until=window.startedAt().plusSeconds(properties.getRateWindowSeconds());
-        if (!now.isBefore(until)) window=new HoldPolicyStore.RateWindow(now,0);
+        int windowSeconds=Math.min(properties.getRateWindowSeconds(),MAX_RATE_WINDOW_SECONDS);
+        // Recover future-dated windows after clock corrections without imposing a long lockout.
+        if (window.startedAt().isAfter(now) || !now.isBefore(window.startedAt().plusSeconds(windowSeconds))) {
+            window=new HoldPolicyStore.RateWindow(now,0);
+        }
+        LocalDateTime until=window.startedAt().plusSeconds(windowSeconds);
         if (window.count()>=properties.getRateLimit()) throw new HoldRestrictionException(
                 HoldRestrictionException.Reason.RATE_LIMIT,"Bạn đang tạo giữ chỗ quá nhanh. Vui lòng chờ rồi thử lại.",until,null);
         store.setRateWindow(driverId,window.startedAt(),window.count()+1);

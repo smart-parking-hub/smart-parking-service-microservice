@@ -10,4 +10,5 @@ public interface QueueService {
     QueueDto getMyQueue(Long driverUserId);
     void cancelQueue(Long driverUserId, Long queueId);
     void promoteNextInQueue(Long parkingLotId, VehicleTypeEnum vehicleType);
+    boolean tryPromoteNextInQueue(Long parkingLotId, VehicleTypeEnum vehicleType);
 }

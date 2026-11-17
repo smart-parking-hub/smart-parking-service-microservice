@@ -24,6 +24,9 @@ jwt:
   secret: smartparkingsecretkeymustbeverylongandsecure2026version
 
 app:
+  schedule:
+    reconciliation:
+      enabled: false
   admin-operations:
     enabled: false
   storage:

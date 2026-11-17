@@ -42,6 +42,14 @@ class SlotHoldPhysicalIntegrationTest {
     @Mock
     private CurrentSlotAllocationRepository currentSlotAllocationRepository;
 
+    @Mock private com.smartparking.parkinglot.application.service.ScheduledSlotService scheduledSlots;
+
+    @org.junit.jupiter.api.BeforeEach
+    void lockedLegacyLedgerLookup() {
+        org.mockito.Mockito.lenient().when(slotHoldRepository.findByIdForUpdate(org.mockito.ArgumentMatchers.anyLong()))
+                .thenAnswer(call -> slotHoldRepository.findById(call.getArgument(0)));
+    }
+
     @InjectMocks
     private SlotServiceImpl slotService;
 

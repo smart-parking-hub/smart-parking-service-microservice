@@ -13,6 +13,8 @@ spring:
   flyway:
     enabled: false
   kafka:
+    listener:
+      auto-startup: false
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -33,6 +35,9 @@ jwt:
   secret: smartparkingsecretkeymustbeverylongandsecure2026version
 
 app:
+  schedule:
+    reconciliation:
+      enabled: false
   booking:
     check-in-early-minutes: 30
     hold-policy:

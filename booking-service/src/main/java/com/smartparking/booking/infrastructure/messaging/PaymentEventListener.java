@@ -84,7 +84,7 @@ public class PaymentEventListener {
 
                     // QR code is valid until expectedCheckInTime + 60 minutes (or 2 hours from now if absent)
                     LocalDateTime deadline = booking.getExpectedCheckInTime() != null
-                            ? booking.getExpectedCheckInTime().plusMinutes(60)
+                            ? com.smartparking.booking.application.service.ScheduledSlotLifecycle.checkInDeadline(booking)
                             : now.plusHours(2);
                     booking.setExpiresAt(deadline);
                     bookingRepository.save(booking);
@@ -106,8 +106,8 @@ public class PaymentEventListener {
                                 .vehicleType(booking.getVehicleType())
                                 .bookingId(booking.getId())
                                 .build();
-                        parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
-                        queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+                        if (booking.getSchedulePolicyVersion() == null) parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+                        if (booking.getSchedulePolicyVersion() == null) queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
                     } catch (Exception ex) {
                         throw new IllegalStateException("Final settlement slot release failed", ex);
                     }

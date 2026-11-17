@@ -1,0 +1,12 @@
+# Local schedule release. Append after compose.restore-p0.local.yaml.
+# Reuse the tested images; do not rebuild unrelated services or change DB URLs.
+services:
+  parking-lot-service:
+    image: smart-parking/parking-lot-service:schedule-local-20261117
+    volumes:
+      - parking_images:/app/uploads/parking-lot-images
+  booking-service:
+    image: smart-parking/booking-service:schedule-local-20261117
+
+volumes:
+  parking_images:

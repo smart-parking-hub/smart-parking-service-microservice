@@ -1,6 +1,6 @@
 # Unpaid hold protection
 
-Owner: booking-service (policy), payment-service (payment evidence). Last verified: 2026-11-15.
+Owner: booking-service (policy), payment-service (payment evidence). Last verified: 2026-11-17.
 Status: approved implementation. Evidence: `UnpaidHoldPolicyIntegrationTest`, `UnpaidHoldPolicyTest`, `UnpaidHoldMigrationTest`, `HoldPolicyContractTest`, `UnpaidHoldAssessmentServiceTest`, `UnpaidHoldInternalContractTest`.
 
 ## Rules
@@ -10,7 +10,9 @@ Status: approved implementation. Evidence: `UnpaidHoldPolicyIntegrationTest`, `U
 | Vehicle, across all lots | One `PENDING_PAYMENT` booking | 409; link to the existing booking only when it belongs to the caller |
 | Driver, across all lots | Three `PENDING_PAYMENT` bookings | 409; resolve existing holds first |
 | Driver + lot | Two confirmed unpaid releases in 60 minutes | 429 until 30 minutes after the threshold release |
-| Driver request rate | Ten new-create attempts in an anchored 60-second window | 429 until the original window end |
+| Driver request rate | Removed by user request (2026-11-17) | No request-count wait during booking creation |
+
+Booking creation no longer calls HoldRateLimiter. Historical rate-window rows, including exhausted/future-dated rows, are ignored and are not incremented by new attempts. The legacy evaluator/schema remain for compatibility; removing the API-path dependency is intentional. No schema migration or manual row deletion is required. Ownership, capacity, schedule conflict checks, transactional account/vehicle locks, request-key idempotency and pending-request double-submit protection remain active.
 
 The server owns all decisions. Changing vehicle, requestId, browser tab or restarting the service does not bypass the persisted driver/lot cooldown. This does not claim to prevent coordinated abuse using multiple accounts or identities.
 
@@ -22,7 +24,7 @@ UNPAID requires verified evidence. Paid, partial, refunded or review attempts ar
 
 ## Public contract
 
-The request for `POST /api/v1/bookings` is unchanged. Successful, completed idempotent replay returns the original booking before rate/quota checks and never extends its deadline. New attempts, including rejected business operations, consume the technical rate window. In-flight duplicate requests can consume the window before their original booking commits, but cannot create another hold.
+The request for `POST /api/v1/bookings` is unchanged. Successful, completed idempotent replay returns the original booking before quota checks and never extends its deadline. New attempts do not consume a technical rate window. In-flight duplicate requests still cannot create another hold.
 
 Restriction response (normal ApiResponse envelope):
 
@@ -42,10 +44,10 @@ Restriction response (normal ApiResponse envelope):
 | VEHICLE_LIMIT | 409 | existingBookingId only for a caller-owned hold |
 | ACCOUNT_LIMIT | 409 | none |
 | COOLDOWN | 429 | retryAt |
-| RATE_LIMIT | 429 | retryAt |
+| RATE_LIMIT (legacy only) | 429 from an older server | No longer emitted by the booking creation path |
 | PAYMENT_CHECK_PENDING | 503 | retryAt; not an abuse finding |
 
-The frontend displays the server message/deadline and relevant ticket link. It disables timed retry until that deadline, refreshes the countdown on browser focus, and never automatically creates a booking or opens payment when the countdown ends. The server still validates every retry.
+A legacy RATE_LIMIT response does not lock the frontend or display a spam warning/countdown: the form retains its inputs and reports that creation failed, with an immediate explicit retry. No automatic booking or fake success is introduced. Other restrictions retain their server message/deadline and ticket link. Regression evidence: `UnpaidHoldPolicyIntegrationTest.bookingCreationIgnoresAnExhaustedFutureRateWindowAndAllowsImmediateRetry`, frontend `BookingHoldRestrictionNotice.test.tsx` and `booking-rate-limit.spec.ts`.
 
 ## Internal contracts and payment safety
 
@@ -67,13 +69,13 @@ Booking V9 adds:
 - `booking_unpaid_hold_releases`: immutable original release, one row per booking, current assessment/last checked time.
 - Composite booking indexes for vehicle/status and driver/status quota reads.
 
-Rate and creation transactions use READ_COMMITTED. Explicit key locks serialize conflicting creates and a second locked requestKey lookup catches in-flight replay. This avoids MySQL absent-row gap-lock deadlocks between unrelated drivers. Rejected gates run before booking/slot creation. Business failures still roll back the booking transaction and retain existing compensation behavior.
+Creation transactions use READ_COMMITTED. Explicit key locks serialize conflicting creates and a second locked requestKey lookup catches in-flight replay. This avoids MySQL absent-row gap-lock deadlocks between unrelated drivers. Rejected gates run before booking/slot creation. Business failures still roll back the booking transaction and retain existing compensation behavior. RATE locks/windows are no longer consulted by this path.
 
 The scheduler processes at most 100 recent unprotected candidates per cycle (default 60s delay), each in its own verification transaction. Confirmed PROTECTED rows are terminal for this policy; UNPAID/UNKNOWN rows are revisited during the 90-minute horizon. Gate checks also verify the caller/lot releases, so the scheduler is not the sole enforcement path. Database records remain available for audit; no destructive retention job is introduced.
 
 ## Configuration and rollback
 
-All Booking defaults are environment configurable:
+Active Booking defaults are environment configurable:
 
 | Variable | Default |
 | --- | --- |
@@ -82,8 +84,8 @@ All Booking defaults are environment configurable:
 | BOOKING_HOLD_ABANDONMENT_THRESHOLD | 2 |
 | BOOKING_HOLD_WINDOW_MINUTES | 60 |
 | BOOKING_HOLD_COOLDOWN_MINUTES | 30 |
-| BOOKING_HOLD_RATE_LIMIT | 10 |
-| BOOKING_HOLD_RATE_WINDOW_SECONDS | 60 |
+
+Legacy BOOKING_HOLD_RATE_LIMIT and BOOKING_HOLD_RATE_WINDOW_SECONDS have no effect on booking creation after removal of the rate-limiter call.
 
 Deploy payment first, then booking. Preserve shared token and each service's existing DB/Flyway configuration. Validate migration on private local copies and retain previous images/database snapshots before local activation. Local Payment's retained V6/V7-compatible lineage remains required; this feature adds no Payment migration.
 

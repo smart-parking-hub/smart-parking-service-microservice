@@ -36,7 +36,6 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final com.smartparking.booking.application.service.UnpaidHoldPolicy holdPolicy;
-    private final com.smartparking.booking.application.service.HoldRateLimiter holdRateLimiter;
     private final com.smartparking.booking.application.service.BookingCreationTransaction creationTransaction;
     private final com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
     private final com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
@@ -65,9 +64,9 @@ public class BookingServiceImpl implements BookingService {
             }
         }
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        holdRateLimiter.acquire(driverUserId, now);
         if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
             throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào phải ở tương lai và giờ ra phải sau giờ vào");
+        com.smartparking.common.util.BookingSchedulePolicy.validate(request.getExpectedCheckInTime(), request.getExpectedCheckOutTime());
         var vehicle = ownedVehicleClient.require(request.getVehicleId());
         if (vehicle.vehicleType() != request.getVehicleType())
             throw new AppException(ErrorCode.BAD_REQUEST, "Loại xe không khớp phương tiện đã đăng ký");
@@ -110,6 +109,7 @@ public class BookingServiceImpl implements BookingService {
                 .parkingLotName(request.getParkingLotName())
                 .parkingLotAddress(request.getParkingLotAddress())
                 .status(BookingStatusEnum.PENDING_PAYMENT)
+                .schedulePolicyVersion(com.smartparking.common.util.BookingSchedulePolicy.VERSION)
                 .expectedCheckInTime(request.getExpectedCheckInTime())
                 .expectedCheckOutTime(request.getExpectedCheckOutTime())
                 .expiresAt(now.plusMinutes(15))
@@ -146,6 +146,8 @@ public class BookingServiceImpl implements BookingService {
                     .vehicleType(request.getVehicleType())
                     .bookingId(saved.getId())
                     .physicalSlotId(request.getPhysicalSlotId())
+                    .startTime(request.getExpectedCheckInTime()).endTime(request.getExpectedCheckOutTime())
+                    .holdExpiresAt(saved.getExpiresAt())
                     .build();
 
             ApiResponse<SlotHoldResponse> holdRes = parkingLotClient.holdSlot(request.getParkingLotId(), holdReq);
@@ -293,8 +295,10 @@ public class BookingServiceImpl implements BookingService {
                     .vehicleType(booking.getVehicleType())
                     .bookingId(booking.getId())
                     .build();
-            parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
-            queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+            if (booking.getSchedulePolicyVersion() != null) {
+                com.smartparking.booking.application.service.ScheduledSlotLifecycle.releaseAfterCommit(booking, parkingLotClient, queueService);
+            } else parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+            if (booking.getSchedulePolicyVersion() == null) queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
         } catch (Exception ex) {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa hủy được chỗ đỗ. Vui lòng thử lại.");
         }

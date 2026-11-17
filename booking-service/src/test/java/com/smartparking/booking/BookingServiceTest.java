@@ -86,7 +86,7 @@ public class BookingServiceTest {
     @Test
     @DisplayName("Create booking successfully with slot hold and outbox event")
     void testCreateBooking() {
-        LocalDateTime checkInTime = LocalDateTime.now().plusHours(1);
+        LocalDateTime checkInTime = LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1);
         CreateBookingRequest req = CreateBookingRequest.builder()
                 .parkingLotId(parkingLotId)
                 .vehicleId(vehicleId)
@@ -114,8 +114,8 @@ public class BookingServiceTest {
                 .parkingLotId(parkingLotId)
                 .vehicleId(vehicleId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
-                .expectedCheckInTime(LocalDateTime.now().plusHours(1))
-                .expectedCheckOutTime(LocalDateTime.now().plusHours(3))
+                .expectedCheckInTime(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1))
+                .expectedCheckOutTime(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(3))
                 .build();
 
         BookingDto created = bookingService.createBooking(driverUserId, req);
@@ -140,14 +140,16 @@ public class BookingServiceTest {
                 .parkingLotId(parkingLotId)
                 .vehicleId(vehicleId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
-                .expectedCheckInTime(LocalDateTime.now().plusMinutes(10))
-                .expectedCheckOutTime(LocalDateTime.now().plusHours(2))
+                .expectedCheckInTime(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1))
+                .expectedCheckOutTime(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(3))
                 .build();
 
         BookingDto created = bookingService.createBooking(driverUserId, req);
 
         // Simulate deposit payment success -> PENDING_CHECKIN
         Booking booking = bookingRepository.findById(created.getId()).orElseThrow();
+        booking.setExpectedCheckInTime(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0));
+        booking.setExpectedCheckOutTime(booking.getExpectedCheckInTime().plusHours(2));
         booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
         booking.setMerchantId(merchantUserId);
         bookingRepository.save(booking);
@@ -203,7 +205,7 @@ public class BookingServiceTest {
                 .vehicleType(VehicleTypeEnum.CONTAINER)
                 .status(BookingStatusEnum.COMPLETED)
                 .advanceDeposit(BigDecimal.valueOf(50000))
-                .expiresAt(LocalDateTime.now().plusHours(1))
+                .expiresAt(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1))
                 .build();
         booking = bookingRepository.save(booking);
 

@@ -39,7 +39,7 @@ class UnpaidHoldQuotaRegressionTest {
                 .success(true).merchantId(99L).baseHourlyPrice(new BigDecimal("20000")).build()));
     }
     private CreateBookingRequest request(long vehicle) {
-        LocalDateTime now=LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDateTime now=LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).withMinute(0).withSecond(0).withNano(0);
         return CreateBookingRequest.builder().requestId(UUID.randomUUID().toString()).vehicleId(vehicle)
                 .parkingLotId(5L).vehicleType(VehicleTypeEnum.LIGHT_TRUCK).expectedCheckInTime(now.plusHours(1))
                 .expectedCheckOutTime(now.plusHours(3)).build();
