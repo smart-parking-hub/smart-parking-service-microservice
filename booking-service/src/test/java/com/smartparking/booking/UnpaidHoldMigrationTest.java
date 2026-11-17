@@ -22,7 +22,8 @@ class UnpaidHoldMigrationTest {
         var old=Flyway.configure().dataSource(url,"root",password).locations("classpath:db/migration").target("8").cleanDisabled(true).load();
         assertEquals(8,old.migrate().migrationsExecuted);
         byte[] before=snapshot(url,password);
-        var current=Flyway.configure().dataSource(url,"root",password).locations("classpath:db/migration").cleanDisabled(true).load();
+        // This historical regression covers V8 -> V9; later additive migrations have dedicated tests.
+        var current=Flyway.configure().dataSource(url,"root",password).locations("classpath:db/migration").target("9").cleanDisabled(true).load();
         assertEquals(1,current.migrate().migrationsExecuted);
         assertArrayEquals(before,snapshot(url,password));
         try(var c=DriverManager.getConnection(url,"root",password);var s=c.createStatement();var r=s.executeQuery("SELECT COUNT(*) FROM booking_unpaid_hold_releases")) {
