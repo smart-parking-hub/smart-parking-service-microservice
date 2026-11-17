@@ -1,5 +1,7 @@
 # SP-PAY-01 — Review bổ sung phục hồi ví và quyết toán
 
+> Bổ sung CI: xem [sửa thứ tự khởi tạo timezone khi runner bắt đầu UTC](SP-PAY-01-CI-TIMEZONE-REVIEW.md). Các kết quả bên dưới ghi nhận lượt kiểm tra trước sửa startup.
+
 Ngày 18/11/2026. Báo cáo mới nhất cho các sửa F1/P1, F2/P2, F3/P2, đã tích hợp main. Báo cáo gốc [SP-PAY-01-REVIEW.md](SP-PAY-01-REVIEW.md) mô tả toàn bộ luồng ví; số kiểm thử và giới hạn mới nhất nằm ở bản bổ sung này.
 
 ## 1. Thông tin chung
