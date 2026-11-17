@@ -24,6 +24,22 @@ class DriverWalletControllerTest {
     @MockBean DriverWalletPaymentService payments;
     @MockBean JwtTokenValidator jwtTokenValidator;
     @MockBean JpaMetamodelMappingContext jpaMappingContext;
+    @Test void bookingPaymentLookupUsesPrincipalAndRepresentsAnAbsentAttempt() throws Exception {
+        when(payments.getForBooking(7L, 41L)).thenReturn(null);
+        mvc.perform(get("/api/v1/payments/wallet").param("bookingId", "41").param("driverId", "999")
+                .header("X-User-Id", "7").header("X-User-Role", "DRIVER").header("X-Internal-Secret", "wallet-test-only"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true)).andExpect(jsonPath("$.data").doesNotExist());
+        verify(payments).getForBooking(7L, 41L);
+        verifyNoMoreInteractions(payments);
+    }
+    @Test void otherRolesCannotLookUpDriverWalletPayments() throws Exception {
+        for (String role : new String[]{"MERCHANT", "ADMIN"}) {
+            mvc.perform(get("/api/v1/payments/wallet").param("bookingId", "41")
+                    .header("X-User-Id", "7").header("X-User-Role", role).header("X-Internal-Secret", "wallet-test-only"))
+                    .andExpect(status().isForbidden());
+        }
+        verifyNoInteractions(payments);
+    }
     @Test void readsOnlyAuthenticatedWalletIgnoringForgedOwner() throws Exception {
         when(payments.enabled()).thenReturn(true);
         when(wallet.balance(7L, true)).thenReturn(new DriverWalletLedger.Balance(new BigDecimal("8000"), BigDecimal.ZERO, "VND", true));

@@ -51,6 +51,21 @@ class DoubleEntryLedgerAndSettlementTest {
     private MerchantWalletServiceImpl merchantWalletService;
     private DailySettlementServiceImpl dailySettlementService;
 
+    private void persistSettlementJournalsInMockRepository() {
+        // Batch reopening relies on journals, so emulate persisted unique keys rather than always
+        // returning "missing" even after creditSettlement saved a journal.
+        var stored = new java.util.HashMap<String, LedgerJournal>();
+        when(ledgerJournalRepository.findByJournalKey(anyString()))
+                .thenAnswer(inv -> Optional.ofNullable(stored.get(inv.getArgument(0))));
+        when(ledgerJournalRepository.existsByJournalKey(anyString()))
+                .thenAnswer(inv -> stored.containsKey(inv.getArgument(0)));
+        when(ledgerJournalRepository.save(any(LedgerJournal.class))).thenAnswer(inv -> {
+            LedgerJournal journal = inv.getArgument(0);
+            stored.put(journal.getJournalKey(), journal);
+            return journal;
+        });
+    }
+
     @BeforeEach
     void setUp() {
         merchantWalletService = new MerchantWalletServiceImpl(walletRepository, ledgerRepository, paymentRepository);
@@ -345,6 +360,7 @@ class DoubleEntryLedgerAndSettlementTest {
         when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // First run: settles 100,000 + (80,000 - 40,000) = 140,000 gross -> 14,000 fee (10%) -> 126,000 net
+        persistSettlementJournalsInMockRepository();
         List<SettlementBatch> firstRun = dailySettlementService.runDailySettlement(businessDate);
         assertEquals(1, firstRun.size());
         SettlementBatch batch = firstRun.get(0);
@@ -425,14 +441,13 @@ class DoubleEntryLedgerAndSettlementTest {
 
         when(settlementBatchRepository.findByBusinessDateAndMerchantId(businessDate, merchantId))
                 .thenReturn(Optional.empty());
-        when(ledgerJournalRepository.findByJournalKey("SETTLE:PAYMENT:" + paymentId))
-                .thenReturn(Optional.empty());
         when(ledgerJournalRepository.existsByJournalKey(anyString())).thenReturn(false);
         when(walletRepository.findByMerchantIdForUpdate(merchantId)).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
         when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Step 3: Run daily settlement for business date
+        persistSettlementJournalsInMockRepository();
         List<SettlementBatch> batches = dailySettlementService.runDailySettlement(businessDate);
         assertEquals(1, batches.size());
         SettlementBatch batch = batches.get(0);

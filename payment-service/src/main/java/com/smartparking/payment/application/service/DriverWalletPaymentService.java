@@ -74,6 +74,12 @@ public class DriverWalletPaymentService {
         return PaymentDto.fromEntity(p);
     }
 
+    public PaymentDto getForBooking(Long driverId, Long bookingId) {
+        if (bookingId == null || bookingId <= 0) throw new AppException(ErrorCode.BAD_REQUEST, "Booking không hợp lệ");
+        return payments.findFirstByDriverIdAndBookingIdAndGatewayOrderByIdDesc(driverId, bookingId, PaymentGatewayEnum.WALLET)
+                .map(PaymentDto::fromEntity).orElse(null);
+    }
+
     public void recover(Long paymentId) {
         var snapshot = payments.findById(paymentId).orElseThrow();
         if (snapshot.getGateway() != PaymentGatewayEnum.WALLET || snapshot.getStatus() != PaymentStatusEnum.PENDING) return;

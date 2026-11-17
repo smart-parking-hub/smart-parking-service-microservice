@@ -33,6 +33,11 @@ public class DriverWalletController {
     public ApiResponse<PaymentDto> pay(@AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody WalletPaymentRequest request) {
         return ApiResponse.success(payments.pay(user.getId(), request.bookingId()));
     }
+    @GetMapping("/api/v1/payments/wallet")
+    public ApiResponse<PaymentDto> paymentForBooking(@AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam Long bookingId) {
+        return ApiResponse.success(payments.getForBooking(user.getId(), bookingId));
+    }
     @GetMapping("/api/v1/payments/{id}")
     public ApiResponse<PaymentDto> payment(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable Long id) {
         return ApiResponse.success(payments.get(user.getId(), id));

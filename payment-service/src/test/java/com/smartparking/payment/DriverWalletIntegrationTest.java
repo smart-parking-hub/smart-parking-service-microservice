@@ -29,7 +29,8 @@ import static com.smartparking.payment.domain.model.LedgerAccountCode.*;
         "app.wallet-recovery-delay-ms=3600000", "app.driver-wallet-enabled=true"})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({DriverWalletLedger.class, DriverWalletPaymentService.class, PaymentAttemptGuard.class, com.smartparking.payment.application.service.impl.RefundServiceImpl.class,
-        com.smartparking.payment.application.service.impl.MerchantWalletServiceImpl.class, DepositStatementService.class})
+        com.smartparking.payment.application.service.impl.MerchantWalletServiceImpl.class,
+        com.smartparking.payment.application.service.impl.DailySettlementServiceImpl.class, DepositStatementService.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class DriverWalletIntegrationTest {
     @Autowired DriverWalletLedger wallet;
@@ -43,6 +44,127 @@ class DriverWalletIntegrationTest {
     @Autowired com.smartparking.payment.application.service.impl.RefundServiceImpl refunds;
     @Autowired MerchantWalletService merchant;
     @Autowired DepositStatementService statements;
+    @Autowired DailySettlementService settlement;
+
+    @Test void concurrentCatchupAndOriginalDayRunsCreditAndCountThePaymentOnce() throws Exception {
+        long driver = 5400L;
+        var day = java.time.LocalDate.of(2020, 9, 1);
+        seed(driver, 54000L, "16000");
+        quote(54001L, driver, "16000");
+        when(booking.confirmWallet(any())).thenReturn(true);
+        var paid = service.pay(driver, 54001L);
+        jdbc.update("UPDATE payments SET created_at=? WHERE id=?", day.atTime(23, 59), paid.getId());
+        var ready = new java.util.concurrent.CountDownLatch(2);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var first = pool.submit(() -> { ready.countDown(); start.await(); return settlement.runDailySettlement(day); });
+            var second = pool.submit(() -> { ready.countDown(); start.await(); return settlement.runDailySettlement(day.plusDays(1)); });
+            assertTrue(ready.await(10, java.util.concurrent.TimeUnit.SECONDS));
+            start.countDown();
+            first.get(20, java.util.concurrent.TimeUnit.SECONDS);
+            second.get(20, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        var batch = settlement.runDailySettlement(day).getFirst();
+        assertEquals(1, batch.getPaymentCount());
+        equal("16000", batch.getGrossAmount());
+        equal("1600", batch.getFeeAmount());
+        equal("14400", batch.getNetAmount());
+        assertEquals(1, journals.findByPaymentId(paid.getId()).stream()
+                .filter(j -> "SETTLEMENT_CREDIT".equals(j.getJournalType())).count());
+    }
+
+    @Test void catchupDoesNotBackfillLegacyPayOsOrSettleFutureWalletPayments() {
+        var day = java.time.LocalDate.of(2020, 10, 1);
+        var oldPayOs = payments.saveAndFlush(Payment.builder().driverId(5500L).bookingId(55000L).merchantId(5L)
+                .amount(money("16000")).paymentType(PaymentTypeEnum.DEPOSIT).gateway(PaymentGatewayEnum.PAYOS)
+                .status(PaymentStatusEnum.SUCCESS).build());
+        jdbc.update("UPDATE payments SET created_at=? WHERE id=?", day.minusDays(1).atStartOfDay(), oldPayOs.getId());
+        merchant.recordPaymentEscrow(oldPayOs, "Legacy deposit outside catchup scope");
+        seed(5500L, 55001L, "16000");
+        quote(55002L, 5500L, "16000");
+        when(booking.confirmWallet(any())).thenReturn(true);
+        var future = service.pay(5500L, 55002L);
+        jdbc.update("UPDATE payments SET created_at=? WHERE id=?", day.plusYears(100).atStartOfDay(), future.getId());
+        settlement.runDailySettlement(day);
+        assertTrue(journals.findByJournalKey("SETTLE:PAYMENT:" + oldPayOs.getId()).isEmpty());
+        assertTrue(journals.findByJournalKey("SETTLE:PAYMENT:" + future.getId()).isEmpty());
+    }
+
+    @Test void bookingPaymentLookupIsScopedToAuthenticatedDriver() {
+        assertNull(service.getForBooking(5300L, 53001L));
+        seed(5300L, 53000L, "8000");
+        quote(53001L, 5300L, "6000");
+        when(booking.confirmWallet(any())).thenThrow(new RuntimeException("response lost"));
+        var held = service.pay(5300L, 53001L);
+        assertEquals(held.getId(), service.getForBooking(5300L, 53001L).getId());
+        assertEquals(PaymentStatusEnum.PENDING, service.getForBooking(5300L, 53001L).getStatus());
+        assertNull(service.getForBooking(5301L, 53001L));
+        assertThrows(AppException.class, () -> service.getForBooking(5300L, -1L));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 50})
+    void lateWalletCaptureIsSettledByNextDayWithoutDoubleCredit(int refundPercent) {
+        long driver = 5100L + refundPercent;
+        long bookingId = 51000L + refundPercent;
+        var day = java.time.LocalDate.of(2020, 1, 1).plusDays(refundPercent);
+        seed(driver, bookingId + 1000, "16000");
+        quote(bookingId, driver, "16000");
+        when(booking.confirmWallet(any())).thenThrow(new RuntimeException("response lost"));
+        var pending = service.pay(driver, bookingId);
+        jdbc.update("UPDATE payments SET created_at=? WHERE id=?", day.atTime(23, 59), pending.getId());
+        settlement.runDailySettlement(day);
+        doReturn(true).when(booking).confirmWallet(any());
+        service.recover(pending.getId());
+        if (refundPercent > 0) {
+            var event = com.smartparking.common.event.BookingEvent.BookingCancelledEvent.builder()
+                    .bookingId(bookingId).userId(driver).merchantId(5L).advanceDeposit(money("16000"))
+                    .refundAmount(money("8000")).refundPercentage(refundPercent).refundRequested(true)
+                    .refundChannel("WALLET").refundPolicy("PARTIAL_50_WITHIN_2H").build();
+            assertEquals("COMPLETED", refunds.handleBookingCancellationRefund(event).getStatus());
+        }
+        var batch = settlement.runDailySettlement(day.plusDays(1)).getFirst();
+        equal(refundPercent == 0 ? "1600" : "800", batch.getFeeAmount());
+        equal(refundPercent == 0 ? "14400" : "7200", batch.getNetAmount());
+        assertEquals(1, batch.getPaymentCount());
+        assertEquals(day, batch.getBusinessDate());
+        settlement.runDailySettlement(day.plusDays(1));
+        var duplicate = settlement.runDailySettlement(day).getFirst();
+        equal(batch.getNetAmount().toPlainString(), duplicate.getNetAmount());
+        assertEquals(1, duplicate.getPaymentCount());
+        settlement.runDailySettlement(day.plusDays(2));
+        assertEquals(1, journals.findByPaymentId(pending.getId()).stream()
+                .filter(j -> "SETTLEMENT_CREDIT".equals(j.getJournalType())).count());
+        var row = statements.read(5L, 0, 100).getContent().stream()
+                .filter(s -> s.paymentId().equals(pending.getId())).findFirst().orElseThrow();
+        assertTrue(row.reconciled());
+        equal("0", row.escrowRemaining());
+    }
+
+    @Test void rerunningCompletedBatchAddsOnlyNewlyCapturedPayment() {
+        long driver = 5200L;
+        var day = java.time.LocalDate.of(2020, 6, 1);
+        seed(driver, 52000L, "32000");
+        quote(52001L, driver, "16000");
+        when(booking.confirmWallet(any())).thenReturn(true);
+        var first = service.pay(driver, 52001L);
+        jdbc.update("UPDATE payments SET created_at=? WHERE id=?", day.atTime(12, 0), first.getId());
+        quote(52002L, driver, "16000");
+        doThrow(new RuntimeException("response lost")).when(booking).confirmWallet(any());
+        var second = service.pay(driver, 52002L);
+        jdbc.update("UPDATE payments SET created_at=? WHERE id=?", day.atTime(23, 59), second.getId());
+        assertEquals(1, settlement.runDailySettlement(day).getFirst().getPaymentCount());
+        doReturn(true).when(booking).confirmWallet(any());
+        service.recover(second.getId());
+        var batch = settlement.runDailySettlement(day).getFirst();
+        assertEquals(2, batch.getPaymentCount());
+        equal("32000", batch.getGrossAmount());
+        equal("3200", batch.getFeeAmount());
+        equal("28800", batch.getNetAmount());
+        assertEquals(2, settlement.runDailySettlement(day).getFirst().getPaymentCount());
+        assertEquals(1, journals.findByPaymentId(second.getId()).stream()
+                .filter(j -> "SETTLEMENT_CREDIT".equals(j.getJournalType())).count());
+    }
 
     @BeforeEach void schema() {
         jdbc.execute("CREATE TABLE IF NOT EXISTS driver_wallets(driver_id BIGINT PRIMARY KEY, available_amount DECIMAL(15,2) DEFAULT 0 NOT NULL CHECK(available_amount>=0), held_amount DECIMAL(15,2) DEFAULT 0 NOT NULL CHECK(held_amount>=0))");

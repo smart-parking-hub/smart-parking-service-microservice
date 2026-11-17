@@ -73,3 +73,9 @@ sequenceDiagram
 ## SP-PAY-01 wallet extension (2026-11-17)
 
 The six accounts and bank-refund sequence above describe the retained merchant/manual-bank flow. Driver refunds can now opt into a separately posted wallet liability. Driver wallet reserve/capture/release, immutable refund channels, durable booking decision receipts, deferred refunds and conservation-based deposit statements are specified in [ADR 0009](../adr/0009-driver-refund-wallet.md). Wallet funds are not fresh gateway cash. Post-settlement reversals use original journal rates; remaining escrow is used before merchant funds. Backend statement APIs are live journal views; historical settlement batches remain dated snapshots, not a recomputed refund report.
+
+### Capture muộn và quyết toán bù (2026-11-18)
+
+Job vẫn lấy giao dịch SUCCESS của ngày đang xử lý và bổ sung cọc WALLET SUCCESS ngày cũ chưa có SETTLEMENT_CREDIT. Backlog chỉ áp dụng cọc ví, không tự backfill toàn bộ PayOS lịch sử. Tiền giữ lại sau hoàn được quyết toán vào batch **ngày tạo gốc**; response job có thể gồm batch ngày cũ được bổ sung. Batch COMPLETED được cộng phần journal mới, không ghi lại tiền hoặc cộng lại tổng cho journal đã có. Tổng batch là snapshot quyết toán gốc, không tính lại theo khoản hoàn phát sinh sau đó; bảng kê deposit mới là nơi xem phân bổ ròng hiện tại.
+
+Khóa ngày theo thứ tự tăng trong payment_attempt_groups, tiếp theo khóa nhóm booking/payment theo thứ tự ổn định, cuối cùng xử lý merchant theo thứ tự tăng. Journal được kiểm tra sau khi lấy khóa, nên hai lần chạy ngày gốc/ngày chạy bù không ghi tiền hoặc tổng batch hai lần. Không đổi schema hoặc sửa journal cũ. Kiểm thử H2/JPA có hai worker đồng thời; kiểm chứng trên MySQL vẫn là một bước triển khai riêng.

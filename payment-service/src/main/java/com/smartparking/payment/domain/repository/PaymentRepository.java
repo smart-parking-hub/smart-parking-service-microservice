@@ -67,6 +67,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
+    @Query("SELECT p FROM Payment p WHERE p.gateway = 'WALLET' AND p.paymentType = 'DEPOSIT' " +
+           "AND p.status = 'SUCCESS' AND p.merchantId IS NOT NULL AND p.createdAt < :before " +
+           "AND NOT EXISTS (SELECT j.id FROM LedgerJournal j WHERE j.paymentId = p.id " +
+           "AND j.journalType = 'SETTLEMENT_CREDIT') ORDER BY p.id ASC")
+    List<Payment> findUnsettledWalletDepositsBefore(@Param("before") LocalDateTime before);
+
+    Optional<Payment> findFirstByDriverIdAndBookingIdAndGatewayOrderByIdDesc(
+            Long driverId, Long bookingId, com.smartparking.common.enums.PaymentGatewayEnum gateway);
+
     List<Payment> findByMerchantIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long merchantId,
             PaymentStatusEnum status,

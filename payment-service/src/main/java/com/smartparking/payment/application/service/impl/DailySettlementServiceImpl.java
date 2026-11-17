@@ -22,15 +22,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class DailySettlementServiceImpl implements DailySettlementService {
+
+    private record BatchKey(Long merchantId, LocalDate businessDate) {}
 
     public static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -53,39 +55,46 @@ public class DailySettlementServiceImpl implements DailySettlementService {
         LocalDateTime windowStart = targetDate.atStartOfDay();
         LocalDateTime windowEnd = targetDate.plusDays(1).atStartOfDay();
 
-        List<Payment> payments = paymentRepository.findSuccessfulPaymentsInWindow(windowStart, windowEnd);
-        if (payments == null || payments.isEmpty()) {
+        List<Payment> payments = new ArrayList<>(paymentRepository.findSuccessfulPaymentsInWindow(windowStart, windowEnd));
+        payments.addAll(paymentRepository.findUnsettledWalletDepositsBefore(windowStart));
+        if (payments.isEmpty()) {
             log.info("No successful payments found for daily settlement on {}", targetDate);
             return settlementBatchRepository.findByBusinessDate(targetDate);
         }
 
-        // Acquire groups in stable order before any merchant wallet lock, fencing refunds/capture.
-        if (attemptGuard != null) payments.stream().sorted(java.util.Comparator.comparing(Payment::getBookingId).thenComparing(Payment::getId))
-                .forEach(p -> attemptGuard.lock(p.getBookingId(), p.getPaymentType()));
-        Map<Long, List<Payment>> byMerchant = new LinkedHashMap<>();
+        // Lock all affected dates before payment groups and merchant wallets. Backlog belongs to
+        // its original date, so a later rerun cannot count one journal in two daily batches.
+        if (attemptGuard != null) {
+            payments.stream().map(p -> businessDate(p, targetDate)).distinct().sorted()
+                    .forEach(attemptGuard::lockSettlementDate);
+            payments.stream().sorted(java.util.Comparator.comparing(Payment::getBookingId).thenComparing(Payment::getId))
+                    .forEach(p -> attemptGuard.lock(p.getBookingId(), p.getPaymentType()));
+        }
+        Map<BatchKey, List<Payment>> byMerchant = new TreeMap<>(java.util.Comparator
+                .comparing(BatchKey::merchantId).thenComparing(BatchKey::businessDate));
         for (Payment p : payments) {
             if (p.getMerchantId() != null) {
-                byMerchant.computeIfAbsent(p.getMerchantId(), k -> new ArrayList<>()).add(p);
+                var key = new BatchKey(p.getMerchantId(), businessDate(p, targetDate));
+                byMerchant.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
             }
         }
 
         List<SettlementBatch> results = new ArrayList<>();
-        for (Map.Entry<Long, List<Payment>> entry : byMerchant.entrySet()) {
-            Long merchantId = entry.getKey();
+        for (Map.Entry<BatchKey, List<Payment>> entry : byMerchant.entrySet()) {
+            Long merchantId = entry.getKey().merchantId();
+            LocalDate settlementDate = entry.getKey().businessDate();
             Optional<SettlementBatch> existingBatch =
-                    settlementBatchRepository.findByBusinessDateAndMerchantId(targetDate, merchantId);
-            if (existingBatch.isPresent() && "COMPLETED".equals(existingBatch.get().getStatus())) {
-                log.info("Daily settlement batch already completed for date={} merchant={}", targetDate, merchantId);
-                results.add(existingBatch.get());
-                continue;
-            }
-
-            BigDecimal totalGross = BigDecimal.ZERO;
-            BigDecimal totalFee = BigDecimal.ZERO;
-            BigDecimal totalNet = BigDecimal.ZERO;
+                    settlementBatchRepository.findByBusinessDateAndMerchantId(settlementDate, merchantId);
+            boolean completedBatch = existingBatch.isPresent() && "COMPLETED".equals(existingBatch.get().getStatus());
+            // A completed batch can receive a delta for a newly captured payment. Existing journals
+            // remain immutable and must not be added to the batch twice.
+            BigDecimal totalGross = completedBatch ? existingBatch.get().getGrossAmount() : BigDecimal.ZERO;
+            BigDecimal totalFee = completedBatch ? existingBatch.get().getFeeAmount() : BigDecimal.ZERO;
+            BigDecimal totalNet = completedBatch ? existingBatch.get().getNetAmount() : BigDecimal.ZERO;
             BigDecimal feePercent = new BigDecimal("10.00");
-            int settledCount = 0;
-            Long lastJournalId = null;
+            int settledCount = completedBatch ? existingBatch.get().getPaymentCount() : 0;
+            Long lastJournalId = completedBatch ? existingBatch.get().getJournalId() : null;
+            int addedCount = 0;
 
             for (Payment payment : entry.getValue()) {
                 BigDecimal settleableGross = computeSettleableGross(payment);
@@ -97,6 +106,10 @@ public class DailySettlementServiceImpl implements DailySettlementService {
                 Optional<LedgerJournal> existingJournal = ledgerJournalRepository.findByJournalKey(journalKey);
                 SettlementSplit split;
                 if (existingJournal.isPresent()) {
+                    // A concurrent run may have settled this payment while we waited for locks.
+                    if (completedBatch) {
+                        continue;
+                    }
                     var journal = existingJournal.get();
                     BigDecimal recordedNet = journal.getPostings().stream()
                             .filter(p -> p.getAccountCode() == com.smartparking.payment.domain.model.LedgerAccountCode.MERCHANT_PAYABLE && p.getDirection() == com.smartparking.payment.domain.model.PostingDirection.CREDIT)
@@ -112,7 +125,7 @@ public class DailySettlementServiceImpl implements DailySettlementService {
                             payment.getBookingId(),
                             payment,
                             settleableGross,
-                            "Quyết toán doanh thu ngày " + targetDate + " cho giao dịch #" + payment.getId()
+                            "Quyết toán doanh thu ngày " + settlementDate + " cho giao dịch #" + payment.getId()
                     );
                     lastJournalId = ledgerJournalRepository.findByJournalKey(journalKey)
                             .map(LedgerJournal::getId)
@@ -124,12 +137,18 @@ public class DailySettlementServiceImpl implements DailySettlementService {
                 totalNet = totalNet.add(split.getNetAmount());
                 feePercent = split.getFeePercent();
                 settledCount++;
+                addedCount++;
             }
 
-            String batchKey = "SETTLEMENT:" + targetDate + ":MERCHANT:" + merchantId;
+            if (completedBatch && addedCount == 0) {
+                results.add(existingBatch.get());
+                continue;
+            }
+
+            String batchKey = "SETTLEMENT:" + settlementDate + ":MERCHANT:" + merchantId;
             SettlementBatch batch = existingBatch.orElseGet(() -> SettlementBatch.builder()
                     .batchKey(batchKey)
-                    .businessDate(targetDate)
+                    .businessDate(settlementDate)
                     .merchantId(merchantId)
                     .build());
 
@@ -147,13 +166,17 @@ public class DailySettlementServiceImpl implements DailySettlementService {
                 log.info("Completed daily settlement batch {} for merchant {}: gross={} fee={} net={} count={}",
                         batchKey, merchantId, totalGross, totalFee, totalNet, settledCount);
             } catch (DataIntegrityViolationException duplicateEx) {
-                log.info("Concurrent daily settlement batch detected for date={} merchant={}", targetDate, merchantId);
-                settlementBatchRepository.findByBusinessDateAndMerchantId(targetDate, merchantId)
+                log.info("Concurrent daily settlement batch detected for date={} merchant={}", settlementDate, merchantId);
+                settlementBatchRepository.findByBusinessDateAndMerchantId(settlementDate, merchantId)
                         .ifPresent(results::add);
             }
         }
 
         return results;
+    }
+
+    private LocalDate businessDate(Payment payment, LocalDate fallback) {
+        return payment.getCreatedAt() == null ? fallback : payment.getCreatedAt().toLocalDate();
     }
 
     private BigDecimal computeSettleableGross(Payment payment) {
