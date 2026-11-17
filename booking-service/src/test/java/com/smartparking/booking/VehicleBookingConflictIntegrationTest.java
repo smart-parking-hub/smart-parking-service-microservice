@@ -44,6 +44,7 @@ import static org.mockito.Mockito.*;
 /** The vehicle schedule invariant also applies when optional unpaid-hold limits are disabled. */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:vehicle_schedule_it;DB_CLOSE_DELAY=-1;MODE=MySQL;LOCK_TIMEOUT=15000",
+        "spring.datasource.hikari.connection-init-sql=SET TIME ZONE 'UTC'",
         "spring.kafka.listener.auto-startup=false", "app.booking.hold-policy.enabled=false"
 })
 class VehicleBookingConflictIntegrationTest {

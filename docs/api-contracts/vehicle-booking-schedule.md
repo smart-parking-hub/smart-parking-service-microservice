@@ -47,3 +47,14 @@ Dữ liệu chỉ đọc từ database booking-service. Không đổi DTO, endpo
 Thay đổi chặn các yêu cầu mới; không sửa booking lịch sử hay tiền ví. Khóa theo phương tiện dùng chung thứ tự với khóa hạn mức hiện tại. Nếu cần rollback, bỏ phần kiểm tra mới trong `BookingServiceImpl` và `HoldPolicyStore.hasScheduleConflict`; không có migration hoặc dữ liệu cần khôi phục. Chưa triển khai/restart dịch vụ đang chạy.
 
 Host UTC được kiểm chứng bằng JAVA_TOOL_OPTIONS=-Duser.timezone=UTC. Booking khởi tạo business timezone trước datasource/Hibernate để JPA và JDBC so sánh cùng giá trị wall-clock. Xem review PR để đối chiếu 9 lỗi trước sửa và kết quả sau sửa.
+
+
+## Kiểm chứng bổ sung sau CI: binding thời gian giữa Hibernate và JDBC
+
+Commit đổi thứ tự khởi tạo timezone đơn thuần đã đạt local nhưng CI vẫn lỗi 10 ca, gồm test round-trip mới. Vì vậy, kết quả local đó không đủ để kết luận lỗi đã được xử lý hoàn toàn.
+
+Hibernate 6.5.3 mặc định có thể chuyển LocalDateTime qua java.sql.Timestamp, phụ thuộc timezone của phiên database. Booking bật `hibernate.type.java_time_use_direct_jdbc` qua HibernatePropertiesCustomizer để JDBC 4.2 bind/read giá trị LocalDateTime trực tiếp. Setting đã được xác minh trong Hibernate runtime đang dùng; không thêm dependency hoặc đổi schema.
+
+Fixture lịch xe còn ép `SET TIME ZONE 'UTC'` trên mọi Hikari connection để không phụ thuộc timezone đã được H2 cache từ một test khác. Giữ nguyên assertion đối chiếu JPA → JDBC và các ca đồng thời/biên lịch.
+
+Sau sửa: toàn Booking Service với JVM UTC và fixture DB session UTC có **201 ca: 197 đạt, 4 bỏ qua, 0 lỗi** (`pr-vehicle-direct-jdbc.log`). Không sửa dữ liệu lịch sử, không thay đổi giá/HTTP contract, không deploy. Kết quả CI cuối cùng trên SHA mới được ghi trong Post-push review của PR.
