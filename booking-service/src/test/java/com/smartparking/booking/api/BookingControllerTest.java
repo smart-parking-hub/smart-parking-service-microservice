@@ -60,10 +60,23 @@ class BookingControllerTest {
     @DisplayName("getMyBookings returns paginated bookings")
     void testGetMyBookings() {
         PageResponse<BookingDto> page = new PageResponse<>(new PageImpl<>(List.of(BookingDto.builder().id(1L).build())));
-        when(bookingService.getMyBookings(eq(100L), any())).thenReturn(page);
+        when(bookingService.getMyBookings(eq(100L), any(), any(), any(), any(), any())).thenReturn(page);
 
         ResponseEntity<ApiResponse<PageResponse<BookingDto>>> response =
-                bookingController.getMyBookings(user, PageRequest.of(0, 20));
+                bookingController.getMyBookings(user, null, null, null, null, PageRequest.of(0, 20));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().getData().getContent().size());
+    }
+
+    @Test
+    @DisplayName("getMyBookings with filters returns filtered bookings")
+    void testGetMyBookingsWithFilters() {
+        PageResponse<BookingDto> page = new PageResponse<>(new PageImpl<>(List.of(BookingDto.builder().id(1L).bookingCode("BK-01").build())));
+        when(bookingService.getMyBookings(eq(100L), eq("BK-01"), any(), any(), any(), any())).thenReturn(page);
+
+        ResponseEntity<ApiResponse<PageResponse<BookingDto>>> response =
+                bookingController.getMyBookings(user, "BK-01", null, null, null, PageRequest.of(0, 20));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().getData().getContent().size());

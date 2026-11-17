@@ -9,7 +9,10 @@ import org.springframework.data.domain.Pageable;
 
 public interface BookingService {
     BookingDto createBooking(Long driverUserId, CreateBookingRequest request);
-    PageResponse<BookingDto> getMyBookings(Long driverUserId, Pageable pageable);
+    PageResponse<BookingDto> getMyBookings(Long driverUserId, String search, com.smartparking.common.enums.BookingStatusEnum status, java.time.LocalDateTime fromTime, java.time.LocalDateTime toTime, Pageable pageable);
+    default PageResponse<BookingDto> getMyBookings(Long driverUserId, Pageable pageable) {
+        return getMyBookings(driverUserId, null, null, null, null, pageable);
+    }
     default PageResponse<BookingDto> getMerchantBookings(Long merchantUserId, Pageable pageable) {
         return getMerchantBookings(merchantUserId, null, pageable);
     }

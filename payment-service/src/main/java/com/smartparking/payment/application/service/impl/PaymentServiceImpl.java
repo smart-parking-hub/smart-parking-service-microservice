@@ -343,9 +343,11 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PaymentDto> getMyPayments(Long driverUserId, Pageable pageable) {
-        Page<PaymentDto> page = paymentRepository.findByDriverId(driverUserId, pageable)
-                .map(PaymentDto::fromEntity);
+    public PageResponse<PaymentDto> getMyPayments(Long driverUserId, Long bookingId, Pageable pageable) {
+        Page<Payment> payments = bookingId == null
+                ? paymentRepository.findByDriverId(driverUserId, pageable)
+                : paymentRepository.findByDriverIdAndBookingId(driverUserId, bookingId, pageable);
+        Page<PaymentDto> page = payments.map(PaymentDto::fromEntity);
         if (refundRequests != null && !page.isEmpty()) {
             var byPayment = refundRequests.findByPaymentIdIn(page.getContent().stream().map(PaymentDto::getId).toList()).stream()
                     .collect(java.util.stream.Collectors.toMap(com.smartparking.payment.domain.model.RefundRequest::getPaymentId, r -> r));

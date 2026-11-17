@@ -89,9 +89,20 @@ class PaymentControllerTest {
     @DisplayName("getMyPayments returns paginated payments")
     void testGetMyPayments() {
         PageResponse<PaymentDto> page = new PageResponse<>(new PageImpl<>(Collections.emptyList()));
-        when(paymentService.getMyPayments(eq(100L), any())).thenReturn(page);
+        when(paymentService.getMyPayments(eq(100L), any(), any())).thenReturn(page);
 
-        ResponseEntity<ApiResponse<PageResponse<PaymentDto>>> res = controller.getMyPayments(user, PageRequest.of(0, 10));
+        ResponseEntity<ApiResponse<PageResponse<PaymentDto>>> res = controller.getMyPayments(user, null, PageRequest.of(0, 10));
+
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("getMyPayments with bookingId returns filtered payments")
+    void testGetMyPaymentsWithBookingId() {
+        PageResponse<PaymentDto> page = new PageResponse<>(new PageImpl<>(Collections.emptyList()));
+        when(paymentService.getMyPayments(eq(100L), eq(123L), any())).thenReturn(page);
+
+        ResponseEntity<ApiResponse<PageResponse<PaymentDto>>> res = controller.getMyPayments(user, 123L, PageRequest.of(0, 10));
 
         assertEquals(HttpStatus.OK, res.getStatusCode());
     }
