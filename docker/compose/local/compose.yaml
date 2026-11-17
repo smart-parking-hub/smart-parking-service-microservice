@@ -1,3 +1,5 @@
+name: docker
+
 # Base compose file defining standard microservice containers and network
 services:
   api-gateway:
@@ -17,6 +19,9 @@ services:
       AI_SERVICE_URL: http://ai-service:8086
       SPRING_DATA_REDIS_HOST: redis
       EUREKA_CLIENT_ENABLED: "false"
+      APP_SECURITY_API_KEY: ${APP_SECURITY_API_KEY:-SP_APP_KEY_2026_xM99qP2!}
+      APP_SECURITY_API_KEY_ENABLED: ${APP_SECURITY_API_KEY_ENABLED:-true}
+      JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
     networks:
       - smart-parking-net
 
@@ -29,8 +34,10 @@ services:
     ports:
       - "8081:8081"
     environment:
-      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
       PORT: 8081
       EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
@@ -48,7 +55,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       BOOKING_SERVICE_URL: http://booking-service:8083
       PORT: 8082
@@ -69,7 +76,7 @@ services:
     ports:
       - "8083:8083"
     environment:
-      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       IDENTITY_SERVICE_URL: http://identity-service:8081
       PORT: 8083
@@ -93,10 +100,10 @@ services:
     ports:
       - "8084:8084"
     environment:
-      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       BOOKING_SERVICE_URL: http://booking-service:8083
-      APP_DEMO_PAYMENT_ENABLED: ${APP_DEMO_PAYMENT_ENABLED:-false}
+      APP_DEMO_PAYMENT_ENABLED: ${APP_DEMO_PAYMENT_ENABLED:-true}
       PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:-http://localhost:3000/payment/return}
       PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:-http://localhost:3000/payment/cancel}
       PORT: 8084
@@ -123,7 +130,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
@@ -151,7 +158,7 @@ services:
     environment:
       PORT: 8086
       PARKING_LOT_SERVICE_URL: http://parking-lot-service:8082
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-demo-key}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
     networks:
       - smart-parking-net
