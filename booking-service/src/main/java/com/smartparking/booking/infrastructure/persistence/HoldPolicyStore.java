@@ -35,6 +35,19 @@ public class HoldPolicyStore {
         return jdbc.query("SELECT id,driver_id FROM bookings WHERE driver_id=? AND status='PENDING_PAYMENT' ORDER BY id FOR UPDATE",
                 (row,index) -> new ActiveBooking(row.getLong(1),row.getLong(2)), driverId);
     }
+    /** Read under the VEHICLE key lock; adjacent [start, end) reservations do not overlap. */
+    public boolean hasScheduleConflict(Long vehicleId, LocalDateTime start, LocalDateTime end, LocalDateTime now) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM bookings WHERE vehicle_id=? AND (
+                    (status IN ('PENDING_PAYMENT','PENDING_CHECKIN')
+                        AND expected_check_in_time < ? AND expected_check_out_time > ?)
+                    OR (status IN ('PARKING','OVERTIME','AWAITING_FINAL_PAYMENT')
+                        AND COALESCE(check_in_time,expected_check_in_time) < ?
+                        AND (expected_check_out_time IS NULL OR expected_check_out_time > ?
+                            OR expected_check_out_time <= ?))
+                ))
+                """, Boolean.class, vehicleId, end, start, end, start, now));
+    }
     public Optional<RateWindow> rateWindow(Long driverId) {
         return jdbc.query("SELECT window_started_at,request_count FROM booking_hold_rate_windows WHERE driver_id=? FOR UPDATE",
                 (row,index) -> new RateWindow(row.getObject(1, LocalDateTime.class),row.getInt(2)),driverId).stream().findFirst();

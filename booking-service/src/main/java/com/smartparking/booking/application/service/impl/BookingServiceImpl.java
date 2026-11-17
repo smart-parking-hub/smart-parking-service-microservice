@@ -73,6 +73,9 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.BAD_REQUEST, "Loại xe không khớp phương tiện đã đăng ký");
         return creationTransaction.run(() -> {
         holdPolicy.lock(driverUserId, request.getVehicleId());
+        // The schedule invariant remains mandatory when optional unpaid-hold limits are disabled.
+        // Reusing this key also serializes creates across different accounts and parking lots.
+        holdPolicyStore.lock("VEHICLE:" + request.getVehicleId());
         if (requestKey != null) {
             var concurrent = bookingRepository.findByRequestKeyForUpdate(requestKey);
             if (concurrent.isPresent()) {
@@ -89,6 +92,11 @@ public class BookingServiceImpl implements BookingService {
         }
         holdPolicy.check(driverUserId, request.getVehicleId(), request.getParkingLotId(),
                 LocalDateTime.now(BUSINESS_ZONE));
+        if (holdPolicyStore.hasScheduleConflict(request.getVehicleId(), request.getExpectedCheckInTime(),
+                request.getExpectedCheckOutTime(), LocalDateTime.now(BUSINESS_ZONE))) {
+            throw new AppException(ErrorCode.CONFLICT,
+                    "Xe này đã có booking trùng thời gian. Vui lòng chọn thời gian khác hoặc hoàn tất lượt đỗ hiện tại.");
+        }
         String bookingCode = "BK" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
         Booking booking = Booking.builder()
