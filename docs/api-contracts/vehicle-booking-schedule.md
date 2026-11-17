@@ -40,8 +40,10 @@ Dữ liệu chỉ đọc từ database booking-service. Không đổi DTO, endpo
 | Gửi lại cùng requestId hợp lệ | Trả booking cũ, không giữ chỗ lần nữa |
 | Bốn yêu cầu đồng thời cùng xe, tắt giới hạn giữ chỗ | Một booking, ba xung đột |
 
-`VehicleBookingConflictIntegrationTest`: 24 tình huống, H2 MySQL mode. Trước sửa: 15 lỗi tái hiện; sau sửa: đạt. Khi tách PR độc lập từ main, toàn bộ `:booking-service:test`: 200 tình huống, 196 đạt, 0 lỗi, 4 bỏ qua theo cấu hình môi trường. Kết quả 211 ca của lượt triển khai trước còn gồm thay đổi checkout được tách sang PR riêng. Chưa chạy các ca xung đột lịch mới trên MySQL thật.
+`VehicleBookingConflictIntegrationTest`: 25 tình huống, H2 MySQL mode (gồm round-trip JPA/JDBC). Trước sửa: 15 lỗi tái hiện; sau sửa: đạt. Khi tách PR độc lập từ main, toàn bộ `:booking-service:test`: 201 tình huống, 197 đạt, 0 lỗi, 4 bỏ qua theo cấu hình môi trường. Kết quả 211 ca của lượt triển khai trước còn gồm thay đổi checkout được tách sang PR riêng. Chưa chạy các ca xung đột lịch mới trên MySQL thật.
 
 ## Rủi ro và khôi phục
 
 Thay đổi chặn các yêu cầu mới; không sửa booking lịch sử hay tiền ví. Khóa theo phương tiện dùng chung thứ tự với khóa hạn mức hiện tại. Nếu cần rollback, bỏ phần kiểm tra mới trong `BookingServiceImpl` và `HoldPolicyStore.hasScheduleConflict`; không có migration hoặc dữ liệu cần khôi phục. Chưa triển khai/restart dịch vụ đang chạy.
+
+Host UTC được kiểm chứng bằng JAVA_TOOL_OPTIONS=-Duser.timezone=UTC. Booking khởi tạo business timezone trước datasource/Hibernate để JPA và JDBC so sánh cùng giá trị wall-clock. Xem review PR để đối chiếu 9 lỗi trước sửa và kết quả sau sửa.

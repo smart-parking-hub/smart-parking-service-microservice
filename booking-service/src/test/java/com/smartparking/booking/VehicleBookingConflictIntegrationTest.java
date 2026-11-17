@@ -90,6 +90,14 @@ class VehicleBookingConflictIntegrationTest {
         assertEquals(1, bookings.count());
     }
 
+    @Test void jpaScheduleRetainsBusinessWallClockWhenReadThroughJdbc() {
+        var booking = existing(BookingStatusEnum.PENDING_CHECKIN, 2, 4);
+        assertEquals(now.plusHours(2), jdbc.queryForObject(
+                "SELECT expected_check_in_time FROM bookings WHERE id=?", LocalDateTime.class, booking.getId()));
+        assertEquals(now.plusHours(4), jdbc.queryForObject(
+                "SELECT expected_check_out_time FROM bookings WHERE id=?", LocalDateTime.class, booking.getId()));
+    }
+
     @ParameterizedTest
     @EnumSource(value = BookingStatusEnum.class, names = {
             "PENDING_PAYMENT", "PENDING_CHECKIN", "PARKING", "OVERTIME", "AWAITING_FINAL_PAYMENT"

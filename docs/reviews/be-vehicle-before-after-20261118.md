@@ -19,7 +19,7 @@ Owner: SmartParkingHub. Phạm vi: `fix/vehicle-booking-conflicts`; base `d004fa
 
 ## Kiểm chứng
 
-- booking-service: **196 đạt, 4 bỏ qua theo môi trường, 0 lỗi** (200 ca trong JUnit).
+- booking-service: **197 đạt, 4 bỏ qua theo môi trường, 0 lỗi** (201 ca trong JUnit).
 - JDK 21; Gradle offline, no-daemon; Kafka listener tắt và broker test trỏ 127.0.0.1:1. Không dùng DB dự án hoặc broker thật.
 
 ## Giới hạn và rollout
@@ -27,3 +27,12 @@ Owner: SmartParkingHub. Phạm vi: `fix/vehicle-booking-conflicts`; base `d004fa
 Không đổi schema, DTO, event hoặc tiền ví. Test đồng thời dùng H2 MySQL mode; chưa xác minh các ca xung đột lịch mới trên MySQL thật trong lượt này. Rollback bằng hoàn tác hai thay đổi logic, không sửa dữ liệu lịch sử.
 
 Không merge/deploy hoặc chuyển tiền thật trong lượt publish này. Working tree nguồn được giữ nguyên; bản sửa review của vé nằm trên nhánh PR riêng.
+
+
+## Sửa blocker sau push: host UTC
+
+CI đầu trên b6e5a09: 9/24 ca xung đột lịch lỗi. Đã tái hiện cùng 9 lỗi bằng `JAVA_TOOL_OPTIONS=-Duser.timezone=UTC` trước sửa (`pr-vehicle-utc-before.log`). Booking đổi default timezone bằng @PostConstruct sau khi persistence có thể đã khởi tạo; dữ liệu Hibernate và so sánh JDBC bị lệch trên host UTC.
+
+Chuyển sang static BeanFactoryPostProcessor trước datasource/Hibernate, theo mẫu Payment Service hiện có. Bổ sung test JPA → JDBC giữ nguyên expected check-in/check-out business wall-clock. Không sửa công thức phí, schema hoặc HTTP contract.
+
+Sau sửa: toàn booking-service dưới UTC có **201 ca: 197 đạt, 4 bỏ qua, 0 lỗi**; nhóm lịch xe có 25 ca. Log `pr-vehicle-utc-after.log`. Đây là thay đổi thứ tự khởi tạo timezone đã có, không phải thêm múi giờ nghiệp vụ mới. Commit sửa nằm trên cùng PR #57; không force push, merge hoặc deploy.
