@@ -17,6 +17,10 @@ import java.util.Optional;
 @Repository
 public interface RefundRequestRepository extends JpaRepository<RefundRequest, Long> {
 
+    List<RefundRequest> findByRefundChannelAndStatusAndIdGreaterThanOrderByIdAsc(String channel, String status, Long id, org.springframework.data.domain.Pageable pageable);
+
+    List<RefundRequest> findByPaymentIdIn(java.util.Collection<Long> paymentIds);
+
     Optional<RefundRequest> findByIdempotencyKey(String idempotencyKey);
 
     Optional<RefundRequest> findByBookingId(Long bookingId);

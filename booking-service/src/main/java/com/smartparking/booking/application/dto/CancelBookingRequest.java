@@ -18,5 +18,6 @@ public class CancelBookingRequest {
 
     private String contactPhone;
     private String preferredResolution;
+    private boolean acceptWalletRefund;
     private String note;
 }

@@ -117,6 +117,7 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .refundPercentage(refundPercentage)
                 .refundRequested(refundAmount.signum() > 0)
                 .refundStatus(refundStatus)
+                .refundChannel(booking.getRefundChannel())
                 .refundPolicy(refundPolicy)
                 .currency("VND")
                 .cancelledAt(cancelledInstant)

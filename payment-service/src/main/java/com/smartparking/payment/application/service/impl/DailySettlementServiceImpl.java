@@ -40,8 +40,11 @@ public class DailySettlementServiceImpl implements DailySettlementService {
     private final RefundRequestRepository refundRequestRepository;
     private final MerchantWalletService merchantWalletService;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
+
     @Override
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public List<SettlementBatch> runDailySettlement(LocalDate businessDate) {
         LocalDate targetDate = businessDate != null
                 ? businessDate
@@ -56,6 +59,9 @@ public class DailySettlementServiceImpl implements DailySettlementService {
             return settlementBatchRepository.findByBusinessDate(targetDate);
         }
 
+        // Acquire groups in stable order before any merchant wallet lock, fencing refunds/capture.
+        if (attemptGuard != null) payments.stream().sorted(java.util.Comparator.comparing(Payment::getBookingId).thenComparing(Payment::getId))
+                .forEach(p -> attemptGuard.lock(p.getBookingId(), p.getPaymentType()));
         Map<Long, List<Payment>> byMerchant = new LinkedHashMap<>();
         for (Payment p : payments) {
             if (p.getMerchantId() != null) {
@@ -91,7 +97,14 @@ public class DailySettlementServiceImpl implements DailySettlementService {
                 Optional<LedgerJournal> existingJournal = ledgerJournalRepository.findByJournalKey(journalKey);
                 SettlementSplit split;
                 if (existingJournal.isPresent()) {
-                    split = merchantWalletService.split(settleableGross);
+                    var journal = existingJournal.get();
+                    BigDecimal recordedNet = journal.getPostings().stream()
+                            .filter(p -> p.getAccountCode() == com.smartparking.payment.domain.model.LedgerAccountCode.MERCHANT_PAYABLE && p.getDirection() == com.smartparking.payment.domain.model.PostingDirection.CREDIT)
+                            .map(com.smartparking.payment.domain.model.LedgerPosting::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal recordedFee = journal.getPostings().stream()
+                            .filter(p -> p.getAccountCode() == com.smartparking.payment.domain.model.LedgerAccountCode.PLATFORM_FEE_REVENUE && p.getDirection() == com.smartparking.payment.domain.model.PostingDirection.CREDIT)
+                            .map(com.smartparking.payment.domain.model.LedgerPosting::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    split = SettlementSplit.builder().grossAmount(recordedNet.add(recordedFee)).feePercent(journal.getFeePercent()).feeAmount(recordedFee).netAmount(recordedNet).build();
                     lastJournalId = existingJournal.get().getId();
                 } else {
                     split = merchantWalletService.creditSettlement(
@@ -150,7 +163,14 @@ public class DailySettlementServiceImpl implements DailySettlementService {
         BigDecimal gross = payment.getAmount();
         if (payment.getBookingId() != null && refundRequestRepository != null) {
             Optional<RefundRequest> refundOpt = refundRequestRepository.findByBookingId(payment.getBookingId());
-            if (refundOpt.isPresent()) {
+            if (refundOpt.isPresent() && refundOpt.get().getPaymentId() == null
+                    && payment.getPaymentType() == com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT
+                    && !"FAILED".equals(refundOpt.get().getStatus()) && !"NONE".equals(refundOpt.get().getStatus())
+                    && refundOpt.get().getRefundAmount() != null && refundOpt.get().getRefundAmount().signum() > 0) {
+                // Unverified refund ownership must keep the deposit in escrow until reconciliation.
+                return BigDecimal.ZERO;
+            }
+            if (refundOpt.isPresent() && java.util.Objects.equals(refundOpt.get().getPaymentId(), payment.getId())) {
                 RefundRequest refund = refundOpt.get();
                 if (!"FAILED".equals(refund.getStatus()) && !"NONE".equals(refund.getStatus())
                         && refund.getRefundAmount() != null && refund.getRefundAmount().signum() > 0) {

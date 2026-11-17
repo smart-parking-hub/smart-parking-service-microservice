@@ -41,3 +41,9 @@ Danh mục tất cả các Domain Event được xuất bản và tiêu thụ tr
 ## 3. Chiến lược Idempotent Consumer & Error Retry
 1. **Deduplication**: Consumer trong `payment-service`, `booking-service` và `notification-service` lưu `eventId` vào bảng `processed_events` (ngoài khóa nghiệp vụ `refund:booking:{bookingId}` hoặc `SETTLE:PAYMENT:{paymentId}`). Nếu `eventId` đã tồn tại, lập tức bỏ qua.
 2. **Dead Letter Queue (DLQ)**: Khi consumer gặp lỗi không thể khắc phục sau 3 lần retry với Exponential Backoff (1s, 2s, 4s), message được gửi vào topic DLQ để đội vận hành kiểm tra thủ công.
+
+## Additive wallet fields — 2026-11-17
+
+BOOKING_CANCELLED adds optional refundChannel (WALLET/BANK_MANUAL). Existing/missing values preserve manual bank processing. PAYMENT_REFUND_UPDATED adds refundChannel alongside the existing refund status/reference fields. Wallet COMPLETED means posted credit to the internal driver liability, not a bank transfer. PAYMENT_COMPLETED may carry paymentMethod=WALLET; existing paymentType=DEPOSIT and booking semantics remain unchanged. Both producers retain transactional outboxes and consumers retain event idempotency.
+
+A cancellation racing wallet capture persists a REQUESTED WALLET refund for recovery; it does not rely only on Kafka retry count. See ADR 0009.

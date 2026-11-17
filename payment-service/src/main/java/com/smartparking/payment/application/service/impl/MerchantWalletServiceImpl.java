@@ -53,6 +53,9 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
     @Autowired(required = false)
     private LedgerPostingRepository ledgerPostingRepository;
 
+    @Autowired(required = false)
+    private com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
+
     @Override
     public SettlementSplit split(BigDecimal grossAmount) {
         BigDecimal effectiveFeePercent = platformFeePercent != null ? platformFeePercent : new BigDecimal("10.0");
@@ -114,6 +117,7 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         if (grossAmount == null || grossAmount.signum() <= 0) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Số tiền quyết toán phải lớn hơn 0");
         }
+        if (attemptGuard != null && payment != null) attemptGuard.lock(bookingId, payment.getPaymentType());
         SettlementSplit split = split(grossAmount);
         Long paymentId = payment != null ? payment.getId() : null;
         String journalKey = buildSettlementJournalKey(merchantId, bookingId, paymentId);
@@ -127,7 +131,8 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
 
         boolean hasEscrow = paymentId != null
                 && ledgerJournalRepository != null
-                && ledgerJournalRepository.existsByJournalKey("ESCROW:PAYMENT:" + paymentId);
+                && (ledgerJournalRepository.existsByJournalKey("ESCROW:PAYMENT:" + paymentId)
+                    || ledgerJournalRepository.existsByJournalKey("WALLET:CAPTURE:" + paymentId));
         LedgerAccountCode debitAccount = hasEscrow
                 ? LedgerAccountCode.CUSTOMER_DEPOSIT_ESCROW
                 : LedgerAccountCode.GATEWAY_CLEARING;
@@ -290,6 +295,22 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         }
     }
 
+    public SettlementSplit refundSplit(Long paymentId, BigDecimal refund) {
+        if (ledgerJournalRepository == null) return split(refund);
+        var original = ledgerJournalRepository.findByJournalKey("SETTLE:PAYMENT:" + paymentId);
+        if (original.isEmpty()) return split(refund);
+        var journal = original.get();
+        BigDecimal gross = journal.getPostings().stream().filter(p -> p.getDirection() == PostingDirection.DEBIT)
+                .map(LedgerPosting::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal fee = journal.getPostings().stream().filter(p -> p.getAccountCode() == LedgerAccountCode.PLATFORM_FEE_REVENUE && p.getDirection() == PostingDirection.CREDIT)
+                .map(LedgerPosting::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (gross.signum() <= 0 || refund.compareTo(gross) > 0) throw new AppException(ErrorCode.BAD_REQUEST, "Khoản hoàn vượt giá trị đã quyết toán");
+        BigDecimal retainedFee = gross.subtract(refund).multiply(journal.getFeePercent()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal reversedFee = fee.subtract(retainedFee).max(BigDecimal.ZERO);
+        return SettlementSplit.builder().grossAmount(refund).feePercent(journal.getFeePercent())
+                .feeAmount(reversedFee).netAmount(refund.subtract(reversedFee)).build();
+    }
+
     @Override
     @Transactional
     public void recordRefundLiability(Long merchantId, Long bookingId, Long paymentId, BigDecimal refundAmount, String idempotencyKey, String note) {
@@ -303,7 +324,12 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
             return;
         }
 
+        if (attemptGuard != null && bookingId != null) attemptGuard.lock(bookingId, com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT);
         BigDecimal scaledRefund = refundAmount.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal escrowPart = ledgerJournalRepository == null ? BigDecimal.ZERO : ledgerJournalRepository.findByPaymentId(paymentId).stream()
+                .flatMap(j -> j.getPostings().stream()).filter(p -> p.getAccountCode() == LedgerAccountCode.CUSTOMER_DEPOSIT_ESCROW)
+                .map(p -> p.getDirection() == PostingDirection.CREDIT ? p.getAmount() : p.getAmount().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add).max(BigDecimal.ZERO).min(scaledRefund);
         boolean alreadySettledToMerchant = paymentId != null
                 && ledgerJournalRepository != null
                 && ledgerJournalRepository.existsByJournalKey("SETTLE:PAYMENT:" + paymentId);
@@ -318,8 +344,9 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                 .description(note)
                 .build();
 
-        if (alreadySettledToMerchant && merchantId != null) {
-            SettlementSplit reversalSplit = split(scaledRefund);
+        if (alreadySettledToMerchant && merchantId != null && escrowPart.compareTo(scaledRefund) < 0) {
+            SettlementSplit reversalSplit = refundSplit(paymentId, scaledRefund.subtract(escrowPart));
+            if (escrowPart.signum() > 0) journal.addPosting(LedgerAccountCode.CUSTOMER_DEPOSIT_ESCROW, merchantId, PostingDirection.DEBIT, escrowPart);
             journal.addPosting(LedgerAccountCode.MERCHANT_PAYABLE, merchantId, PostingDirection.DEBIT, reversalSplit.getNetAmount());
             if (reversalSplit.getFeeAmount().signum() > 0) {
                 journal.addPosting(LedgerAccountCode.PLATFORM_FEE_REVENUE, merchantId, PostingDirection.DEBIT, reversalSplit.getFeeAmount());
@@ -339,7 +366,8 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                     .merchantId(merchantId)
                     .bookingId(bookingId)
                     .entryType(WalletLedgerEntryTypeEnum.ADJUSTMENT)
-                    .grossAmount(scaledRefund)
+                    .grossAmount(reversalSplit.getGrossAmount())
+                    .payment(paymentRepository.getReferenceById(paymentId))
                     .feePercent(reversalSplit.getFeePercent())
                     .feeAmount(reversalSplit.getFeeAmount().negate())
                     .netAmount(reversalSplit.getNetAmount().negate())
@@ -397,6 +425,7 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         }
         LedgerJournal original = ledgerJournalRepository.findById(journalId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy bút toán gốc để đảo"));
+        if (original.getDriverId() != null) throw new AppException(ErrorCode.BAD_REQUEST, "Bút toán ví tài xế phải được xử lý qua luồng hoàn hoặc đối soát ví");
         String reversalKey = "REV:" + original.getJournalKey();
         var existing = ledgerJournalRepository.findByJournalKey(reversalKey);
         if (existing.isPresent()) {

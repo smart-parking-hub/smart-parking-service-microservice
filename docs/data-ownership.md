@@ -1,5 +1,12 @@
 # Data Ownership & Ranh giới Dữ liệu (Database per Service)
 
+## Driver wallet — SP-PAY-01 (2026-11-17)
+
+- Payment V19 owns driver_wallets and driver_wallet_entries; journals/postings add nullable driver_id, payments add wallet_refund, and refund_requests add refund_channel default BANK_MANUAL for historical requests. Driver wallet accounts extend the original six-account chart with DRIVER_WALLET_PAYABLE and DRIVER_WALLET_HOLD. No historical balance is minted.
+- Booking V10 owns wallet_payment_receipts (durable decision per remote paymentId) and bookings.refund_channel. Remote payment IDs are references, not cross-database foreign keys.
+- See [ADR 0009](adr/0009-driver-refund-wallet.md) and [API contract](api-contracts/driver-wallet.md). Source and isolated test verification only; not deployed.
+
+
 ## Bổ sung Admin notifications — SP-S3-UI-16 (2026-11-12)
 
 Owner: SPH; code/schema mới đang chờ kiểm chứng runtime. Các thay đổi dưới đây bổ sung cho bảng catalog hiện có, không chuyển quyền sở hữu dữ liệu:

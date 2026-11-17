@@ -44,6 +44,9 @@ public class LedgerPosting {
     @Column(name = "merchant_id", updatable = false)
     private Long merchantId;
 
+    @Column(name = "driver_id", updatable = false)
+    private Long driverId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false, length = 10)
     private PostingDirection direction;

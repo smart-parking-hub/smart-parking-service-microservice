@@ -18,6 +18,9 @@ public interface LedgerJournalRepository extends JpaRepository<LedgerJournal, Lo
 
     List<LedgerJournal> findByPaymentId(Long paymentId);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "postings")
+    List<LedgerJournal> findByPaymentIdIn(java.util.Collection<Long> paymentIds);
+
     List<LedgerJournal> findByBookingId(Long bookingId);
 }
 

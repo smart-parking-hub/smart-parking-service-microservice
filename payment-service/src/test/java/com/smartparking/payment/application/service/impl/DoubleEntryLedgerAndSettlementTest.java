@@ -208,9 +208,9 @@ class DoubleEntryLedgerAndSettlementTest {
         when(paymentRepository.findSuccessfulPaymentsInWindow(dateBefore.atStartOfDay(), dateBefore.plusDays(1).atStartOfDay()))
                 .thenReturn(List.of(pFullRefundBefore, pHalfRefundBefore));
         when(refundRequestRepository.findByBookingId(701L)).thenReturn(Optional.of(
-                RefundRequest.builder().bookingId(701L).refundAmount(new BigDecimal("100000.00")).status("REQUESTED").build()));
+                RefundRequest.builder().paymentId(601L).bookingId(701L).refundAmount(new BigDecimal("100000.00")).status("REQUESTED").build()));
         when(refundRequestRepository.findByBookingId(702L)).thenReturn(Optional.of(
-                RefundRequest.builder().bookingId(702L).refundAmount(new BigDecimal("50000.00")).status("REQUESTED").build()));
+                RefundRequest.builder().paymentId(602L).bookingId(702L).refundAmount(new BigDecimal("50000.00")).status("REQUESTED").build()));
         when(settlementBatchRepository.findByBusinessDateAndMerchantId(dateBefore, merchantId)).thenReturn(Optional.empty());
         when(settlementBatchRepository.saveAndFlush(any(SettlementBatch.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -330,6 +330,7 @@ class DoubleEntryLedgerAndSettlementTest {
         when(refundRequestRepository.findByBookingId(2002L)).thenReturn(Optional.of(
                 RefundRequest.builder()
                         .bookingId(2002L)
+                        .paymentId(1002L)
                         .refundAmount(new BigDecimal("40000.00"))
                         .status("REQUESTED")
                         .build()
@@ -454,4 +455,18 @@ class DoubleEntryLedgerAndSettlementTest {
         assertEquals(0, new BigDecimal("45000.00").compareTo(wallet.getBalance()),
                 "Duplicate settlement invocation must preserve idempotency and not double-credit wallet");
     }
+    @Test
+    void unverifiedRefundKeepsDepositEscrowAndNeverSubtractsFromFinalPayment() {
+        when(refundRequestRepository.findByBookingId(9901L)).thenReturn(Optional.of(RefundRequest.builder()
+                .bookingId(9901L).refundAmount(new BigDecimal("8000")).status("REQUIRES_RECONCILIATION").build()));
+        Payment deposit=Payment.builder().id(9902L).bookingId(9901L).amount(new BigDecimal("16000"))
+                .paymentType(com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT).build();
+        Payment finalPayment=Payment.builder().id(9903L).bookingId(9901L).amount(new BigDecimal("16000"))
+                .paymentType(com.smartparking.common.enums.PaymentTypeEnum.FINAL_PAYMENT).build();
+        BigDecimal held=ReflectionTestUtils.invokeMethod(dailySettlementService,"computeSettleableGross",deposit);
+        BigDecimal finalGross=ReflectionTestUtils.invokeMethod(dailySettlementService,"computeSettleableGross",finalPayment);
+        assertEquals(0,BigDecimal.ZERO.compareTo(held));
+        assertEquals(0,new BigDecimal("16000").compareTo(finalGross));
+    }
+
 }

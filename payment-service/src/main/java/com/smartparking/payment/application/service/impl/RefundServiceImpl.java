@@ -45,8 +45,17 @@ public class RefundServiceImpl implements RefundService {
     private final MerchantWalletService merchantWalletService;
     private final OutboxPublisherService outboxPublisherService;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartparking.payment.application.service.DriverWalletLedger driverWallet;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartparking.payment.domain.repository.LedgerJournalRepository journals;
+    @org.springframework.beans.factory.annotation.Value("${app.driver-wallet-enabled:true}")
+    private boolean walletEnabled = true;
+
     @Override
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public RefundRequestDto handleBookingCancellationRefund(BookingEvent.BookingCancelledEvent event) {
         if (event == null || event.getBookingId() == null) {
             return null;
@@ -59,6 +68,9 @@ public class RefundServiceImpl implements RefundService {
             return null;
         }
 
+        if (attemptGuard != null) attemptGuard.lock(event.getBookingId(), com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT);
+        boolean walletRequested = "WALLET".equals(event.getRefundChannel());
+        String channel = walletRequested ? "WALLET" : "BANK_MANUAL";
         String idempotencyKey = "refund:booking:" + event.getBookingId();
         Optional<RefundRequest> existing = refundRequestRepository.findByIdempotencyKey(idempotencyKey);
         if (existing.isPresent()) {
@@ -66,9 +78,27 @@ public class RefundServiceImpl implements RefundService {
             return RefundRequestDto.fromEntity(existing.get());
         }
 
-        Optional<Payment> paidPaymentOpt = paymentRepository.findByBookingId(event.getBookingId()).stream()
-                .filter(p -> p.getStatus() == PaymentStatusEnum.SUCCESS)
-                .findFirst();
+        var bookingPayments = paymentRepository.findByBookingId(event.getBookingId());
+        var pendingWallet = bookingPayments.stream().filter(p -> p.getGateway() == com.smartparking.common.enums.PaymentGatewayEnum.WALLET && p.getStatus() == PaymentStatusEnum.PENDING).findFirst();
+        if (pendingWallet.isPresent()) {
+            var pending = pendingWallet.get();
+            if (!java.util.Objects.equals(event.getUserId(), pending.getDriverId()) || !java.util.Objects.equals(event.getMerchantId(), pending.getMerchantId())
+                    || refundAmount.compareTo(pending.getAmount()) > 0)
+                throw new AppException(ErrorCode.BAD_REQUEST, "Yêu cầu hoàn không khớp giao dịch ví đang xử lý");
+            var deferred = refundRequestRepository.save(RefundRequest.builder().idempotencyKey(idempotencyKey)
+                    .bookingId(pending.getBookingId()).paymentId(pending.getId()).driverId(pending.getDriverId()).merchantId(pending.getMerchantId())
+                    .parkingLotId(pending.getParkingLotId()).depositAmount(pending.getAmount()).refundAmount(refundAmount)
+                    .refundPercentage(event.getRefundPercentage()).policyCode(event.getRefundPolicy()).refundChannel("WALLET")
+                    .status(STATUS_REQUESTED).dueAt(LocalDateTime.now(DailySettlementServiceImpl.BUSINESS_ZONE).plusHours(24))
+                    .verificationNote("Chờ xác nhận khoản cọc; tiền hoàn chưa được cộng vào ví").build());
+            outboxPublisherService.publishRefundStatusChanged(deferred);
+            return RefundRequestDto.fromEntity(deferred);
+        }
+        var candidates = bookingPayments.stream().filter(p -> p.getStatus() == PaymentStatusEnum.SUCCESS)
+                .filter(p -> p.getPaymentType() == com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT || (!walletRequested && p.getPaymentType() == null))
+                .filter(p -> event.getUserId() == null || java.util.Objects.equals(event.getUserId(), p.getDriverId()))
+                .filter(p -> event.getMerchantId() == null || java.util.Objects.equals(event.getMerchantId(), p.getMerchantId())).toList();
+        Optional<Payment> paidPaymentOpt = candidates.size() == 1 ? Optional.of(candidates.getFirst()) : Optional.empty();
 
         LocalDateTime now = LocalDateTime.now(DailySettlementServiceImpl.BUSINESS_ZONE);
         LocalDateTime dueAt = now.plusHours(24);
@@ -78,6 +108,7 @@ public class RefundServiceImpl implements RefundService {
         if (paidPaymentOpt.isEmpty()) {
             RefundRequest unverified = RefundRequest.builder()
                     .idempotencyKey(idempotencyKey)
+                    .refundChannel(channel)
                     .bookingId(event.getBookingId())
                     .driverId(event.getUserId() != null ? event.getUserId() : 0L)
                     .merchantId(event.getMerchantId())
@@ -104,6 +135,7 @@ public class RefundServiceImpl implements RefundService {
         if (refundAmount.compareTo(paidPayment.getAmount()) > 0) {
             RefundRequest mismatch = RefundRequest.builder()
                     .idempotencyKey(idempotencyKey)
+                    .refundChannel(channel)
                     .bookingId(event.getBookingId())
                     .paymentId(paidPayment.getId())
                     .driverId(driverId)
@@ -127,6 +159,7 @@ public class RefundServiceImpl implements RefundService {
 
         RefundRequest refundRequest = RefundRequest.builder()
                 .idempotencyKey(idempotencyKey)
+                    .refundChannel(channel)
                 .bookingId(event.getBookingId())
                 .paymentId(paidPayment.getId())
                 .driverId(driverId)
@@ -142,6 +175,15 @@ public class RefundServiceImpl implements RefundService {
                 .dueAt(dueAt)
                 .build();
 
+        boolean toWallet = walletRequested || paidPayment.isWalletRefund();
+        if (toWallet) refundRequest.setRefundChannel("WALLET");
+        if (toWallet && (!walletEnabled || !canFundWalletRefund(paidPayment, refundAmount))) {
+            refundRequest.setStatus(STATUS_REQUIRES_RECONCILIATION);
+            refundRequest.setVerificationNote("Hoàn ví đang tạm dừng hoặc số dư chủ bãi cần được đối soát");
+            var blocked = refundRequestRepository.save(refundRequest);
+            outboxPublisherService.publishRefundStatusChanged(blocked);
+            return RefundRequestDto.fromEntity(blocked);
+        }
         RefundRequest saved = refundRequestRepository.save(refundRequest);
 
         merchantWalletService.recordRefundLiability(
@@ -152,10 +194,67 @@ public class RefundServiceImpl implements RefundService {
                 "REFUND_REQ:BOOKING:" + event.getBookingId(),
                 "Ghi nhận nghĩa vụ hoàn tiền thủ công booking #" + event.getBookingId());
 
+        if (toWallet) completeWalletRefund(saved, paidPayment, now);
         outboxPublisherService.publishRefundStatusChanged(saved);
-        log.info("Created manual refund request {} for booking {} with status={}",
+        log.info("Created refund request {} for booking {} with status={}",
                 saved.getId(), saved.getBookingId(), saved.getStatus());
         return RefundRequestDto.fromEntity(saved);
+    }
+
+    private void completeWalletRefund(RefundRequest saved, Payment payment, LocalDateTime now) {
+        driverWallet.post(saved.getDriverId(), saved.getBookingId(), payment.getId(), "WALLET:REFUND:" + payment.getId(), "REFUND", saved.getRefundAmount(),
+                com.smartparking.payment.domain.model.LedgerAccountCode.REFUND_PAYABLE,
+                com.smartparking.payment.domain.model.LedgerAccountCode.DRIVER_WALLET_PAYABLE, saved.getRefundAmount(), BigDecimal.ZERO);
+        saved.setStatus(STATUS_COMPLETED);
+        saved.setTransactionReference("WALLET-REFUND-" + payment.getId());
+        saved.setVerifiedAt(now);
+        saved.setVerificationNote("Đã ghi có tiền hoàn vào ví tài xế");
+        refundRequestRepository.save(saved);
+        if (saved.getRefundAmount().compareTo(payment.getAmount()) == 0) payment.setStatus(PaymentStatusEnum.REFUNDED);
+        paymentRepository.save(payment);
+    }
+
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public RefundRequestDto retryWalletRefund(Long refundId, Long adminId) {
+        var snapshot = refundRequestRepository.findById(refundId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy yêu cầu hoàn"));
+        attemptGuard.lock(snapshot.getBookingId(), com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT);
+        var refund = refundRequestRepository.findByIdForUpdate(refundId).orElseThrow();
+        if (!"WALLET".equals(refund.getRefundChannel())) throw new AppException(ErrorCode.BAD_REQUEST, "Yêu cầu này thuộc kênh ngân hàng");
+        if (STATUS_COMPLETED.equals(refund.getStatus())) return RefundRequestDto.fromEntity(refund);
+        if (refund.getPaymentId() == null) throw new AppException(ErrorCode.BAD_REQUEST, "Chưa xác minh được giao dịch cọc gốc");
+        var payment = paymentRepository.findByIdForUpdate(refund.getPaymentId()).orElseThrow();
+        if (payment.getStatus() != PaymentStatusEnum.SUCCESS || payment.getPaymentType() != com.smartparking.common.enums.PaymentTypeEnum.DEPOSIT
+                || !java.util.Objects.equals(payment.getDriverId(), refund.getDriverId()) || !java.util.Objects.equals(payment.getMerchantId(), refund.getMerchantId())
+                || refund.getRefundAmount().signum() <= 0 || refund.getRefundAmount().compareTo(payment.getAmount()) > 0)
+            throw new AppException(ErrorCode.BAD_REQUEST, "Dữ liệu hoàn không khớp giao dịch cọc");
+        if (!walletEnabled || !canFundWalletRefund(payment, refund.getRefundAmount()))
+            throw new AppException(ErrorCode.CONFLICT, "Chưa đủ điều kiện hoàn ví; cần đối soát số dư chủ bãi");
+        merchantWalletService.recordRefundLiability(refund.getMerchantId(), refund.getBookingId(), payment.getId(), refund.getRefundAmount(),
+                "REFUND_REQ:BOOKING:" + refund.getBookingId(), "Đối soát hoàn ví");
+        refund.setVerifiedBy(adminId);
+        completeWalletRefund(refund, payment, LocalDateTime.now(DailySettlementServiceImpl.BUSINESS_ZONE));
+        outboxPublisherService.publishRefundStatusChanged(refund);
+        return RefundRequestDto.fromEntity(refund);
+    }
+
+    private boolean canFundWalletRefund(Payment payment, BigDecimal refund) {
+        if (journals == null) return false;
+        BigDecimal escrow = journals.findByPaymentId(payment.getId()).stream().flatMap(j -> j.getPostings().stream())
+                .filter(p -> p.getAccountCode() == com.smartparking.payment.domain.model.LedgerAccountCode.CUSTOMER_DEPOSIT_ESCROW)
+                .map(p -> p.getDirection() == com.smartparking.payment.domain.model.PostingDirection.CREDIT ? p.getAmount() : p.getAmount().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add).max(BigDecimal.ZERO);
+        BigDecimal reversalAmount = refund.subtract(escrow.min(refund));
+        if (reversalAmount.signum() == 0) return true;
+        var settlement = journals.findByJournalKey("SETTLE:PAYMENT:" + payment.getId());
+        if (settlement.isEmpty()) return false;
+        var original = settlement.get();
+        var fee = original.getPostings().stream().filter(p -> p.getAccountCode() == com.smartparking.payment.domain.model.LedgerAccountCode.PLATFORM_FEE_REVENUE)
+                .map(com.smartparking.payment.domain.model.LedgerPosting::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        var gross = original.getTotalDebit();
+        if (gross == null || gross.compareTo(reversalAmount) < 0) return false;
+        var retainedFee = gross.subtract(reversalAmount).multiply(original.getFeePercent()).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        var merchantPart = reversalAmount.subtract(fee.subtract(retainedFee));
+        return merchantWalletService.getWalletBalance(payment.getMerchantId()).compareTo(merchantPart) >= 0;
     }
 
     @Override
@@ -170,6 +269,8 @@ public class RefundServiceImpl implements RefundService {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền cập nhật hoàn tiền của bãi xe khác");
         }
 
+        if ("WALLET".equals(refund.getRefundChannel()))
+            throw new AppException(ErrorCode.BAD_REQUEST, "Khoản hoàn ví không được xử lý chuyển khoản ngân hàng");
         if (STATUS_COMPLETED.equals(refund.getStatus())) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Yêu cầu hoàn tiền này đã hoàn tất xác minh");
         }
@@ -219,6 +320,8 @@ public class RefundServiceImpl implements RefundService {
         RefundRequest refund = refundRequestRepository.findByIdForUpdate(refundId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy yêu cầu hoàn tiền"));
 
+        if ("WALLET".equals(refund.getRefundChannel()))
+            throw new AppException(ErrorCode.BAD_REQUEST, "Khoản hoàn ví không được xử lý chuyển khoản ngân hàng");
         if (STATUS_COMPLETED.equals(refund.getStatus())) {
             return RefundRequestDto.fromEntity(refund);
         }
@@ -289,7 +392,7 @@ public class RefundServiceImpl implements RefundService {
 
         for (RefundRequest candidate : overdueList) {
             RefundRequest locked = refundRequestRepository.findByIdForUpdate(candidate.getId()).orElse(null);
-            if (locked == null || !STATUS_REQUESTED.equals(locked.getStatus()) || !locked.getDueAt().isBefore(now)) {
+            if (locked == null || "WALLET".equals(locked.getRefundChannel()) || !STATUS_REQUESTED.equals(locked.getStatus()) || !locked.getDueAt().isBefore(now)) {
                 continue;
             }
             locked.setStatus(STATUS_REQUIRES_RECONCILIATION);

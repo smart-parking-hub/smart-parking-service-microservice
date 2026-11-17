@@ -26,6 +26,7 @@ public class RefundRequestDto {
     private String currency;
     private String policyCode;
     private String status;
+    private String refundChannel;
     private String cancellationReason;
     private String transactionReference;
     private String evidenceUrl;
@@ -54,6 +55,7 @@ public class RefundRequestDto {
                 .currency(entity.getCurrency())
                 .policyCode(entity.getPolicyCode())
                 .status(entity.getStatus())
+                .refundChannel(entity.getRefundChannel())
                 .cancellationReason(entity.getCancellationReason())
                 .transactionReference(entity.getTransactionReference())
                 .evidenceUrl(entity.getEvidenceUrl())

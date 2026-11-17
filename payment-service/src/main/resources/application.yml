@@ -59,6 +59,7 @@ resilience4j:
         timeout-duration: 9s
 
 app:
+  driver-wallet-enabled: ${DRIVER_WALLET_ENABLED:true}
   payos-recovery-enabled: ${PAYOS_RECOVERY_ENABLED:true}
   storage:
     dispute-evidence-dir: ${DISPUTE_EVIDENCE_DIR:uploads/dispute-evidence}

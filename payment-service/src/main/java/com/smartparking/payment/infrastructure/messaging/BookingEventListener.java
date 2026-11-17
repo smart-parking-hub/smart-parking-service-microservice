@@ -37,7 +37,7 @@ public class BookingEventListener {
     private ProcessedEventRepository processedEventRepository;
 
     @KafkaListener(topics = "booking.events", groupId = "payment-service-group")
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void handleBookingEvent(String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
@@ -89,7 +89,7 @@ public class BookingEventListener {
                 case "BOOKING_CANCELLED" -> {
                     log.info("Booking {} cancelled. Processing pending payments and refund policy.", bookingId);
                     paymentRepository.findByBookingId(bookingId).stream()
-                            .filter(p -> p.getStatus() == PaymentStatusEnum.PENDING)
+                            .filter(p -> p.getStatus() == PaymentStatusEnum.PENDING && p.getGateway() != com.smartparking.common.enums.PaymentGatewayEnum.WALLET)
                             .forEach(p -> {
                                 p.setStatus(PaymentStatusEnum.FAILED);
                                 paymentRepository.save(p);
@@ -133,6 +133,7 @@ public class BookingEventListener {
                                 .refundRequested(refundRequested)
                                 .refundPolicy(refundPolicy)
                                 .refundStatus(refundStatus)
+                                .refundChannel(root.path("refundChannel").asText("BANK_MANUAL"))
                                 .currency("VND")
                                 .build();
 

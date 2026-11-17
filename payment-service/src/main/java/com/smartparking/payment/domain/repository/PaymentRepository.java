@@ -18,6 +18,11 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
+    java.util.List<Payment> findByGatewayAndStatusAndIdGreaterThanOrderByIdAsc(com.smartparking.common.enums.PaymentGatewayEnum gateway, PaymentStatusEnum status, Long id, org.springframework.data.domain.Pageable pageable);
+
+    Page<Payment> findByPaymentType(PaymentTypeEnum type, Pageable pageable);
+    Page<Payment> findByMerchantIdAndPaymentType(Long merchantId, PaymentTypeEnum type, Pageable pageable);
+
     Optional<Payment> findByIdempotencyKey(String idempotencyKey);
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Payment p WHERE p.id = :id")

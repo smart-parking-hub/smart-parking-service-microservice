@@ -51,6 +51,7 @@ public class PaymentEvent {
         private BigDecimal refundAmount;
         private Integer refundPercentage;
         private String refundStatus;
+        private String refundChannel;
         private String policyCode;
         private String transactionReference;
         private String reason;
