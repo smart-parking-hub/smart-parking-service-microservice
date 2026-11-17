@@ -57,6 +57,19 @@ class PaymentControllerTest {
     }
 
     @Test
+    @DisplayName("createGateFinalPayment returns payment link for merchant")
+    void testCreateGateFinalPayment() {
+        AuthenticatedUser merchant = new AuthenticatedUser(200L, "merchant01", "MERCHANT");
+        GateFinalPaymentRequest req = GateFinalPaymentRequest.builder().bookingId(456L).build();
+        when(paymentService.createGateFinalPaymentLink(200L, 456L)).thenReturn("http://payos.vn/checkout/456");
+
+        ResponseEntity<ApiResponse<String>> res = controller.createGateFinalPayment(merchant, req);
+
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals("http://payos.vn/checkout/456", res.getBody().getData());
+    }
+
+    @Test
     @DisplayName("confirmDemoPayment returns confirmed PaymentDto")
     void testConfirmDemoPayment() {
         DemoPaymentRequest req = new DemoPaymentRequest();

@@ -46,6 +46,7 @@ class PaymentRecoveryIntegrationTest {
     @Autowired PaymentRepository payments;
     @Autowired JdbcTemplate jdbc;
     @Autowired PlatformTransactionManager transactions;
+    @Autowired com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
     @MockBean BookingPaymentVerifier verifier;
     @MockBean com.smartparking.payment.infrastructure.client.DisputeBookingClient disputeBookingClient;
     @MockBean(answer = org.mockito.Answers.RETURNS_DEEP_STUBS) PayOS payOS;
@@ -117,9 +118,9 @@ class PaymentRecoveryIntegrationTest {
     @Test void orderCodesAreUniqueAcrossBookingsAndTransactionRollbacks() {
         var template = new TransactionTemplate(transactions);
         Long lost = template.execute(status -> {
-            var keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
-            jdbc.update(c -> c.prepareStatement("INSERT INTO payment_order_codes () VALUES ()", java.sql.Statement.RETURN_GENERATED_KEYS), keys);
-            status.setRollbackOnly(); return keys.getKey().longValue();
+            long code = attemptGuard.nextOrderCode();
+            status.setRollbackOnly();
+            return code;
         });
         service.createPaymentLink(7L, request());
         assertTrue(payments.findByBookingId(BOOKING).getFirst().getOrderCode() > lost);

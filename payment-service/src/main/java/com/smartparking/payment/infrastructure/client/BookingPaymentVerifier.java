@@ -12,7 +12,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.extern.slf4j.Slf4j;
 @Component
+@Slf4j
 public class BookingPaymentVerifier {
     private final RestClient client;
     @org.springframework.beans.factory.annotation.Autowired
@@ -26,7 +28,11 @@ public class BookingPaymentVerifier {
                         BigDecimal advanceDeposit, BigDecimal totalAmount, LocalDateTime expiresAt) {
         public BigDecimal payable(PaymentTypeEnum type) {
             if (type == PaymentTypeEnum.DEPOSIT && "PENDING_PAYMENT".equals(status) && expiresAt != null && expiresAt.isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")))) return advanceDeposit;
-            if (type == PaymentTypeEnum.FINAL_PAYMENT && "AWAITING_FINAL_PAYMENT".equals(status)) return totalAmount.subtract(advanceDeposit).max(BigDecimal.ZERO);
+            if (type == PaymentTypeEnum.FINAL_PAYMENT && "AWAITING_FINAL_PAYMENT".equals(status)) {
+                BigDecimal total = totalAmount != null ? totalAmount : BigDecimal.ZERO;
+                BigDecimal deposit = advanceDeposit != null ? advanceDeposit : BigDecimal.ZERO;
+                return total.subtract(deposit).max(BigDecimal.ZERO);
+            }
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không còn ở trạng thái được thanh toán");
         }
     }
@@ -40,6 +46,24 @@ public class BookingPaymentVerifier {
         if (quote == null || !userId.equals(quote.driverId()) || quote.merchantId() == null)
             throw new AppException(ErrorCode.FORBIDDEN, "Không xác minh được quyền thanh toán booking");
         return quote;
+    }
+    public Quote requireMerchantFinalPayment(Long bookingId, Long merchantId) {
+        var attributes = RequestContextHolder.getRequestAttributes();
+        String token = attributes instanceof ServletRequestAttributes context ? context.getRequest().getHeader("Authorization") : null;
+        if (token == null || !token.startsWith("Bearer ")) throw new AppException(ErrorCode.FORBIDDEN, "Thiếu phiên xác thực booking");
+        try {
+            var result = client.get().uri("/api/v1/merchant/bookings/{id}", bookingId).header("Authorization", token)
+                    .retrieve().body(new ParameterizedTypeReference<ApiResponse<Quote>>() {});
+            Quote quote = result == null ? null : result.getData();
+            if (quote == null || !merchantId.equals(quote.merchantId()))
+                throw new AppException(ErrorCode.FORBIDDEN, "Lượt đỗ không thuộc bãi của bạn");
+            return quote;
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to query merchant booking {}: {}", bookingId, e.getMessage());
+            throw new AppException(ErrorCode.BAD_REQUEST, "Không lấy được thông tin lượt đỗ từ máy chủ quản lý: " + e.getMessage());
+        }
     }
     public boolean confirm(com.smartparking.payment.domain.model.Payment payment) {
         if (serviceToken == null || serviceToken.isBlank()) throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa cấu hình xác nhận thanh toán nội bộ");

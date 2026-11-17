@@ -41,6 +41,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/disputes/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/v1/disputes/*/resolve").hasRole("ADMIN")
                     .requestMatchers("/api/v1/driver/wallet", "/api/v1/driver/wallet/**").hasRole("DRIVER")
+                    .requestMatchers("/api/v1/payments/gate/**").hasRole("MERCHANT")
                     .requestMatchers("/api/v1/payments/**").hasRole("DRIVER")
                     .requestMatchers("/api/v1/disputes/**").authenticated()
                     .anyRequest().authenticated()

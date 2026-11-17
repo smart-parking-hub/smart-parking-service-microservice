@@ -33,6 +33,15 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(paymentUrl, "Payment link created successfully"));
     }
 
+    @PostMapping("/gate/final-link")
+    @PreAuthorize("hasRole('MERCHANT')")
+    public ResponseEntity<ApiResponse<String>> createGateFinalPayment(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody GateFinalPaymentRequest request) {
+        String paymentUrl = paymentService.createGateFinalPaymentLink(user.getId(), request.getBookingId());
+        return ResponseEntity.ok(ApiResponse.success(paymentUrl, "Tạo mã QR thanh toán cổng thành công"));
+    }
+
     @PostMapping("/demo-confirm")
     @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<ApiResponse<PaymentDto>> confirmDemoPayment(
