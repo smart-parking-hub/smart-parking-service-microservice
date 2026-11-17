@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface PaymentService {
     String createPaymentLink(Long driverUserId, CreatePaymentRequest request);
+    String createGateFinalPaymentLink(Long merchantUserId, Long bookingId);
     PaymentDto confirmDemoDeposit(Long driverUserId, Long bookingId);
     PaymentDto confirmDemoDeposit(Long driverUserId, DemoPaymentRequest request);
     PaymentDto syncPayOSPayment(Long driverUserId, Long orderCode, Long bookingId, String paymentLinkId);

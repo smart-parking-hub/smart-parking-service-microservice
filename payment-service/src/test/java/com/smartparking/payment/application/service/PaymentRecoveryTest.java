@@ -138,6 +138,22 @@ class PaymentRecoveryTest {
         verifyNoInteractions(verifier, wallet, events);
     }
 
+    @Test void missingPayOsLinkWithZeroMoneyRetiresOldAttemptAndGeneratesNew() {
+        Payment old = attempt(PaymentStatusEnum.FAILED);
+        quote();
+        when(payOS.paymentRequests().get(511L)).thenReturn(null);
+        when(guard.nextOrderCode()).thenReturn(9002L);
+        var result = mock(CreatePaymentLinkResponse.class);
+        when(result.getOrderCode()).thenReturn(9002L);
+        when(result.getAmount()).thenReturn(4000L);
+        when(result.getCheckoutUrl()).thenReturn("https://pay.payos.vn/web/fresh");
+        when(payOS.paymentRequests().create(any(CreatePaymentLinkRequest.class))).thenReturn(result);
+
+        assertEquals("https://pay.payos.vn/web/fresh", service.createPaymentLink(7L, request()));
+        assertEquals(PaymentStatusEnum.FAILED, old.getStatus());
+        verify(guard).nextOrderCode();
+    }
+
     @Test void disablingRecoveryBlocksRetryButKeepsHistory() {
         attempt(PaymentStatusEnum.FAILED); quote(); provider(511, PaymentLinkStatus.CANCELLED, 0L);
         org.springframework.test.util.ReflectionTestUtils.setField(service, "payosRecoveryEnabled", false);
