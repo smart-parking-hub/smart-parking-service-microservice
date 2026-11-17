@@ -39,8 +39,8 @@ class CheckoutBusinessTimeTest {
             when(bookings.findByBookingCodeForUpdate("BK-TIME")).thenReturn(Optional.of(booking));
             var result = service.checkOut(7L, "BK-TIME", 8L);
             assertEquals(90, result.getParkingMinutes());
-            assertEquals(0, new BigDecimal("80000").compareTo(result.getTotalAmount()));
-            assertEquals(0, new BigDecimal("70000").compareTo(result.getAmountDue()));
+            assertEquals(0, new BigDecimal("60000").compareTo(result.getTotalAmount()));
+            assertEquals(0, new BigDecimal("50000").compareTo(result.getAmountDue()));
             assertFalse(booking.getCheckOutTime().isBefore(now));
         } finally {
             TimeZone.setDefault(original);

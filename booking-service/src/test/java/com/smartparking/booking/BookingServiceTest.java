@@ -134,7 +134,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    @DisplayName("Check-in and check-out full lifecycle")
+    @DisplayName("Check-in and early check-out collect the full reserved fee")
     void testCheckInOutLifecycle() {
         CreateBookingRequest req = CreateBookingRequest.builder()
                 .parkingLotId(parkingLotId)
@@ -163,7 +163,11 @@ public class BookingServiceTest {
         CheckOutResponse checkOutRes = checkInOutService.checkOut(merchantUserId, booking.getBookingCode(), parkingLotId);
         assertNotNull(checkOutRes);
         assertEquals(booking.getBookingCode(), checkOutRes.getBookingCode());
-        assertNotNull(checkOutRes.getTotalAmount());
+        assertEquals(0, new BigDecimal("50000").compareTo(checkOutRes.getTotalAmount()));
+        assertEquals(0, new BigDecimal("40000").compareTo(checkOutRes.getAmountDue()));
+        assertEquals(BookingStatusEnum.AWAITING_FINAL_PAYMENT.name(), checkOutRes.getBookingStatus());
+        Booking checkedOut = bookingRepository.findById(created.getId()).orElseThrow();
+        assertEquals(0, new BigDecimal("50000").compareTo(checkedOut.getTotalAmount()));
     }
 
     @Test
