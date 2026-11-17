@@ -32,6 +32,8 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentAmountConsistencyTest {
+    @Mock private com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository cashReceipts;
+
     @Mock private BookingPaymentVerifier bookingPaymentVerifier;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS) private PayOS payOS;
     @Mock private PayOSConfig payOSConfig;

@@ -61,6 +61,13 @@ public class Booking extends BaseEntity {
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(name = "final_payment_method", length = 20)
+    private String finalPaymentMethod;
+    @Column(name = "final_payment_reference", length = 80)
+    private String finalPaymentReference;
+    @Column(name = "final_payment_amount", precision = 10, scale = 2)
+    private BigDecimal finalPaymentAmount;
+
     @Column(name = "hourly_rate", precision = 10, scale = 2)
     private BigDecimal hourlyRate;
 

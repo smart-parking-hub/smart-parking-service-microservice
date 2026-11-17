@@ -22,6 +22,7 @@ public class ConfirmCashRequest {
     @NotNull(message = "Vui lòng chọn bãi đỗ đang vận hành")
     private Long parkingLotId;
 
-    @DecimalMin(value = "0.0", inclusive = true, message = "Số tiền mặt xác nhận không được âm")
+    @NotNull(message = "Vui lòng xác nhận số tiền còn phải thu")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Số tiền mặt xác nhận phải lớn hơn 0")
     private BigDecimal amount;
 }

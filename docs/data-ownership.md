@@ -150,3 +150,8 @@ Retained local lineage update (2026-11-15): the local database can opt into the 
 ### Unpaid hold policy (Booking V9, 2026-11-15)
 
 Booking exclusively owns `booking_hold_policy_locks`, `booking_hold_rate_windows` and `booking_unpaid_hold_releases`. Releases are idempotent by booking ID, retain their original time, and are not backfilled from historical terminal bookings. Payment owns all deposit-attempt/provider evidence; it exposes UNPAID/PROTECTED/UNKNOWN via an authenticated internal RPC without creating ledger entries. Booking derives quota/cooldown from its own persisted state. See [unpaid hold contract](./api-contracts/unpaid-hold-policy.md) for limits, locking, late-payment protection, configuration and rollback. Local Booking is at V9; local Payment remains at V18 after preserved-data copy verification.
+
+
+## Gate final payment (Booking V11, Payment V20)
+
+Booking owns nullable final_payment_method/reference/amount on bookings, recording the one accepted final tender. Payment owns cash_checkout_receipts keyed by booking_id with merchant/lot/amount/status/update time and recovery index. Cash receipts coordinate collection but are not gateway money or merchant wallet credit. Service-authenticated callbacks join the workflow without cross-database queries. See [gate final payment contract](api-contracts/gate-final-payment.md).

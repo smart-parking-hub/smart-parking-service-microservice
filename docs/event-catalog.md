@@ -47,3 +47,8 @@ Danh mục tất cả các Domain Event được xuất bản và tiêu thụ tr
 BOOKING_CANCELLED adds optional refundChannel (WALLET/BANK_MANUAL). Existing/missing values preserve manual bank processing. PAYMENT_REFUND_UPDATED adds refundChannel alongside the existing refund status/reference fields. Wallet COMPLETED means posted credit to the internal driver liability, not a bank transfer. PAYMENT_COMPLETED may carry paymentMethod=WALLET; existing paymentType=DEPOSIT and booking semantics remain unchanged. Both producers retain transactional outboxes and consumers retain event idempotency.
 
 A cancellation racing wallet capture persists a REQUESTED WALLET refund for recovery; it does not rely only on Kafka retry count. See ADR 0009.
+
+
+## Checkout completion follow-up (2026-11-18)
+
+The FINAL_PAYMENT consumer in booking-service records/verifies the accepted payment identity, then writes BOOKING_COMPLETED to the existing outbox after completing the booking and releasing the slot. Topic and payload shape are unchanged. Replayed final events cannot replace a CASH/different payment decision or complete an already completed booking again. See [gate final payment](api-contracts/gate-final-payment.md).

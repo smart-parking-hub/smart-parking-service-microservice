@@ -45,6 +45,8 @@ class PaymentEventListenerTest {
 
 
 
+    @Mock private com.smartparking.booking.application.service.OutboxPublisherService outbox;
+
     @InjectMocks
     private PaymentEventListener listener;
 
@@ -77,7 +79,7 @@ class PaymentEventListenerTest {
     void testFinalPaymentCompleted() throws Exception {
         String payload = "{\"bookingId\":20,\"amount\":30000}";
         PaymentEvent.PaymentCompletedEvent event = PaymentEvent.PaymentCompletedEvent.builder()
-                .bookingId(20L).paymentType("FINAL_PAYMENT")
+                .bookingId(20L).paymentId(100L).paymentType("FINAL_PAYMENT")
                 .amount(new BigDecimal("30000"))
                 .build();
         when(objectMapper.readValue(payload, PaymentEvent.PaymentCompletedEvent.class)).thenReturn(event);
@@ -95,7 +97,9 @@ class PaymentEventListenerTest {
 
         assertEquals(BookingStatusEnum.COMPLETED, booking.getStatus());
         verify(bookingRepository, times(1)).save(booking);
+        listener.handlePaymentEvent(payload);
         verify(parkingLotClient, times(1)).releaseSlot(eq(99L), any(SlotHoldRequest.class));
+        verify(outbox, times(1)).publishBookingCompleted(booking);
     }
     @Test void replayedDepositCannotSettleFinalBill() {
         Booking b = Booking.builder().id(20L).status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)

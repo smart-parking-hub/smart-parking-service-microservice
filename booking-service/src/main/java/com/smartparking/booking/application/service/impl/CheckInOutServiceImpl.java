@@ -85,15 +85,19 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền check-out cho đơn đặt chỗ của bãi xe này!");
         }
 
-        if (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT) {
+        if (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT
+                || booking.getStatus() == BookingStatusEnum.COMPLETED) {
             BigDecimal totalAmount = booking.getTotalAmount() != null ? booking.getTotalAmount() : BigDecimal.ZERO;
             BigDecimal deposit = booking.getAdvanceDeposit() != null ? booking.getAdvanceDeposit() : BigDecimal.ZERO;
-            BigDecimal amountDue = totalAmount.subtract(deposit).max(BigDecimal.ZERO);
+            BigDecimal amountDue = booking.getStatus() == BookingStatusEnum.COMPLETED ? BigDecimal.ZERO
+                    : totalAmount.subtract(deposit).max(BigDecimal.ZERO);
             long minutes = Math.max(0, Duration.between(
                     booking.getCheckInTime() != null ? booking.getCheckInTime() : LocalDateTime.now(BUSINESS_ZONE).minusHours(1),
                     booking.getCheckOutTime() != null ? booking.getCheckOutTime() : LocalDateTime.now(BUSINESS_ZONE)).toMinutes());
 
             return CheckOutResponse.builder()
+                    .bookingId(booking.getId())
+                    .finalPaymentMethod(booking.getFinalPaymentMethod())
                     .bookingCode(bookingCode)
                     .totalAmount(totalAmount)
                     .advanceDeposit(deposit)
@@ -165,6 +169,8 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                 bookingCode, totalAmount, deposit, amountDue, booking.getStatus());
 
         return CheckOutResponse.builder()
+                .bookingId(booking.getId())
+                .finalPaymentMethod(booking.getFinalPaymentMethod())
                 .bookingCode(bookingCode)
                 .totalAmount(totalAmount)
                 .advanceDeposit(deposit)
@@ -180,7 +186,8 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         Booking booking = bookingRepository.findByBookingCodeForUpdate(bookingCode)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Booking không tồn tại!"));
 
-        if (booking.getStatus() != BookingStatusEnum.AWAITING_FINAL_PAYMENT) {
+        if (booking.getStatus() != BookingStatusEnum.AWAITING_FINAL_PAYMENT
+                && !(booking.getStatus() == BookingStatusEnum.COMPLETED && "CASH".equals(booking.getFinalPaymentMethod()))) {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID,
                     "Booking không ở trạng thái chờ thanh toán phụ phí!");
         }
@@ -193,6 +200,18 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền xác nhận thu tiền cho bãi xe này!");
         }
 
+        BigDecimal due = booking.getTotalAmount() != null && booking.getAdvanceDeposit() != null
+                ? booking.getTotalAmount().subtract(booking.getAdvanceDeposit()).max(BigDecimal.ZERO) : null;
+        if (amount == null || amount.signum() <= 0 || due == null || amount.compareTo(due) != 0) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Số tiền mặt không khớp số tiền còn phải thu");
+        }
+        if (booking.getStatus() == BookingStatusEnum.COMPLETED) return;
+        if (booking.getFinalPaymentMethod() != null) {
+            throw new AppException(ErrorCode.CONFLICT, "Đã ghi nhận thanh toán qua kênh khác; vui lòng kiểm tra lại");
+        }
+        booking.setFinalPaymentMethod("CASH");
+        booking.setFinalPaymentReference("CASH:" + booking.getId());
+        booking.setFinalPaymentAmount(amount);
         booking.setStatus(BookingStatusEnum.COMPLETED);
         bookingRepository.save(booking);
 

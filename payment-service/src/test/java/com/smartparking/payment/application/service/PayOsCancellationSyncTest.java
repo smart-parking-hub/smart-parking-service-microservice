@@ -22,6 +22,8 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PayOsCancellationSyncTest {
+    @Mock private com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository cashReceipts;
+
     @Mock BookingPaymentVerifier verifier;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS) PayOS payOS;
     @Mock PayOSConfig config;

@@ -26,6 +26,32 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class InternalPaymentConfirmationControllerTest {
+    @Test void finalPaymentAcceptsOnlyOnePaymentIdentityAndReplaysAfterCompletion() {
+        Booking booking = finalBooking();
+        var request = new InternalPaymentConfirmationController.Confirmation(20L, 30L, new BigDecimal("32000"), "FINAL_PAYMENT", 100L);
+        assertTrue(controller.confirm(10L, "test-internal-token", request).getData());
+        assertEquals("PAYOS", booking.getFinalPaymentMethod());
+        booking.setStatus(BookingStatusEnum.COMPLETED);
+        assertTrue(controller.confirm(10L, "test-internal-token", request).getData());
+        assertFalse(controller.confirm(10L, "test-internal-token", new InternalPaymentConfirmationController.Confirmation(
+                20L, 30L, new BigDecimal("32000"), "FINAL_PAYMENT", 101L)).getData());
+    }
+
+    @Test void finalPaymentCannotBeAcceptedAfterCashOrWithoutIdentity() {
+        Booking booking = finalBooking();
+        assertFalse(controller.confirm(10L, "test-internal-token", new InternalPaymentConfirmationController.Confirmation(
+                20L, 30L, new BigDecimal("32000"), "FINAL_PAYMENT")).getData());
+        booking.setStatus(BookingStatusEnum.COMPLETED); booking.setFinalPaymentMethod("CASH");
+        assertFalse(controller.confirm(10L, "test-internal-token", new InternalPaymentConfirmationController.Confirmation(
+                20L, 30L, new BigDecimal("32000"), "FINAL_PAYMENT", 100L)).getData());
+    }
+
+    private Booking finalBooking() {
+        Booking booking = Booking.builder().id(10L).driverId(20L).merchantId(30L)
+                .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT).advanceDeposit(new BigDecimal("8000"))
+                .totalAmount(new BigDecimal("40000")).build();
+        when(repository.findByIdForUpdate(10L)).thenReturn(Optional.of(booking)); return booking;
+    }
     @Mock BookingRepository repository;
     @InjectMocks InternalPaymentConfirmationController controller;
     private TimeZone originalZone;

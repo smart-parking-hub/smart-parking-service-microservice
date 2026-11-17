@@ -37,6 +37,8 @@ class MerchantCheckInOutControllerTest {
     @Mock
     private BookingService bookingService;
 
+    @Mock private com.smartparking.booking.application.service.GateCashCheckoutService cashCheckout;
+
     @InjectMocks
     private MerchantCheckInOutController controller;
 
@@ -125,11 +127,11 @@ class MerchantCheckInOutControllerTest {
         assertNotNull(response.getBody());
         assertEquals("Xác nhận thu tiền mặt và trả chỗ thành công!", response.getBody().getMessage());
         assertNull(response.getBody().getData());
-        verify(checkInOutService, times(1)).confirmCashPayment(200L, "BK-12345", 10L, new BigDecimal("60000"));
+        verify(cashCheckout, times(1)).confirm(200L, "BK-12345", 10L, new BigDecimal("60000"));
     }
 
     @Test
-    @DisplayName("confirmCashPayment without amount delegates to checkInOutService with null amount and returns 200 OK")
+    @DisplayName("Cash request requires an amount before controller execution")
     void testConfirmCashPayment_WithoutAmount() {
         // Arrange
         ConfirmCashRequest req = ConfirmCashRequest.builder()
@@ -137,14 +139,10 @@ class MerchantCheckInOutControllerTest {
                 .parkingLotId(10L)
                 .build();
 
-        // Act
-        ResponseEntity<ApiResponse<Void>> response = controller.confirmCashPayment(user, req);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Xác nhận thu tiền mặt và trả chỗ thành công!", response.getBody().getMessage());
-        assertNull(response.getBody().getData());
-        verify(checkInOutService, times(1)).confirmCashPayment(200L, "BK-12345", 10L, null);
+        try (var factory = jakarta.validation.Validation.buildDefaultValidatorFactory()) {
+            assertTrue(factory.getValidator().validate(req).stream()
+                    .anyMatch(violation -> "amount".equals(violation.getPropertyPath().toString())));
+        }
+        verifyNoInteractions(cashCheckout);
     }
 }

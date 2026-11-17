@@ -18,7 +18,11 @@ import static com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE;
 public class InternalPaymentConfirmationController {
     private final BookingRepository repository;
     @Value("${app.internal-service-token:}") private String serviceToken;
-    public record Confirmation(Long driverId, Long merchantId, BigDecimal amount, String paymentType) {}
+    public record Confirmation(Long driverId, Long merchantId, BigDecimal amount, String paymentType, Long paymentId) {
+        public Confirmation(Long driverId, Long merchantId, BigDecimal amount, String paymentType) {
+            this(driverId, merchantId, amount, paymentType, null);
+        }
+    }
     @PostMapping("/{id}/confirm-payment") @Transactional
     public ApiResponse<Boolean> confirm(@PathVariable Long id,
             @RequestHeader(value = "X-Internal-Service-Token", required = false) String token, @RequestBody Confirmation request) {
@@ -39,7 +43,17 @@ public class InternalPaymentConfirmationController {
         // Final settlement remains event-driven; reserve no new slot and never revive a cancelled booking.
         if ("FINAL_PAYMENT".equals(request.paymentType()) && (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT || booking.getStatus() == BookingStatusEnum.COMPLETED)) {
             BigDecimal due = booking.getTotalAmount().subtract(booking.getAdvanceDeposit()).max(BigDecimal.ZERO);
-            if (request.amount() != null && request.amount().compareTo(due) == 0) return ApiResponse.ok(true);
+            if (request.paymentId() == null || request.paymentId() <= 0 || due.signum() <= 0
+                    || request.amount() == null || request.amount().compareTo(due) != 0) return ApiResponse.ok(false);
+            String reference = String.valueOf(request.paymentId());
+            if (booking.getFinalPaymentMethod() != null) return ApiResponse.ok(
+                    "PAYOS".equals(booking.getFinalPaymentMethod()) && reference.equals(booking.getFinalPaymentReference()));
+            if (booking.getStatus() != BookingStatusEnum.AWAITING_FINAL_PAYMENT) return ApiResponse.ok(false);
+            booking.setFinalPaymentMethod("PAYOS");
+            booking.setFinalPaymentReference(reference);
+            booking.setFinalPaymentAmount(request.amount());
+            repository.save(booking);
+            return ApiResponse.ok(true);
         }
         return ApiResponse.ok(false);
     }

@@ -36,6 +36,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceImplTest {
 
+    @Mock private com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository cashReceipts;
+
     @Mock
     private PayOS payOS;
 

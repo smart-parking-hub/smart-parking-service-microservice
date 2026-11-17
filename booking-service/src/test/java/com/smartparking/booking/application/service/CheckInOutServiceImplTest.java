@@ -53,6 +53,51 @@ class CheckInOutServiceImplTest {
     private final Long parkingLotId = 50L;
 
     @ParameterizedTest
+    @CsvSource({"31000", "40000"})
+    void rejectsCashAmountDifferentFromOutstandingBalance(String amount) {
+        Booking booking = cashBooking();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+        assertThrows(AppException.class, () -> checkInOutService.confirmCashPayment(
+                merchantUserId, bookingCode, parkingLotId, new BigDecimal(amount)));
+        verifyNoInteractions(parkingLotClient, queueService, outboxPublisherService);
+        assertEquals(BookingStatusEnum.AWAITING_FINAL_PAYMENT, booking.getStatus());
+    }
+
+    @Test void missingCashAmountCannotCompleteBooking() {
+        Booking booking = cashBooking();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+        assertThrows(AppException.class, () -> checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+        verifyNoInteractions(parkingLotClient, queueService, outboxPublisherService);
+    }
+
+    @Test void cashRetryAndCompletedRescanDoNotRepeatReleaseOrOutbox() {
+        Booking booking = cashBooking();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+        checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, new BigDecimal("32000"));
+        checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, new BigDecimal("32000"));
+        var result = checkInOutService.checkOut(merchantUserId, bookingCode, parkingLotId);
+        assertEquals(BigDecimal.ZERO, result.getAmountDue());
+        assertEquals("CASH", result.getFinalPaymentMethod());
+        assertEquals(1L, result.getBookingId());
+        verify(parkingLotClient).releaseSlot(eq(parkingLotId), any());
+        verify(outboxPublisherService).publishBookingCompleted(booking);
+    }
+
+    @Test void recordedPayOsCannotBeConfirmedAsCash() {
+        Booking booking = cashBooking(); booking.setFinalPaymentMethod("PAYOS");
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+        assertThrows(AppException.class, () -> checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, new BigDecimal("32000")));
+        verifyNoInteractions(parkingLotClient, queueService, outboxPublisherService);
+    }
+
+    private Booking cashBooking() {
+        return Booking.builder().id(1L).bookingCode(bookingCode).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .vehicleType(VehicleTypeEnum.CONTAINER).status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
+                .totalAmount(new BigDecimal("40000")).advanceDeposit(new BigDecimal("8000"))
+                .checkInTime(LocalDateTime.now(BUSINESS_ZONE).minusHours(2)).checkOutTime(LocalDateTime.now(BUSINESS_ZONE)).build();
+    }
+
+    @ParameterizedTest
     @CsvSource({
             "0, 0, 40000", "0, 10, 40000", "30, 40, 40000", "0, 60, 40000", "0, 120, 40000",
             "90, 125, 55000", "90, 155, 70000", "-30, 120, 60000"
@@ -419,6 +464,7 @@ class CheckInOutServiceImplTest {
                 .merchantId(merchantUserId)
                 .parkingLotId(parkingLotId)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
+                .totalAmount(new BigDecimal("40000")).advanceDeposit(new BigDecimal("8000"))
                 .status(BookingStatusEnum.AWAITING_FINAL_PAYMENT)
                 .build();
         when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
@@ -427,7 +473,7 @@ class CheckInOutServiceImplTest {
 
         // Act & Assert
         AppException ex = assertThrows(AppException.class, () ->
-                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, null));
+                checkInOutService.confirmCashPayment(merchantUserId, bookingCode, parkingLotId, new BigDecimal("32000")));
 
         assertEquals(ErrorCode.INTERNAL_SERVER_ERROR, ex.getErrorCode());
         assertEquals("Chưa giải phóng được chỗ đỗ. Vui lòng thử lại.", ex.getMessage());

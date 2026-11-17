@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CheckOutResponse {
+    private Long bookingId;
+    private String finalPaymentMethod;
     private String bookingCode;
     private BigDecimal totalAmount;
     private BigDecimal advanceDeposit;
