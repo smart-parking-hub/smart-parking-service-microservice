@@ -61,6 +61,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final DisputeRepository disputeRepository;
     private final WalletLedgerEntryRepository walletLedgerEntryRepository;
 
+    private final com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository cashReceipts;
+
     @Value("${app.demo-payment-enabled:false}")
     private boolean demoPaymentEnabled;
 
@@ -77,6 +79,8 @@ public class PaymentServiceImpl implements PaymentService {
         try { type = PaymentTypeEnum.valueOf(request.getPaymentType()); }
         catch (RuntimeException failure) { throw new AppException(ErrorCode.BAD_REQUEST, "Loại thanh toán không hợp lệ"); }
         attemptGuard.lock(request.getBookingId(), type);
+        if (type == PaymentTypeEnum.FINAL_PAYMENT && cashCollectionReserved(request.getBookingId()))
+            throw new AppException(ErrorCode.CONFLICT, "Tiền mặt đang được xác nhận hoặc đã thu; không tạo thêm khoản PayOS");
         List<Payment> attempts = attempts(request.getBookingId(), type);
         if (attempts.stream().anyMatch(p -> p.getGateway() == PaymentGatewayEnum.WALLET && p.getStatus() == PaymentStatusEnum.PENDING))
             throw new AppException(ErrorCode.CONFLICT, "Thanh toán ví đang xử lý; vui lòng kiểm tra kết quả");
@@ -364,6 +368,10 @@ public class PaymentServiceImpl implements PaymentService {
         payment = paymentRepository.findByIdForUpdate(payment.getId()).orElseThrow();
         if (payment.getStatus() == PaymentStatusEnum.SUCCESS || payment.getStatus() == PaymentStatusEnum.REQUIRES_REVIEW
                 || payment.getStatus() == PaymentStatusEnum.REFUNDED) return;
+        if (payment.getPaymentType() == PaymentTypeEnum.FINAL_PAYMENT && cashCollectionReserved(payment.getBookingId())) {
+            markReview(payment, "PayOS đến sau khi chọn thu tiền mặt; cần đối soát, không đóng lượt đỗ lần nữa");
+            return;
+        }
         final Long currentId = payment.getId();
         if (attempts(payment.getBookingId(), payment.getPaymentType()).stream().anyMatch(other ->
                 !other.getId().equals(currentId) && (other.getStatus() == PaymentStatusEnum.SUCCESS
@@ -388,6 +396,12 @@ public class PaymentServiceImpl implements PaymentService {
 
         outboxPublisherService.publishPaymentCompleted(payment);
         log.info("Payment {} applied SUCCESS for booking {}", payment.getId(), payment.getBookingId());
+    }
+
+    private boolean cashCollectionReserved(Long bookingId) {
+        // A sync/webhook may have read payment before waiting on the group lock. Use a current
+        // locking read, not an older MySQL REPEATABLE_READ snapshot, for the cash decision.
+        return cashReceipts.findCurrentForUpdate(bookingId).filter(receipt -> !"REJECTED".equals(receipt.getStatus())).isPresent();
     }
 
     @org.springframework.lang.NonNull

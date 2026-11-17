@@ -46,9 +46,20 @@ public class BookingPaymentVerifier {
         var result = client.post().uri("/api/v1/internal/bookings/{id}/confirm-payment", payment.getBookingId())
                 .header("X-Internal-Service-Token", serviceToken)
                 .body(java.util.Map.of("driverId", payment.getDriverId(), "merchantId", payment.getMerchantId(),
-                        "amount", payment.getAmount(), "paymentType", payment.getPaymentType().name()))
+                        "amount", payment.getAmount(), "paymentType", payment.getPaymentType().name(), "paymentId", payment.getId()))
                 .retrieve().body(new ParameterizedTypeReference<ApiResponse<Boolean>>() {});
         return result != null && Boolean.TRUE.equals(result.getData());
+    }
+
+    public boolean confirmCash(Long bookingId, com.smartparking.common.dto.CashCheckoutCommand command) {
+        if (serviceToken == null || serviceToken.isBlank()) throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Thiếu cấu hình xác nhận nội bộ");
+        return breakers.create("cash-booking-confirm").run(() -> {
+            var result = client.post().uri("/api/v1/internal/bookings/{id}/confirm-cash-checkout", bookingId)
+                    .header("X-Internal-Service-Token", serviceToken).body(command).retrieve()
+                    .body(new ParameterizedTypeReference<ApiResponse<Boolean>>() {});
+            if (result == null || result.getData() == null) throw new IllegalStateException("Chưa xác định kết quả thu tiền mặt");
+            return result.getData();
+        });
     }
 
     public boolean confirmWallet(com.smartparking.payment.domain.model.Payment payment) {

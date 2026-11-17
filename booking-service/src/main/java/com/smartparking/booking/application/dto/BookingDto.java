@@ -30,6 +30,8 @@ public class BookingDto {
     private BookingStatusEnum status;
     private BigDecimal advanceDeposit;
     private BigDecimal totalAmount;
+    private String finalPaymentMethod;
+    private BigDecimal finalPaymentAmount;
     private BigDecimal hourlyRate;
 
     private BigDecimal surgeMultiplier;
@@ -71,6 +73,8 @@ public class BookingDto {
                 .status(entity.getStatus())
                 .advanceDeposit(entity.getAdvanceDeposit())
                 .totalAmount(entity.getTotalAmount())
+                .finalPaymentMethod(entity.getFinalPaymentMethod())
+                .finalPaymentAmount(entity.getFinalPaymentAmount())
                 .hourlyRate(entity.getHourlyRate())
                 .surgeMultiplier(entity.getSurgeMultiplier())
                 .surgeStartTime(entity.getSurgeStartTime())

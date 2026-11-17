@@ -23,7 +23,7 @@ class PaymentHistoryWalletRefundTest {
     void historyKeepsRefundFieldsWithAndWithoutBookingFilter(Long bookingId) {
         var payments = mock(PaymentRepository.class);
         var refunds = mock(RefundRequestRepository.class);
-        var service = new PaymentServiceImpl(null, null, null, payments, null, null, null, null, null, null, null);
+        var service = new PaymentServiceImpl(null, null, null, payments, null, null, null, null, null, null, null, null);
         ReflectionTestUtils.setField(service, "refundRequests", refunds);
         var pageable = PageRequest.of(0, 20);
         var payment = Payment.builder().id(71L).driverId(7L).bookingId(41L).merchantId(9L)

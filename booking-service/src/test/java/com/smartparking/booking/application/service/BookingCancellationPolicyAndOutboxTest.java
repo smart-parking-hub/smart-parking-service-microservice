@@ -225,7 +225,7 @@ class BookingCancellationPolicyAndOutboxTest {
         mapper.findAndRegisterModules();
 
         PaymentEventListener listener = new PaymentEventListener(
-                bookingRepository, parkingLotClient, mapper, queueService);
+                bookingRepository, parkingLotClient, mapper, queueService, mock(OutboxPublisherService.class));
         ReflectionTestUtils.setField(listener, "processedEventRepository", processedEventRepository);
 
         Booking booking = Booking.builder()

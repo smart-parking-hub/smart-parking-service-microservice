@@ -25,6 +25,7 @@ public class MerchantCheckInOutController {
 
     private final CheckInOutService checkInOutService;
     private final BookingService bookingService;
+    private final com.smartparking.booking.application.service.GateCashCheckoutService cashCheckout;
 
     @PostMapping("/check-in")
     @PreAuthorize("hasRole('MERCHANT')")
@@ -49,7 +50,7 @@ public class MerchantCheckInOutController {
     public ResponseEntity<ApiResponse<Void>> confirmCashPayment(
             @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody ConfirmCashRequest request) {
-        checkInOutService.confirmCashPayment(user.getId(), request.getBookingCode(), request.getParkingLotId(), request.getAmount());
+        cashCheckout.confirm(user.getId(), request.getBookingCode(), request.getParkingLotId(), request.getAmount());
         return ResponseEntity.ok(ApiResponse.success(null, "Xác nhận thu tiền mặt và trả chỗ thành công!"));
     }
 

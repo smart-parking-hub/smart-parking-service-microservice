@@ -25,6 +25,7 @@ public class PaymentEventListener {
     private final ParkingLotClient parkingLotClient;
     private final ObjectMapper objectMapper;
     private final com.smartparking.booking.application.service.QueueService queueService;
+    private final com.smartparking.booking.application.service.OutboxPublisherService outbox;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.smartparking.booking.domain.repository.ProcessedEventRepository processedEventRepository;
 
@@ -90,6 +91,13 @@ public class PaymentEventListener {
                     log.info("Booking {} transitioned to PENDING_CHECKIN after deposit payment, expiresAt={}", booking.getBookingCode(), deadline);
                 } else if (booking.getStatus() == BookingStatusEnum.AWAITING_FINAL_PAYMENT && "FINAL_PAYMENT".equals(event.getPaymentType())) {
                     if (event.getAmount() == null || booking.getTotalAmount() == null || booking.getAdvanceDeposit() == null || event.getAmount().compareTo(booking.getTotalAmount().subtract(booking.getAdvanceDeposit()).max(java.math.BigDecimal.ZERO)) != 0) return;
+                    if (event.getPaymentId() == null) return;
+                    // An already-paid legacy attempt may replay after the migration. Cash still wins if recorded.
+                    if (booking.getFinalPaymentMethod() != null && (!"PAYOS".equals(booking.getFinalPaymentMethod())
+                            || !String.valueOf(event.getPaymentId()).equals(booking.getFinalPaymentReference()))) return;
+                    booking.setFinalPaymentMethod("PAYOS");
+                    booking.setFinalPaymentReference(String.valueOf(event.getPaymentId()));
+                    booking.setFinalPaymentAmount(event.getAmount());
                     booking.setStatus(BookingStatusEnum.COMPLETED);
                     bookingRepository.save(booking);
 
@@ -104,6 +112,7 @@ public class PaymentEventListener {
                         throw new IllegalStateException("Final settlement slot release failed", ex);
                     }
 
+                    outbox.publishBookingCompleted(booking);
                     log.info("Booking {} transitioned to COMPLETED after final payment", booking.getBookingCode());
                 }
             });
