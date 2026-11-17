@@ -91,11 +91,13 @@ class TransactionalEventOutboxTest {
         assertThat(jdbc.queryForObject("SELECT event_id FROM admin_event_outbox", String.class)).isEqualTo(input.getEventId());
         relay.relay();
         verify(kafka, times(1)).send(eq(AdminOperationEvent.TOPIC), eq("dispute:1"), contains(input.getEventId()));
-        jdbc.update("UPDATE admin_event_outbox SET attempts = 4, next_attempt_at = CURRENT_TIMESTAMP");
+        jdbc.update("UPDATE admin_event_outbox SET attempts = 4, next_attempt_at = ?",
+                java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(5)));
         relay.relay();
         assertThat(jdbc.queryForObject("SELECT status FROM admin_event_outbox", String.class)).isEqualTo("FAILED");
         // Simulate the documented targeted replay after the underlying outage is fixed.
-        jdbc.update("UPDATE admin_event_outbox SET status = 'PENDING', attempts = 0, next_attempt_at = CURRENT_TIMESTAMP WHERE event_id = ?", input.getEventId());
+        jdbc.update("UPDATE admin_event_outbox SET status = 'PENDING', attempts = 0, next_attempt_at = ? WHERE event_id = ?",
+                java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(5)), input.getEventId());
         when(kafka.send(anyString(), anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(null));
         relay.relay();
         assertThat(jdbc.queryForObject("SELECT status FROM admin_event_outbox", String.class)).isEqualTo("PUBLISHED");

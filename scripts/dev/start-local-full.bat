@@ -1,10 +1,14 @@
 @echo off
+setlocal
 echo ==========================================================
 echo  [SmartParkingHub] Starting Full Local Integration Lab
 echo  (Microservices + MySQL + Redis + Kafka + Prometheus + Grafana)
 echo ==========================================================
 
 cd /d "%~dp0..\.."
-docker compose --project-directory . -f docker\compose\local\compose.yaml -f docker\compose\local\compose.local.yaml -f docker\compose\local\compose.local-full.yaml up -d --build
-echo Full local lab started!
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync-all.ps1" -Mode "local-full" %*
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Khoi dong Full Local Lab that bai.
+)
 pause
