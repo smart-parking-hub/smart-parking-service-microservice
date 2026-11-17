@@ -1,3 +1,5 @@
+name: docker
+
 # Full Local Integration Lab Overlay: includes Discovery Server (Eureka), Config Server, Kafka, Prometheus, and Grafana
 services:
   discovery-server:
