@@ -23,6 +23,7 @@ public class ParkingLotDto {
     private BigDecimal longitude;
     private ParkingLotStatusEnum status;
     private String reviewReason;
+    private String description;
     private BigDecimal ratingAverage;
     private List<SlotDto> slots;
     private List<PricingRuleDto> pricingRules;
@@ -38,6 +39,7 @@ public class ParkingLotDto {
                 .longitude(lot.getLongitude())
                 .status(lot.getStatus())
                 .reviewReason(lot.getReviewReason())
+                .description(lot.getDescription())
                 .ratingAverage(lot.getRatingAverage() != null ? lot.getRatingAverage() : BigDecimal.ZERO)
                 .images(List.of())
                 .build();

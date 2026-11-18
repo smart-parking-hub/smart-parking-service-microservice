@@ -51,13 +51,17 @@ class AdminParkingLotControllerTest {
     @Test
     @DisplayName("getParkingLotDetail returns admin detail")
     void testGetParkingLotDetail() {
-        AdminParkingLotDetailResponse detail = AdminParkingLotDetailResponse.builder().id(10L).build();
+        AdminParkingLotDetailResponse detail = AdminParkingLotDetailResponse.builder()
+                .id(10L)
+                .description("Hồ sơ tiếp vận container")
+                .build();
         when(parkingLotService.getParkingLotDetailForAdmin(10L)).thenReturn(detail);
 
         var res = controller.getParkingLotDetail(10L);
 
         assertEquals(HttpStatus.OK, res.getStatusCode());
         assertNotNull(res.getBody());
+        assertEquals("Hồ sơ tiếp vận container", res.getBody().getData().getDescription());
         assertEquals(10L, res.getBody().getData().getId());
     }
 

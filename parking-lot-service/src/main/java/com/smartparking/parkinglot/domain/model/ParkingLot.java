@@ -46,6 +46,9 @@ public class ParkingLot extends BaseEntity {
     @Column(name = "review_reason", length = 1000)
     private String reviewReason;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "reviewed_by")
     private Long reviewedBy;
 

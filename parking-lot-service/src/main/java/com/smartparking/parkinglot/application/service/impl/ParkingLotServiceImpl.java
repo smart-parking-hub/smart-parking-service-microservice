@@ -58,6 +58,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 .address(request.getAddress().trim())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
+                .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .status(ParkingLotStatusEnum.PENDING_APPROVAL)
                 .ratingAverage(BigDecimal.ZERO)
                 .build();
@@ -84,6 +85,9 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         lot.setAddress(request.getAddress().trim());
         lot.setLatitude(request.getLatitude());
         lot.setLongitude(request.getLongitude());
+        if (request.getDescription() != null) {
+            lot.setDescription(request.getDescription().trim());
+        }
         lot.setStatus(ParkingLotStatusEnum.PENDING_APPROVAL);
         lot.setReviewReason(null);
         lot.setReviewedAt(null);

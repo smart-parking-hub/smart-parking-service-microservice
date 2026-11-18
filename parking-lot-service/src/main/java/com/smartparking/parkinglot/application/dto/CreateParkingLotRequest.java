@@ -31,4 +31,7 @@ public class CreateParkingLotRequest {
     @DecimalMin(value = "-180.0", message = "Kinh độ phải từ -180 đến 180")
     @DecimalMax(value = "180.0", message = "Kinh độ phải từ -180 đến 180")
     private BigDecimal longitude;
+
+    @Size(max = 5000, message = "Mô tả bãi đỗ không được vượt quá 5000 ký tự")
+    private String description;
 }

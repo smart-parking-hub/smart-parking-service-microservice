@@ -23,14 +23,17 @@ public class AiContentGenerationService {
         String sanitizedHighlights = sanitizeCustomHighlights(request.getCustomHighlights());
 
         String systemInstruction = """
-            Bạn là Chuyên gia Vận hành và Truyền thông Bãi đỗ xe Đô thị tại Việt Nam.
+            Bạn là Chuyên gia Vận hành và Truyền thông Bãi đỗ xe Đô thị & Logistics tại Việt Nam.
             Hãy sinh nội dung bãi xe theo đúng format JSON:
             {
-              "marketingDescription": "Đoạn giới thiệu hấp dẫn 2-3 câu làm nổi bật tiện ích và các điểm nhấn đặc biệt của bãi xe",
-              "operatingRegulations": "Nội quy ngắn gọn về PCCC, giữ vé QR, biểu phí phạt đỗ quá giờ và các lưu ý an toàn",
-              "wayfindingGuide": "Hướng dẫn di chuyển rõ ràng từ các trục đường chính xung quanh bãi"
+              "marketingDescription": "Đoạn giới thiệu 2-3 câu tự nhiên, mạch lạc, nêu bật tiện ích thực tế và lợi ích cho tài xế",
+              "operatingRegulations": "Nội quy an toàn PCCC, hướng dẫn kiểm soát vé QR và quy định đậu xe văn minh",
+              "wayfindingGuide": "Hướng dẫn di chuyển rõ ràng, trực quan từ các trục đường chính xung quanh bãi"
             }
-            Nếu chủ bãi có cung cấp từ khóa/điểm nhấn đặc biệt, hãy ưu tiên lồng ghép tự nhiên vào marketingDescription và operatingRegulations.
+            LƯU Ý QUAN TRỌNG:
+            - Tuyệt đối KHÔNG dùng các từ sáo rỗng như 'vị trí đắc địa', 'an toàn tuyệt đối'.
+            - Tuyệt đối KHÔNG để lộ các mã code kỹ thuật viết hoa (ví dụ: ALPR_GATE, REEFER_380V, SECURITY_24_7). Hãy dịch sang tiếng Việt mượt mà.
+            - Nếu chủ bãi có cung cấp từ khóa/điểm nhấn đặc thù, hãy lồng ghép khéo léo vào nội dung.
             Chỉ trả về JSON thuần túy, không dùng markdown ```json.
             """;
 
@@ -133,31 +136,53 @@ public class AiContentGenerationService {
         return generateFallbackMockLots(request);
     }
 
+    private String formatAmenities(List<String> rawAmenities) {
+        if (rawAmenities == null || rawAmenities.isEmpty()) {
+            return "hệ thống camera giám sát an ninh 24/7, phòng cháy chữa cháy đạt chuẩn";
+        }
+        Map<String, String> translation = Map.of(
+            "ALPR_GATE", "cổng barie nhận diện biển số tự động ALPR",
+            "REEFER_380V", "hạ tầng ổ cắm điện lạnh Reefer 380V",
+            "SECURITY_24_7", "bảo vệ giám sát 24/7",
+            "EV_CHARGER", "trụ sạc nhanh xe điện",
+            "COVERED_ROOF", "mái che mát toàn bãi",
+            "WEIGH_STATION", "trạm cân xe tải",
+            "CASHLESS_PAYMENT", "thanh toán tự động không tiền mặt"
+        );
+        List<String> translated = new ArrayList<>();
+        for (String item : rawAmenities) {
+            translated.add(translation.getOrDefault(item, item));
+        }
+        return String.join(", ", translated);
+    }
+
     private ParkingDescriptionDto.Response generateFallbackDescription(ParkingDescriptionDto.Request request) {
-        String amenitiesStr = request.getAmenities() != null && !request.getAmenities().isEmpty()
-                ? String.join(", ", request.getAmenities())
-                : "hệ thống giám sát camera 24/7, phòng cháy chữa cháy đạt chuẩn";
+        String amenitiesStr = formatAmenities(request.getAmenities());
 
         String highlightsSuffix = "";
         if (request.getCustomHighlights() != null && !request.getCustomHighlights().isBlank()) {
-            highlightsSuffix = String.format(" Điểm nổi bật: %s.", sanitizeCustomHighlights(request.getCustomHighlights()));
+            highlightsSuffix = String.format(" Điểm nhấn nổi bật: %s.", sanitizeCustomHighlights(request.getCustomHighlights()));
         }
 
         String marketing = String.format(
-                "%s tọa lạc tại vị trí đắc địa trên trục đường %s. Bãi xe sở hữu không gian rộng rãi với sức chứa %d vị trí đỗ, trang bị %s.%s Đảm bảo an toàn tuyệt đối và tiện lợi tối đa cho phương tiện của quý khách.",
+                "Bãi đỗ xe \"%s\" tại %s được quy hoạch đồng bộ với quy mô %d vị trí đỗ, trang bị %s.%s Không gian an toàn, thuận tiện cho mọi phương tiện ra vào.",
                 request.getLotName(), request.getAddress(),
                 request.getTotalCapacity() != null ? request.getTotalCapacity() : 50,
                 amenitiesStr,
                 highlightsSuffix
         );
 
-        String regulations = "1. Quý khách vui lòng xuất trình mã QR trên ứng dụng khi check-in/check-out.\n" +
-                "2. Nghiêm cấm hút thuốc, mang chất dễ cháy nổ vào bãi đỗ xe.\n" +
-                "3. Thời gian giữ chỗ hợp lệ tối đa 10 phút. Quá giờ dự kiến 15 phút sẽ áp dụng phụ phí 1.5x đơn giá niêm yết.";
+        String regulations = "1. Quý khách vui lòng xuất trình vé điện tử hoặc biển số đã đăng ký khi ra vào cổng.\n" +
+                "2. Nghiêm cấm hút thuốc, mang chất dễ cháy nổ hoặc sang chiết nhiên liệu trong bãi.\n" +
+                "3. Thời gian giữ chỗ hợp lệ tối đa 10 phút. Duy trì tốc độ an toàn < 10km/h, tuân thủ vạch kẻ ô và khóa xe cẩn thận trước khi rời đi.";
+
+        String landmark = (request.getNearbyLandmarks() != null && !request.getNearbyLandmarks().isBlank())
+                ? request.getNearbyLandmarks()
+                : request.getAddress();
 
         String wayfinding = String.format(
-                "Từ trục đường chính, quý khách di chuyển theo hướng %s, quan sát biển chỉ dẫn SmartParkingHub bên tay phải. Cổng vào có barie tự động và camera nhận diện biển số.",
-                request.getNearbyLandmarks() != null && !request.getNearbyLandmarks().isBlank() ? request.getNearbyLandmarks() : request.getAddress()
+                "Từ trục giao thông chính, di chuyển theo hướng %s, quan sát biển chỉ dẫn lối vào bãi đỗ. Cổng vào có barie tự động và camera quét biển số nhanh chóng.",
+                landmark
         );
 
         return ParkingDescriptionDto.Response.builder()
