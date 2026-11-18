@@ -21,6 +21,8 @@ public interface RefundRequestRepository extends JpaRepository<RefundRequest, Lo
 
     List<RefundRequest> findByPaymentIdIn(java.util.Collection<Long> paymentIds);
 
+    List<RefundRequest> findByBookingIdIn(java.util.Collection<Long> bookingIds);
+
     Optional<RefundRequest> findByIdempotencyKey(String idempotencyKey);
 
     Optional<RefundRequest> findByBookingId(Long bookingId);

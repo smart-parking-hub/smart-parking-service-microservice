@@ -29,19 +29,42 @@ public class LotRevenueBreakdownDto {
     private Long counterQrCount = 0L;
 
     @Builder.Default
+    private BigDecimal unclassifiedTransferGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal unclassifiedTransferRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private Long unclassifiedTransferCount = 0L;
+
+    @Builder.Default
+    private BigDecimal pendingSettlementGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodPendingSettlementGrossRevenue = BigDecimal.ZERO;
+
+    @Builder.Default
     private BigDecimal cashRevenue = BigDecimal.ZERO;
     @Builder.Default
     private Long cashBookingCount = 0L;
 
+    @Builder.Default
+    private BigDecimal periodOnlineTransferGrossRevenue = BigDecimal.ZERO;
     @Builder.Default
     private BigDecimal periodOnlineTransferRevenue = BigDecimal.ZERO;
     @Builder.Default
     private Long periodOnlineTransferCount = 0L;
 
     @Builder.Default
+    private BigDecimal periodCounterQrGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
     private BigDecimal periodCounterQrRevenue = BigDecimal.ZERO;
     @Builder.Default
     private Long periodCounterQrCount = 0L;
+
+    @Builder.Default
+    private BigDecimal periodUnclassifiedTransferGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodUnclassifiedTransferRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private Long periodUnclassifiedTransferCount = 0L;
 
     @Builder.Default
     private BigDecimal periodCashRevenue = BigDecimal.ZERO;

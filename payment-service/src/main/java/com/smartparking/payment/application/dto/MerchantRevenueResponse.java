@@ -27,11 +27,24 @@ public class MerchantRevenueResponse {
     private BigDecimal minWithdrawalAmount;
 
     @Builder.Default
+    private BigDecimal periodTotalGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodTotalPlatformFee = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodTotalNetRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal pendingSettlementGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodPendingSettlementGrossRevenue = BigDecimal.ZERO;
+
+    @Builder.Default
     private BigDecimal onlineTransferGrossRevenue = BigDecimal.ZERO;
     @Builder.Default
     private BigDecimal onlineTransferNetRevenue = BigDecimal.ZERO;
     @Builder.Default
     private Long onlineTransferCount = 0L;
+    @Builder.Default
+    private BigDecimal periodOnlineTransferGrossRevenue = BigDecimal.ZERO;
     @Builder.Default
     private BigDecimal periodOnlineTransferNetRevenue = BigDecimal.ZERO;
     @Builder.Default
@@ -44,9 +57,24 @@ public class MerchantRevenueResponse {
     @Builder.Default
     private Long counterQrCount = 0L;
     @Builder.Default
+    private BigDecimal periodCounterQrGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
     private BigDecimal periodCounterQrNetRevenue = BigDecimal.ZERO;
     @Builder.Default
     private Long periodCounterQrCount = 0L;
+
+    @Builder.Default
+    private BigDecimal unclassifiedTransferGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal unclassifiedTransferNetRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private Long unclassifiedTransferCount = 0L;
+    @Builder.Default
+    private BigDecimal periodUnclassifiedTransferGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodUnclassifiedTransferNetRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private Long periodUnclassifiedTransferCount = 0L;
 
     @Builder.Default
     private BigDecimal totalCashRevenue = BigDecimal.ZERO;

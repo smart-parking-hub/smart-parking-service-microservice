@@ -3,10 +3,13 @@ package com.smartparking.payment;
 import com.smartparking.common.enums.PaymentGatewayEnum;
 import com.smartparking.common.enums.PaymentStatusEnum;
 import com.smartparking.common.enums.PaymentTypeEnum;
+import com.smartparking.common.enums.WalletLedgerEntryTypeEnum;
 import com.smartparking.payment.domain.model.CashCheckoutReceipt;
 import com.smartparking.payment.domain.model.Payment;
+import com.smartparking.payment.domain.model.WalletLedgerEntry;
 import com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository;
 import com.smartparking.payment.domain.repository.PaymentRepository;
+import com.smartparking.payment.domain.repository.WalletLedgerEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +36,12 @@ class MerchantRevenueChannelRepositoryTest {
     @Autowired
     CashCheckoutReceiptRepository cashReceipts;
 
+    @Autowired
+    WalletLedgerEntryRepository ledgerEntries;
+
     @BeforeEach
     void setUp() {
+        ledgerEntries.deleteAll();
         cashReceipts.deleteAll();
         paymentRepository.deleteAll();
     }
@@ -97,5 +104,29 @@ class MerchantRevenueChannelRepositoryTest {
         assertEquals(101L, cashAggs.getFirst().getParkingLotId());
         assertEquals(0, new BigDecimal("45000").compareTo(cashAggs.getFirst().getTotalAmount()));
         assertEquals(1L, cashAggs.getFirst().getBookingCount());
+
+        // Ledger query returns SETTLEMENT_CREDIT and ADJUSTMENT with joined Payment, excluding WITHDRAWAL_HOLD
+        ledgerEntries.saveAndFlush(WalletLedgerEntry.builder()
+                .merchantId(10L).bookingId(1L).payment(p1)
+                .entryType(WalletLedgerEntryTypeEnum.SETTLEMENT_CREDIT)
+                .grossAmount(new BigDecimal("100000")).feePercent(new BigDecimal("10"))
+                .feeAmount(new BigDecimal("10000")).netAmount(new BigDecimal("90000"))
+                .createdAt(now).build());
+        ledgerEntries.saveAndFlush(WalletLedgerEntry.builder()
+                .merchantId(10L).bookingId(1L).payment(p1)
+                .entryType(WalletLedgerEntryTypeEnum.ADJUSTMENT)
+                .grossAmount(BigDecimal.ZERO).feePercent(BigDecimal.ZERO)
+                .feeAmount(BigDecimal.ZERO).netAmount(new BigDecimal("-5000"))
+                .createdAt(now).build());
+        ledgerEntries.saveAndFlush(WalletLedgerEntry.builder()
+                .merchantId(10L)
+                .entryType(WalletLedgerEntryTypeEnum.WITHDRAWAL_HOLD)
+                .grossAmount(BigDecimal.ZERO).feePercent(BigDecimal.ZERO)
+                .feeAmount(BigDecimal.ZERO).netAmount(new BigDecimal("-50000"))
+                .createdAt(now).build());
+
+        var revenueEntries = ledgerEntries.findRevenueEntriesWithPaymentByMerchantId(10L);
+        assertEquals(2, revenueEntries.size());
+        assertEquals("ONLINE_TRANSFER", revenueEntries.get(0).getPayment().getPaymentChannel());
     }
 }

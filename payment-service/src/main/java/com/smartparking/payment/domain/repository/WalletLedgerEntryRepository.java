@@ -27,4 +27,11 @@ public interface WalletLedgerEntryRepository extends JpaRepository<WalletLedgerE
 
     @Query("SELECT COALESCE(SUM(w.feeAmount), 0) FROM WalletLedgerEntry w WHERE w.merchantId = :merchantId")
     BigDecimal sumPlatformFeeByMerchantId(@Param("merchantId") Long merchantId);
+
+    @Query("SELECT w FROM WalletLedgerEntry w LEFT JOIN FETCH w.payment p " +
+           "WHERE w.merchantId = :merchantId " +
+           "AND w.entryType IN (com.smartparking.common.enums.WalletLedgerEntryTypeEnum.SETTLEMENT_CREDIT, " +
+           "com.smartparking.common.enums.WalletLedgerEntryTypeEnum.ADJUSTMENT) " +
+           "ORDER BY w.createdAt ASC")
+    java.util.List<WalletLedgerEntry> findRevenueEntriesWithPaymentByMerchantId(@Param("merchantId") Long merchantId);
 }

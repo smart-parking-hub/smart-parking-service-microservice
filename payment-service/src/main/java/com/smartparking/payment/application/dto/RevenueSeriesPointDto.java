@@ -21,12 +21,16 @@ public class RevenueSeriesPointDto {
     @Builder.Default
     private BigDecimal counterQrRevenue = BigDecimal.ZERO;
     @Builder.Default
+    private BigDecimal unclassifiedTransferRevenue = BigDecimal.ZERO;
+    @Builder.Default
     private BigDecimal cashRevenue = BigDecimal.ZERO;
 
     @Builder.Default
     private Long onlineTransferCount = 0L;
     @Builder.Default
     private Long counterQrCount = 0L;
+    @Builder.Default
+    private Long unclassifiedTransferCount = 0L;
     @Builder.Default
     private Long cashBookingCount = 0L;
 }

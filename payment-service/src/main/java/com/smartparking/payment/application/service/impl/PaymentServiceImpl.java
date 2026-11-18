@@ -208,10 +208,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment latest = attempts.isEmpty() ? null : attempts.getFirst();
         if (latest != null && latest.getStatus() == PaymentStatusEnum.PENDING && latest.getCheckoutUrl() != null
                 && latest.getAmount() != null && latest.getAmount().compareTo(amount) == 0) {
-            if (!"COUNTER_QR".equalsIgnoreCase(latest.getPaymentChannel())) {
-                latest.setPaymentChannel("COUNTER_QR");
-                paymentRepository.save(latest);
-            }
+            // Preserve immutable origination channel when reusing an existing pending payment link.
             return latest.getCheckoutUrl();
         }
 

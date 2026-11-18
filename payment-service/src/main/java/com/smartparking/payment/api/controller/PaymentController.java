@@ -3,7 +3,6 @@ package com.smartparking.payment.api.controller;
 import com.smartparking.common.dto.ApiResponse;
 import com.smartparking.common.dto.PageResponse;
 import com.smartparking.payment.application.dto.*;
-import com.smartparking.payment.application.service.MerchantWalletService;
 import com.smartparking.payment.application.service.PaymentService;
 import com.smartparking.payment.infrastructure.security.AuthenticatedUser;
 import jakarta.validation.Valid;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final MerchantWalletService merchantWalletService;
 
     @PostMapping
     @PreAuthorize("hasRole('DRIVER')")
@@ -87,13 +85,5 @@ public class PaymentController {
         log.info("PayOS webhook received");
         paymentService.handleWebhook(rawBody);
         return ResponseEntity.ok(ApiResponse.success(null, "Webhook processed"));
-    }
-
-    // --- Internal Endpoints for Feign / Inter-Service RPC ---
-
-    @GetMapping("/internal/merchants/{merchantId}/revenue")
-    public ResponseEntity<ApiResponse<MerchantRevenueResponse>> getMerchantRevenue(
-            @PathVariable Long merchantId) {
-        return ResponseEntity.ok(ApiResponse.success(merchantWalletService.getRevenueSummary(merchantId)));
     }
 }

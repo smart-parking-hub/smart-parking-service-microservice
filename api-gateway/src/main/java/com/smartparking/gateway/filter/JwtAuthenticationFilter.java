@@ -47,6 +47,11 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
+        String rawPath = request.getURI().getPath();
+        if (rawPath != null && (rawPath.contains("/internal/") || rawPath.endsWith("/internal"))) {
+            log.warn("Blocked external access to internal path via API Gateway: {}", rawPath);
+            return onError(exchange, "Không có quyền truy cập endpoint nội bộ", HttpStatus.FORBIDDEN);
+        }
 
         // Always strip client-provided internal user identity headers to prevent spoofing
         // and inject valid trusted internal secret for downstream microservices

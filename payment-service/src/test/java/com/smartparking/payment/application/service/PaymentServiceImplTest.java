@@ -333,7 +333,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    @DisplayName("Gate final payment link records COUNTER_QR channel on creation and when reusing pending attempt")
+    @DisplayName("Gate final payment link records COUNTER_QR on new creation and preserves original channel when reusing pending attempt")
     void gateFinalPaymentLinkRecordsCounterQrChannel() {
         when(bookingPaymentVerifier.requireMerchantFinalPayment(bookingId, merchantUserId)).thenReturn(
                 new com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote(
@@ -360,7 +360,7 @@ class PaymentServiceImplTest {
         verify(paymentRepository).save(captor.capture());
         assertEquals("COUNTER_QR", captor.getValue().getPaymentChannel());
 
-        // Reusing an existing ONLINE_TRANSFER PENDING attempt upgrades it to COUNTER_QR
+        // Reusing an existing ONLINE_TRANSFER PENDING attempt preserves its immutable origination channel
         Payment existingPending = Payment.builder()
                 .id(55L).bookingId(bookingId).driverId(driverUserId).merchantId(merchantUserId).parkingLotId(10L)
                 .gateway(PaymentGatewayEnum.PAYOS).paymentType(PaymentTypeEnum.FINAL_PAYMENT)
@@ -371,6 +371,7 @@ class PaymentServiceImplTest {
 
         String reusedUrl = paymentService.createGateFinalPaymentLink(merchantUserId, bookingId);
         assertEquals("https://pay.payos.vn/web/existing", reusedUrl);
-        assertEquals("COUNTER_QR", existingPending.getPaymentChannel());
+        assertEquals("ONLINE_TRANSFER", existingPending.getPaymentChannel());
+        verify(paymentRepository, times(1)).save(any(Payment.class));
     }
 }

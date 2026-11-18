@@ -70,5 +70,17 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     long countByParkingLotIdAndStatusIn(Long parkingLotId, Collection<BookingStatusEnum> statuses);
 
+    interface StatusCountProjection {
+        BookingStatusEnum getStatus();
+        Long getCount();
+    }
+
+    @Query("SELECT b.status AS status, COUNT(b) AS count FROM Booking b " +
+           "WHERE b.merchantId = :merchantId AND (:parkingLotId IS NULL OR b.parkingLotId = :parkingLotId) " +
+           "GROUP BY b.status")
+    List<StatusCountProjection> countByMerchantAndOptionalLotGroupedByStatus(
+            @Param("merchantId") Long merchantId,
+            @Param("parkingLotId") Long parkingLotId);
+
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
 }

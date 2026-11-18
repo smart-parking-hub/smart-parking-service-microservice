@@ -1,5 +1,5 @@
 ALTER TABLE payments
-    ADD COLUMN payment_channel VARCHAR(30) NOT NULL DEFAULT 'ONLINE_TRANSFER';
+    ADD COLUMN payment_channel VARCHAR(30) NOT NULL DEFAULT 'UNKNOWN';
 
 CREATE INDEX idx_payments_merchant_lot_channel
     ON payments (merchant_id, status, parking_lot_id, payment_channel, created_at);

@@ -421,4 +421,31 @@ class BookingServiceImplTest {
         assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
         verify(parkingLotClient, never()).holdSlot(any(), any());
     }
+
+    @Test
+    @DisplayName("getMerchantBookingSummary aggregates all status counts server-side without 500-row cap")
+    void testGetMerchantBookingSummary() {
+        BookingRepository.StatusCountProjection pPending = statusCount(BookingStatusEnum.PENDING_CHECKIN, 12L);
+        BookingRepository.StatusCountProjection pParking = statusCount(BookingStatusEnum.PARKING, 8L);
+        BookingRepository.StatusCountProjection pCompleted = statusCount(BookingStatusEnum.COMPLETED, 640L);
+        BookingRepository.StatusCountProjection pCancelled = statusCount(BookingStatusEnum.CANCELLED, 40L);
+
+        when(bookingRepository.countByMerchantAndOptionalLotGroupedByStatus(merchantUserId, parkingLotId))
+                .thenReturn(java.util.List.of(pPending, pParking, pCompleted, pCancelled));
+
+        var summary = bookingService.getMerchantBookingSummary(merchantUserId, parkingLotId);
+
+        assertEquals(700L, summary.getTotal());
+        assertEquals(12L, summary.getPendingCheckIn());
+        assertEquals(8L, summary.getParking());
+        assertEquals(640L, summary.getCompleted());
+        assertEquals(40L, summary.getStatusCounts().get("CANCELLED"));
+    }
+
+    private BookingRepository.StatusCountProjection statusCount(BookingStatusEnum status, Long count) {
+        return new BookingRepository.StatusCountProjection() {
+            @Override public BookingStatusEnum getStatus() { return status; }
+            @Override public Long getCount() { return count; }
+        };
+    }
 }

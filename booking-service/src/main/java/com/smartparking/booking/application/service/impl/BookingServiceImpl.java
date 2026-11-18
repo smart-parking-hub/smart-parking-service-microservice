@@ -229,6 +229,30 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
+    public com.smartparking.booking.application.dto.MerchantBookingSummaryResponse getMerchantBookingSummary(Long merchantUserId, Long parkingLotId) {
+        java.util.List<BookingRepository.StatusCountProjection> rows =
+                bookingRepository.countByMerchantAndOptionalLotGroupedByStatus(merchantUserId, parkingLotId);
+        java.util.Map<String, Long> statusCounts = new java.util.LinkedHashMap<>();
+        long total = 0L;
+        if (rows != null) {
+            for (var row : rows) {
+                if (row == null || row.getStatus() == null) continue;
+                long count = row.getCount() != null ? row.getCount() : 0L;
+                statusCounts.put(row.getStatus().name(), count);
+                total += count;
+            }
+        }
+        return com.smartparking.booking.application.dto.MerchantBookingSummaryResponse.builder()
+                .total(total)
+                .pendingCheckIn(statusCounts.getOrDefault(BookingStatusEnum.PENDING_CHECKIN.name(), 0L))
+                .parking(statusCounts.getOrDefault(BookingStatusEnum.PARKING.name(), 0L))
+                .completed(statusCounts.getOrDefault(BookingStatusEnum.COMPLETED.name(), 0L))
+                .statusCounts(statusCounts)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public BookingDto getBookingDetail(Long userId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy booking"));
