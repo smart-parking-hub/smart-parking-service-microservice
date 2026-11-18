@@ -29,8 +29,8 @@ import java.util.*;
 public class ParkingLotImageServiceImpl implements ParkingLotImageService {
 
     private static final int MAX_IMAGES_PER_LOT = 5;
-    private static final long MAX_FILE_SIZE = 5L * 1024 * 1024;
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".webp");
+    private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif");
 
     private final ParkingLotRepository parkingLotRepository;
     private final ParkingLotImageRepository imageRepository;
@@ -87,11 +87,11 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
                 String originalFilename = file.getOriginalFilename() == null ? "image.jpg" : file.getOriginalFilename();
                 String ext = getFileExtension(originalFilename);
                 if (!ALLOWED_EXTENSIONS.contains(ext.toLowerCase(Locale.ROOT))) {
-                    throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ chấp nhận file ảnh (.jpg, .jpeg, .png, .webp)");
+                    throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ chấp nhận file ảnh (.jpg, .jpeg, .png, .webp, .heic, .heif)");
                 }
 
                 if (file.getSize() > MAX_FILE_SIZE) {
-                    throw new AppException(ErrorCode.BAD_REQUEST, "Mỗi ảnh không được vượt quá 5 MB");
+                    throw new AppException(ErrorCode.BAD_REQUEST, "Mỗi ảnh không được vượt quá 10 MB");
                 }
 
                 String storedFileName;
