@@ -7,6 +7,7 @@ import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.identity.application.dto.*;
 import com.smartparking.identity.application.service.AuthService;
+import com.smartparking.identity.application.util.PhoneNumberUtil;
 import com.smartparking.identity.domain.model.Driver;
 import com.smartparking.identity.domain.model.Merchant;
 import com.smartparking.identity.domain.model.OtpChallenge;
@@ -103,8 +104,12 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public SendOtpResponse sendRegisterOtp(SendOtpRequest request) {
         String email = normalizeEmail(request.getEmail());
-        if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
-            throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã tồn tại trong hệ thống!");
+        String phone = PhoneNumberUtil.normalizePhone(request.getPhone());
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Số điện thoại không được để trống!");
+        }
+        if (userRepository.existsByPhone(phone)) {
+            throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã liên kết với tài khoản khác. Vui lòng đăng nhập hoặc dùng số khác.");
         }
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new AppException(ErrorCode.CONFLICT, "Email đã tồn tại trong hệ thống!");
@@ -174,18 +179,38 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.FORBIDDEN, "Không được phép tự đăng ký tài khoản Quản trị viên (ADMIN)!");
         }
 
-        if (userRepository.existsByPhone(request.getPhone())) {
-            throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã tồn tại trong hệ thống!");
+        String phone = PhoneNumberUtil.normalizePhone(request.getPhone());
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Số điện thoại không được để trống!");
         }
-        if (userRepository.existsByEmailIgnoreCase(normalizeEmail(request.getEmail()))) {
+        if (userRepository.existsByPhone(phone)) {
+            throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã liên kết với tài khoản khác. Vui lòng đăng nhập hoặc dùng số khác.");
+        }
+
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new AppException(ErrorCode.CONFLICT, "Email đã tồn tại trong hệ thống!");
         }
 
-        verifyAndConsumeOtp(normalizeEmail(request.getEmail()), request.getOtpCode(), OtpPurposeEnum.REGISTER);
+        if (request.getRole() == RoleEnum.MERCHANT) {
+            String citizenId = request.getCitizenId() != null ? request.getCitizenId().trim() : "";
+            if (citizenId.isEmpty()) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "CCCD/CMND là bắt buộc đối với Chủ bãi xe!");
+            }
+            if (merchantRepository.existsByCitizenId(citizenId)) {
+                throw new AppException(ErrorCode.CONFLICT, "CCCD/CMND đã tồn tại trong hệ thống!");
+            }
+            if (request.getBankName() == null || request.getBankName().trim().isEmpty() ||
+                request.getBankAccountNum() == null || request.getBankAccountNum().trim().isEmpty()) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Thông tin tài khoản ngân hàng là bắt buộc đối với Chủ bãi xe!");
+            }
+        }
+
+        verifyAndConsumeOtp(email, request.getOtpCode(), OtpPurposeEnum.REGISTER);
 
         User user = User.builder()
-                .phone(request.getPhone())
-                .email(normalizeEmail(request.getEmail()))
+                .phone(phone)
+                .email(email)
                 .emailVerifiedAt(LocalDateTime.now())
                 .fullName(request.getFullName())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -205,16 +230,10 @@ public class AuthServiceImpl implements AuthService {
                     .build();
             driverRepository.save(driver);
         } else if (request.getRole() == RoleEnum.MERCHANT) {
-            if (request.getCitizenId() == null || request.getCitizenId().trim().isEmpty()) {
-                throw new AppException(ErrorCode.BAD_REQUEST, "CCCD/CMND là bắt buộc đối với Chủ bãi xe!");
-            }
-            if (request.getBankName() == null || request.getBankName().trim().isEmpty() ||
-                request.getBankAccountNum() == null || request.getBankAccountNum().trim().isEmpty()) {
-                throw new AppException(ErrorCode.BAD_REQUEST, "Thông tin tài khoản ngân hàng là bắt buộc đối với Chủ bãi xe!");
-            }
+            String citizenId = request.getCitizenId().trim();
             Merchant merchant = Merchant.builder()
                     .user(savedUser)
-                    .citizenId(request.getCitizenId().trim())
+                    .citizenId(citizenId)
                     .bankName(request.getBankName().trim())
                     .bankAccountNum(request.getBankAccountNum().trim())
                     .walletBalance(BigDecimal.ZERO)

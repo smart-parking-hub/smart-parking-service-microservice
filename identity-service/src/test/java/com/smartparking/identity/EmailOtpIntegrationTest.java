@@ -46,7 +46,12 @@ class EmailOtpIntegrationTest {
 
     @BeforeEach void setup() { email = UUID.randomUUID() + "@example.test"; }
 
-    SendOtpRequest request() { var r = new SendOtpRequest(); r.setEmail(email); return r; }
+    SendOtpRequest request() {
+        var r = new SendOtpRequest();
+        r.setEmail(email);
+        r.setPhone("09" + String.format("%08d", Math.floorMod(email.hashCode(), 100000000)));
+        return r;
+    }
     String send() {
         var response = auth.sendRegisterOtp(request());
         assertEquals(300, response.getExpiresInSeconds());
