@@ -32,6 +32,16 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+  folder: ${CLOUDINARY_FOLDER:smartparking/lots}
+
+app:
+  storage:
+    parking-lot-images-dir: ${PARKING_LOT_IMAGES_DIR:uploads/parking-lot-images}
+
 management:
   endpoints:
     web:

@@ -20,8 +20,11 @@ public class ParkingLotImage extends BaseEntity {
     @JoinColumn(name = "parking_lot_id", nullable = false)
     private ParkingLot parkingLot;
 
-    @Column(name = "stored_file_name", nullable = false, unique = true, length = 100)
+    @Column(name = "stored_file_name", nullable = false, unique = true, length = 255)
     private String storedFileName;
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @Column(name = "original_file_name", nullable = false, length = 255)
     private String originalFileName;

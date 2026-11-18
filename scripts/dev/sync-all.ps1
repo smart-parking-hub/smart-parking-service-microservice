@@ -117,14 +117,17 @@ if ($CleanDb) {
 # 3. Khoi dong tang Ha tang (Infrastructure: MySQL, Redis) & Cho MySQL Healthy
 Write-Host "`n[2/5] Khoi dong Ha tang va cho MySQL san sang..." -ForegroundColor Yellow
 
-# Đảm bảo network smart-parking-net tồn tại
+# Đảm bảo network smart-parking-net tồn tại (Idempotent - không báo lỗi nếu đã có)
 $networkExists = $false
 try {
-    $netCheck = docker network inspect smart-parking-net 2>&1
-    if ($LASTEXITCODE -eq 0) { $networkExists = $true }
+    $netCheck = docker network ls --filter "name=^smart-parking-net$" --format "{{.Name}}" 2>&1
+    if ($netCheck -match "smart-parking-net") { $networkExists = $true }
 } catch {}
 if (-not $networkExists) {
-    cmd /c "docker network create smart-parking-net" | Out-Null
+    Write-Host "Khoi tao Docker network smart-parking-net..." -ForegroundColor Gray
+    $null = docker network create smart-parking-net 2>&1
+} else {
+    Write-Host "-> Docker network smart-parking-net da san sang." -ForegroundColor Gray
 }
 
 # Khoi dong MySQL & Redis truoc
@@ -136,12 +139,13 @@ if ($Mode -eq "local-full") {
     cmd /c "$infraComposeCmd up -d mysql redis"
 }
 
-# Neu phat hien xung dot container, tu dong remove container bi xung dot roi khoi dong lai
+# Neu phat hien xung dot container ha tang cu, tu dong don dep container ha tang va thu lai
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[CANH BAO] Phat hien xung dot container cu. Dang tu dong don dep va thu lai..." -ForegroundColor Yellow
-    $strayContainers = docker ps -a --filter "name=smart-parking-" --format "{{.ID}}"
-    if ($strayContainers) {
-        $strayContainers | ForEach-Object { docker rm -f $_ 2>&1 | Out-Null }
+    Write-Host "[CANH BAO] Phat hien xung dot container ha tang cu. Dang tu dong don dep va thu lai..." -ForegroundColor Yellow
+    $infraContainers = @("smart-parking-mysql", "smart-parking-redis")
+    if ($Mode -eq "local-full") { $infraContainers += "smart-parking-kafka" }
+    foreach ($c in $infraContainers) {
+        $null = docker rm -f $c 2>&1
     }
     if ($Mode -eq "local-full") {
         cmd /c "$infraComposeCmd up -d mysql redis kafka"
@@ -225,6 +229,8 @@ if ($Mode -eq "local-full") {
     $composeCmd += " -f docker\compose\local\compose.local-full.yaml"
 }
 
+$allMicroservices = "api-gateway identity-service parking-lot-service booking-service payment-service notification-service ai-service"
+
 if ($Service -ne "") {
     $targetContainer = $Service
     if (-not $targetContainer.EndsWith("-service") -and $targetContainer -ne "api-gateway") {
@@ -232,17 +238,22 @@ if ($Service -ne "") {
     }
     cmd /c "$composeCmd up -d --build --force-recreate $targetContainer"
 } else {
-    cmd /c "$composeCmd up -d --build --force-recreate"
+    # Chi cap nhat va tai tao cac container Microservices, giu nguyen MySQL va Redis dang chay
+    cmd /c "$composeCmd up -d --build --force-recreate $allMicroservices"
 }
 
-# Neu dính lỗi conflict tên container, tự động remove container cũ và chạy lại lần 2
+# Neu dinh loi conflict ten container, chi go bo cac container microservices bi chiem ten va chay lai
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[CANH BAO] Phat hien xung dot container khi build/up. Dang tu dong go bo container bi chiem ten..." -ForegroundColor Yellow
-    $strayContainers = docker ps -a --filter "name=smart-parking-" --format "{{.ID}}"
-    if ($strayContainers) {
-        $strayContainers | ForEach-Object { docker rm -f $_ 2>&1 | Out-Null }
+    Write-Host "[CANH BAO] Phat hien xung dot container khi build/up. Dang tu dong go bo container microservices bi chiem ten..." -ForegroundColor Yellow
+    $appContainers = @("smart-parking-gateway", "smart-parking-identity", "smart-parking-parkinglot", "smart-parking-booking", "smart-parking-payment", "smart-parking-notification", "smart-parking-ai")
+    foreach ($c in $appContainers) {
+        $null = docker rm -f $c 2>&1
     }
-    cmd /c "$composeCmd up -d --build --force-recreate"
+    if ($Service -ne "") {
+        cmd /c "$composeCmd up -d --build --force-recreate $targetContainer"
+    } else {
+        cmd /c "$composeCmd up -d --build --force-recreate $allMicroservices"
+    }
 }
 
 if ($LASTEXITCODE -ne 0) {

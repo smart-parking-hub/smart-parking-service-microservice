@@ -44,6 +44,11 @@ public class ParkingLotImageController {
             @PathVariable Long parkingLotId,
             @PathVariable Long imageId) {
         ParkingLotImageService.StoredImage image = imageService.getContent(parkingLotId, imageId);
+        if (image.redirectUrl() != null && !image.redirectUrl().isBlank()) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(java.net.URI.create(image.redirectUrl()))
+                    .build();
+        }
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
