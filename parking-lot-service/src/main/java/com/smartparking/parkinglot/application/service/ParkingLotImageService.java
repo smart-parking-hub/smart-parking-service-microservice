@@ -13,5 +13,9 @@ public interface ParkingLotImageService {
     void delete(Long merchantUserId, Long parkingLotId, Long imageId);
     ParkingLotImageResponse setCover(Long merchantUserId, Long parkingLotId, Long imageId);
 
-    record StoredImage(Resource resource, String contentType, String originalFileName) {}
+    record StoredImage(Resource resource, String contentType, String originalFileName, String redirectUrl) {
+        public StoredImage(Resource resource, String contentType, String originalFileName) {
+            this(resource, contentType, originalFileName, null);
+        }
+    }
 }

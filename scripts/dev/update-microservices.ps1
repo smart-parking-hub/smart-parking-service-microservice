@@ -107,10 +107,38 @@ Write-Host "-> Bien dich JAR hoan tat thanh cong." -ForegroundColor Green
 
 # 4. Build Docker & Recreate Container
 Write-Host "`n[3/4] Build lai Docker Image va Recreate Container tren Docker..." -ForegroundColor Yellow
+
+# Đảm bảo network smart-parking-net tồn tại (Idempotent - không báo lỗi nếu đã có)
+$networkExists = $false
+try {
+    $netCheck = docker network ls --filter "name=^smart-parking-net$" --format "{{.Name}}" 2>&1
+    if ($netCheck -match "smart-parking-net") { $networkExists = $true }
+} catch {}
+if (-not $networkExists) {
+    Write-Host "Khoi tao Docker network smart-parking-net..." -ForegroundColor Gray
+    $null = docker network create smart-parking-net 2>&1
+}
+
+$composeCmd = "docker compose -p docker --project-directory . -f docker\compose\local\compose.yaml -f docker\compose\local\compose.local.yaml"
+$allMicroservices = "api-gateway identity-service parking-lot-service booking-service payment-service notification-service ai-service"
+
 if ($composeService -ne "") {
-    cmd /c "docker compose -p docker --project-directory . -f docker\compose\local\compose.yaml up -d --build $composeService"
+    cmd /c "$composeCmd up -d --build --force-recreate $composeService"
 } else {
-    cmd /c "docker compose -p docker --project-directory . -f docker\compose\local\compose.yaml up -d --build"
+    cmd /c "$composeCmd up -d --build --force-recreate $allMicroservices"
+}
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[CANH BAO] Phat hien container cu bi xung dot. Dang tu dong go bo container microservices va thu lai..." -ForegroundColor Yellow
+    $appContainers = @("smart-parking-gateway", "smart-parking-identity", "smart-parking-parkinglot", "smart-parking-booking", "smart-parking-payment", "smart-parking-notification", "smart-parking-ai")
+    foreach ($c in $appContainers) {
+        $null = docker rm -f $c 2>&1
+    }
+    if ($composeService -ne "") {
+        cmd /c "$composeCmd up -d --build --force-recreate $composeService"
+    } else {
+        cmd /c "$composeCmd up -d --build --force-recreate $allMicroservices"
+    }
 }
 
 if ($LASTEXITCODE -ne 0) {

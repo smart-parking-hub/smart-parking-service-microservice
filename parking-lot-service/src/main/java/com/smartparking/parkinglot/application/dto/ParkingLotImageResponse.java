@@ -23,6 +23,11 @@ public class ParkingLotImageResponse {
     private LocalDateTime createdAt;
 
     public static ParkingLotImageResponse fromEntity(ParkingLotImage image) {
+        String contentUrl = image.getImageUrl() != null && !image.getImageUrl().isBlank()
+                ? image.getImageUrl()
+                : "/api/v1/parking-lots/" + image.getParkingLot().getId()
+                + "/images/" + image.getId() + "/content";
+
         return ParkingLotImageResponse.builder()
                 .id(image.getId())
                 .parkingLotId(image.getParkingLot().getId())
@@ -30,8 +35,7 @@ public class ParkingLotImageResponse {
                 .contentType(image.getContentType())
                 .sizeBytes(image.getSizeBytes())
                 .cover(image.isCover())
-                .contentUrl("/api/v1/parking-lots/" + image.getParkingLot().getId()
-                        + "/images/" + image.getId() + "/content")
+                .contentUrl(contentUrl)
                 .createdAt(image.getCreatedAt())
                 .build();
     }

@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import com.smartparking.parkinglot.infrastructure.cloudinary.CloudinaryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.*;
 
 @Service
@@ -34,14 +35,25 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
     private final ParkingLotRepository parkingLotRepository;
     private final ParkingLotImageRepository imageRepository;
     private final Path storageRoot;
+    private final CloudinaryService cloudinaryService;
 
     public ParkingLotImageServiceImpl(
             ParkingLotRepository parkingLotRepository,
             ParkingLotImageRepository imageRepository,
             @Value("${app.storage.parking-lot-images-dir:uploads/parking-lot-images}") String storageDirectory) {
+        this(parkingLotRepository, imageRepository, storageDirectory, null);
+    }
+
+    @Autowired
+    public ParkingLotImageServiceImpl(
+            ParkingLotRepository parkingLotRepository,
+            ParkingLotImageRepository imageRepository,
+            @Value("${app.storage.parking-lot-images-dir:uploads/parking-lot-images}") String storageDirectory,
+            @Autowired(required = false) CloudinaryService cloudinaryService) {
         this.parkingLotRepository = parkingLotRepository;
         this.imageRepository = imageRepository;
         this.storageRoot = Path.of(storageDirectory).toAbsolutePath().normalize();
+        this.cloudinaryService = cloudinaryService;
     }
 
     @Override
@@ -62,9 +74,15 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
         }
 
         List<Path> writtenPaths = new ArrayList<>();
+        List<String> uploadedCloudinaryPublicIds = new ArrayList<>();
         List<ParkingLotImageResponse> responses = new ArrayList<>();
+        boolean useCloudinary = cloudinaryService != null && cloudinaryService.isAvailable();
+
         try {
-            Files.createDirectories(storageRoot);
+            if (!useCloudinary) {
+                Files.createDirectories(storageRoot);
+            }
+
             for (MultipartFile file : files) {
                 String originalFilename = file.getOriginalFilename() == null ? "image.jpg" : file.getOriginalFilename();
                 String ext = getFileExtension(originalFilename);
@@ -76,16 +94,27 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
                     throw new AppException(ErrorCode.BAD_REQUEST, "Mỗi ảnh không được vượt quá 5 MB");
                 }
 
-                String storedFileName = UUID.randomUUID() + ext;
-                Path destination = storageRoot.resolve(storedFileName);
-                try (InputStream input = file.getInputStream()) {
-                    Files.copy(input, destination, StandardCopyOption.REPLACE_EXISTING);
+                String storedFileName;
+                String imageUrl = null;
+
+                if (useCloudinary) {
+                    CloudinaryService.CloudinaryUploadResult cloudResult = cloudinaryService.upload(file, parkingLotId);
+                    storedFileName = cloudResult.publicId();
+                    imageUrl = cloudResult.secureUrl();
+                    uploadedCloudinaryPublicIds.add(storedFileName);
+                } else {
+                    storedFileName = UUID.randomUUID() + ext;
+                    Path destination = storageRoot.resolve(storedFileName);
+                    try (InputStream input = file.getInputStream()) {
+                        Files.copy(input, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    writtenPaths.add(destination);
                 }
-                writtenPaths.add(destination);
 
                 ParkingLotImage saved = imageRepository.saveAndFlush(ParkingLotImage.builder()
                         .parkingLot(parkingLot)
                         .storedFileName(storedFileName)
+                        .imageUrl(imageUrl)
                         .originalFileName(originalFilename)
                         .contentType(file.getContentType() != null ? file.getContentType() : "image/jpeg")
                         .sizeBytes(file.getSize())
@@ -96,9 +125,11 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
             return responses;
         } catch (IOException exception) {
             cleanupFiles(writtenPaths);
+            cleanupCloudinary(uploadedCloudinaryPublicIds);
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Không thể lưu ảnh bãi đỗ: " + exception.getMessage());
         } catch (RuntimeException exception) {
             cleanupFiles(writtenPaths);
+            cleanupCloudinary(uploadedCloudinaryPublicIds);
             throw exception;
         }
     }
@@ -116,6 +147,9 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
     @Transactional(readOnly = true)
     public StoredImage getContent(Long parkingLotId, Long imageId) {
         ParkingLotImage image = getImage(parkingLotId, imageId);
+        if (image.getImageUrl() != null && !image.getImageUrl().isBlank()) {
+            return new StoredImage(null, image.getContentType(), image.getOriginalFileName(), image.getImageUrl());
+        }
         try {
             Resource resource = new UrlResource(storageRoot.resolve(image.getStoredFileName()).toUri());
             if (!resource.exists() || !resource.isReadable()) {
@@ -133,7 +167,6 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
         getOwnedParkingLot(merchantUserId, parkingLotId);
         ParkingLotImage image = getImage(parkingLotId, imageId);
         boolean deletedCover = image.isCover();
-        Path storedFile = storageRoot.resolve(image.getStoredFileName());
 
         imageRepository.delete(image);
         imageRepository.flush();
@@ -144,10 +177,16 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
                 imageRepository.save(next);
             });
         }
-        try {
-            Files.deleteIfExists(storedFile);
-        } catch (IOException exception) {
-            log.warn("Failed to delete stored file: {}", storedFile);
+
+        if (image.getImageUrl() != null && cloudinaryService != null && cloudinaryService.isAvailable()) {
+            cloudinaryService.delete(image.getStoredFileName());
+        } else {
+            Path storedFile = storageRoot.resolve(image.getStoredFileName());
+            try {
+                Files.deleteIfExists(storedFile);
+            } catch (IOException exception) {
+                log.warn("Failed to delete stored file: {}", storedFile);
+            }
         }
     }
 
@@ -192,6 +231,18 @@ public class ParkingLotImageServiceImpl implements ParkingLotImageService {
             try {
                 Files.deleteIfExists(path);
             } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void cleanupCloudinary(List<String> publicIds) {
+        if (cloudinaryService == null || !cloudinaryService.isAvailable() || publicIds == null) {
+            return;
+        }
+        for (String id : publicIds) {
+            try {
+                cloudinaryService.delete(id);
+            } catch (Exception ignored) {
             }
         }
     }

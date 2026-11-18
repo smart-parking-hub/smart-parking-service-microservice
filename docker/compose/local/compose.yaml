@@ -65,6 +65,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-root}
       REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-smartparking/lots}
     networks:
       - smart-parking-net
 
@@ -166,8 +170,7 @@ services:
 
 networks:
   smart-parking-net:
-    name: smart-parking-net
-    driver: bridge
+    external: true
 
 volumes:
   payment_uploads:
