@@ -13,6 +13,11 @@ eureka:
     fetch-registry: ${EUREKA_CLIENT_ENABLED:false}
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      # Keep room for multipart framing. Identity enforces the file total separately.
+      max-request-size: 17MB
   application:
     name: identity-service
   datasource:
@@ -43,6 +48,18 @@ jwt:
 
 app:
   internal-service-token: ${APP_INTERNAL_SERVICE_TOKEN:}
+  verification:
+    casso:
+      enabled: ${CASSO_TAX_LOOKUP_ENABLED:false}
+      app-id: ${CASSO_APP_ID:}
+      app-secret: ${CASSO_APP_SECRET:}
+      timeout: ${CASSO_TAX_LOOKUP_TIMEOUT:5s}
+      minimum-interval: ${CASSO_TAX_LOOKUP_MINIMUM_INTERVAL:3s}
+    cloudinary:
+      writes-enabled: ${KYC_CLOUDINARY_WRITES_ENABLED:false}
+      cloud-name: ${KYC_CLOUDINARY_CLOUD_NAME:${CLOUDINARY_CLOUD_NAME:}}
+      api-key: ${KYC_CLOUDINARY_API_KEY:${CLOUDINARY_API_KEY:}}
+      api-secret: ${KYC_CLOUDINARY_API_SECRET:${CLOUDINARY_API_SECRET:}}
 
 resilience4j:
   timelimiter:

@@ -26,21 +26,18 @@ class IdentitySchemaMigrationTest {
     private static final String MYSQL_USER = resolveProperty("test.mysql.user", "DB_USERNAME", "root");
     private static final String MYSQL_PASSWORD = resolvePassword();
 
-    private static String resolveProperty(String sysProp, String envVar, String defaultValue) {
-        String val = System.getProperty(sysProp);
-        if (val != null && !val.isBlank()) return val.trim();
-        val = System.getenv(envVar);
-        if (val != null && !val.isBlank()) return val.trim();
-        return defaultValue;
+    private static String stripQuotes(String val) {
+        if (val == null) return null;
+        String trimmed = val.trim();
+        if ((trimmed.startsWith("'") && trimmed.endsWith("'")) || (trimmed.startsWith("\"") && trimmed.endsWith("\""))) {
+            if (trimmed.length() >= 2) {
+                return trimmed.substring(1, trimmed.length() - 1).trim();
+            }
+        }
+        return trimmed;
     }
 
-    private static String resolvePassword() {
-        String val = System.getProperty("test.mysql.password");
-        if (val != null) return val;
-        val = System.getenv("DB_PASSWORD");
-        if (val != null) return val;
-
-        // Fallback: read DB_PASSWORD from .env in workspace root without printing credentials
+    private static String readFromEnvFile(String key) {
         for (Path candidate : List.of(
                 Paths.get(".env"),
                 Paths.get("../.env"),
@@ -51,14 +48,34 @@ class IdentitySchemaMigrationTest {
                     List<String> lines = Files.readAllLines(candidate, StandardCharsets.UTF_8);
                     for (String line : lines) {
                         String trimmed = line.trim();
-                        if (trimmed.startsWith("DB_PASSWORD=")) {
-                            return trimmed.substring("DB_PASSWORD=".length()).trim();
+                        if (trimmed.startsWith(key + "=")) {
+                            return stripQuotes(trimmed.substring((key + "=").length()));
                         }
                     }
                 } catch (Exception ignored) {
                 }
             }
         }
+        return null;
+    }
+
+    private static String resolveProperty(String sysProp, String envVar, String defaultValue) {
+        String val = System.getProperty(sysProp);
+        if (val != null && !val.isBlank()) return stripQuotes(val);
+        val = System.getenv(envVar);
+        if (val != null && !val.isBlank()) return stripQuotes(val);
+        val = readFromEnvFile(envVar);
+        if (val != null && !val.isBlank()) return val;
+        return defaultValue;
+    }
+
+    private static String resolvePassword() {
+        String val = System.getProperty("test.mysql.password");
+        if (val != null) return stripQuotes(val);
+        val = System.getenv("DB_PASSWORD");
+        if (val != null) return stripQuotes(val);
+        val = readFromEnvFile("DB_PASSWORD");
+        if (val != null) return val;
         return "";
     }
 
@@ -174,7 +191,7 @@ class IdentitySchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("MySQL: Flyway V4->V5 upgrade preserves existing data and leaves account_holder_name NULL for existing records")
+    @DisplayName("MySQL: upgrades V4→V5 and V7→V10 while preserving legacy merchant data")
     void mySqlUpgradeMigrationV4ToV5PreservesExistingData() throws Exception {
         if (!isMySqlAvailable()) {
             fail("MySQL test environment verification FAILED: cannot connect to MySQL at "
@@ -262,6 +279,78 @@ class IdentitySchemaMigrationTest {
                         assertTrue(rs.next());
                         assertEquals("0071001234567", rs.getString("bank_account_num"));
                         assertEquals("NGUYỄN VĂN CHỦ BÃI", rs.getString("account_holder_name"));
+                    }
+                }
+                // Move to the pre-KYC schema, then migrate it with existing Merchant data.
+                Flyway.configure().dataSource(dbUrl, MYSQL_USER, MYSQL_PASSWORD)
+                        .target("7").locations("classpath:db/migration").load().migrate();
+                var kycFlyway = Flyway.configure().dataSource(dbUrl, MYSQL_USER, MYSQL_PASSWORD)
+                        .target("9").locations("classpath:db/migration").load();
+                assertEquals(2, kycFlyway.migrate().migrationsExecuted, "KYC upgrades V7 through V8 and V9");
+                try (Connection dbConn = DriverManager.getConnection(dbUrl, MYSQL_USER, MYSQL_PASSWORD);
+                     Statement dbStmt = dbConn.createStatement()) {
+                    dbStmt.executeUpdate("""
+                            INSERT INTO merchant_verification_dossiers (id, merchant_id, user_id, status, legal_name)
+                            SELECT 100, id, user_id, 'DRAFT', 'EXISTING NAME' FROM merchants WHERE id = 1
+                            """);
+                    dbStmt.executeUpdate("""
+                            INSERT INTO merchant_verification_documents
+                            (id, dossier_id, document_type, original_name, content_type, size_bytes, sha256_hash)
+                            VALUES ('legacy-image', 100, 'BUSINESS_REGISTRATION', 'legacy.png', 'image/png', 3, 'test')
+                            """);
+                    dbStmt.executeUpdate("INSERT INTO merchant_verification_document_bytes VALUES ('legacy-image', X'010203')");
+                    dbStmt.executeUpdate("""
+                            INSERT INTO merchant_verification_submissions
+                            (dossier_id, submission_version, business_registration_number, legal_name)
+                            VALUES (100, 1, '0101234567', 'EXISTING NAME')
+                            """);
+                }
+                var upgraded = Flyway.configure().dataSource(dbUrl, MYSQL_USER, MYSQL_PASSWORD)
+                        .locations("classpath:db/migration").load();
+                assertEquals(1, upgraded.migrate().migrationsExecuted, "V10 upgrades V9 with existing KYC data");
+                upgraded.validate();
+                try (Connection dbConn = DriverManager.getConnection(dbUrl, MYSQL_USER, MYSQL_PASSWORD);
+                     Statement dbStmt = dbConn.createStatement()) {
+                    try (ResultSet rs = dbStmt.executeQuery("""
+                            SELECT d.cloudinary_public_id, HEX(b.file_bytes) AS bytes
+                            FROM merchant_verification_documents d JOIN merchant_verification_document_bytes b
+                            ON b.document_id = d.id WHERE d.id = 'legacy-image'
+                            """)) {
+                        assertTrue(rs.next());
+                        assertNull(rs.getString("cloudinary_public_id"));
+                        assertEquals("010203", rs.getString("bytes"));
+                    }
+                    try (ResultSet rs = dbStmt.executeQuery("""
+                            SELECT legal_name, ocr_document_id, ocr_method
+                            FROM merchant_verification_submissions WHERE dossier_id = 100
+                            """)) {
+                        assertTrue(rs.next());
+                        assertEquals("EXISTING NAME", rs.getString("legal_name"));
+                        assertNull(rs.getString("ocr_document_id"));
+                        assertNull(rs.getString("ocr_method"));
+                    }
+                }
+                try (Connection dbConn = DriverManager.getConnection(dbUrl, MYSQL_USER, MYSQL_PASSWORD);
+                     Statement dbStmt = dbConn.createStatement()) {
+                    try (ResultSet rs = dbStmt.executeQuery(
+                            "SELECT business_license, bank_account_num, account_holder_name FROM merchants WHERE id = 1")) {
+                        assertTrue(rs.next());
+                        assertEquals("0071001234567", rs.getString("bank_account_num"));
+                        assertEquals("NGUYỄN VĂN CHỦ BÃI", rs.getString("account_holder_name"));
+                    }
+                    try (ResultSet rs = dbStmt.executeQuery("SELECT COUNT(*) FROM merchant_verification_dossiers")) {
+                        assertTrue(rs.next());
+                        assertEquals(1, rs.getInt(1), "Only the explicitly inserted dossier should exist");
+                    }
+                    try (ResultSet rs = dbStmt.executeQuery(
+                            "SHOW COLUMNS FROM merchant_verification_submissions LIKE 'assessment_attempts'")) {
+                        assertTrue(rs.next());
+                        assertEquals("0", rs.getString("Default"));
+                    }
+                    try (ResultSet rs = dbStmt.executeQuery(
+                            "SHOW COLUMNS FROM merchant_verification_document_bytes LIKE 'file_bytes'")) {
+                        assertTrue(rs.next());
+                        assertEquals("longblob", rs.getString("Type"));
                     }
                 }
             } finally {

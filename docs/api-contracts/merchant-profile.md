@@ -168,3 +168,27 @@ Cập nhật thông tin hồ sơ của Merchant đang đăng nhập.
   ```
 - **409 Conflict**:
   - `email` hoặc `citizenId` đã được sử dụng bởi người dùng khác.
+
+---
+
+## 3. Legacy Compatibility Route: POST `/api/v1/merchant/profile/documents` & Verification Badge
+
+- **Service**: `identity-service`
+- **Path**: `/api/v1/merchant/profile/documents`
+- **Method**: `POST`
+- **Description**: Tái sử dụng route cũ để phục vụ tương thích ngược. Khi client gọi endpoint này:
+  - Nếu chỉ gửi số giấy phép kinh doanh (`businessLicense`): Hệ thống cập nhật trường `businessRegistrationNumber` trong bản nháp hồ sơ xác minh (`DRAFT`) và cập nhật `merchants.business_license`.
+  - Nếu có đính kèm tệp: Hệ thống lưu tệp vào bản nháp dưới loại tài liệu bắt buộc `BUSINESS_REGISTRATION`.
+  - Route này chỉ ghi trong `DRAFT`, dùng chung giới hạn, validation và kho tệp Identity. Các trạng thái khác trả `409 CONFLICT`.
+  - PDF lưu trong MySQL. Ảnh JPEG, PNG và WebP tải mới lưu theo cấu hình Cloudinary của KYC. Bản nháp được tạo từ route cũ cũng để trống tên pháp lý.
+  - Trả về envelope `MerchantProfileResponse` với message thông báo đã lưu vào bản nháp.
+- **Verification Status & Badge mapping**:
+  - `VERIFIED`: Đã xác thực (chỉ khi hồ sơ được Admin phê duyệt).
+  - `PENDING_REVIEW` / `PENDING`: Đang chờ duyệt.
+  - `CHANGES_REQUESTED`: Yêu cầu bổ sung.
+  - `DRAFT`: Bản nháp.
+  - `NOT_SUBMITTED`: Chưa nộp.
+  - Hồ sơ cũ có số giấy phép nhưng chưa qua quy trình duyệt hồ sơ doanh nghiệp sẽ hiển thị trạng thái `CHƯA XÁC THỰC` (`NOT_SUBMITTED` hoặc `DRAFT`), không tự suy ra `VERIFIED`.
+- Để sử dụng toàn bộ quy trình tải nhiều loại tài liệu, quản lý phiên bản và xem kết quả thẩm định OCR, tham khảo [Merchant Verification Contract](./merchant-verification.md).
+
+Khi hồ sơ đã tồn tại, trường số giấy phép thuộc workflow xác minh. PUT hồ sơ chung vẫn cập nhật các trường hồ sơ thông thường.
