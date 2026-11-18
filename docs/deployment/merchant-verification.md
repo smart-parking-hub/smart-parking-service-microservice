@@ -14,13 +14,13 @@ Tính năng xác minh doanh nghiệp chủ bãi xe (`SP-MERCHANT-KYC-01`) bổ s
 
 ### Casso IDKit tax lookup
 
-Identity uses Casso Open Platform business and household lookup endpoints. Grant the app `idkit:business:read` for business and branch codes and `idkit:household:read` for 12-digit household codes. Configure `CASSO_APP_ID` and `CASSO_APP_SECRET` in the Identity runtime and set `CASSO_TAX_LOOKUP_ENABLED=true` when enabling the feature. The default is `false`. Local Compose passes these settings to `identity-service`. Grant outbound HTTPS access to `openapi.casso.vn` from Identity.
+Identity uses the Casso Open Platform business lookup endpoint. Grant the app `idkit:business:read` for 10-digit business codes and branch codes in the 10-digit-3-digit format. Admins check 12-digit numbers against the submitted documents. Configure `CASSO_APP_ID` and `CASSO_APP_SECRET` in the Identity runtime and set `CASSO_TAX_LOOKUP_ENABLED=true` when enabling the feature. The default is `false`. Local Compose passes these settings to `identity-service`. Grant outbound HTTPS access to `openapi.casso.vn` from Identity.
 
 `CASSO_TAX_LOOKUP_TIMEOUT` defaults to `5s` for the token and lookup requests combined. `CASSO_TAX_LOOKUP_MINIMUM_INTERVAL` defaults to `3s` per Admin and per dossier within each Identity instance. The client reuses the OAuth token, refreshes it once if Casso rejects it, and honors `Retry-After` after Casso returns `429`. Provider responses and URL paths containing the tax code should be excluded from request logs and telemetry.
 
 Use public company samples for smoke tests. The provider returned `200` for its published sample company and a known branch. A missing record returned HTTP `400` with `errorCode=IDKIT_BUSINESS_NOT_FOUND`. Disabling the feature stops requests to Casso and leaves manual KYC review available.
 
-Trial responses may contain demonstration data, including household responses that echo the requested MST alongside a different name. Identity marks data from a trial app and the Admin screen displays the label beside the result. Use official app credentials for KYC decisions. [Casso IDKit](https://www.vietqr.io/tra-cuu-mst)
+Trial responses may contain demonstration data. Identity marks data from a trial app and the Admin screen displays the label beside the result. Use official app credentials for production lookups. [Casso IDKit](https://www.vietqr.io/tra-cuu-mst)
 
 ## 3. Database Migration
 - Migration script: `identity-service/src/main/resources/db/migration/V8__merchant_business_verification.sql`.

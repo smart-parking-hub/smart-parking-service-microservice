@@ -69,7 +69,7 @@ public class CassoBusinessTaxRegistry implements BusinessTaxRegistry {
     }
 
     @Override
-    public Result lookup(String taxCode, TaxpayerType type) {
+    public Result lookup(String taxCode) {
         if (!enabled) {
             return Result.unavailable(null);
         }
@@ -83,24 +83,23 @@ public class CassoBusinessTaxRegistry implements BusinessTaxRegistry {
         }
 
         long deadline = System.nanoTime() + timeout.toNanos();
-        String resource = type == TaxpayerType.HOUSEHOLD ? "household" : "business";
         try {
             Token current = accessToken(deadline, null);
             if (current == null) {
                 return Result.unavailable(activeQuotaWait());
             }
-            var response = lookupTaxpayer(resource, taxCode, current, deadline);
+            var response = lookupBusiness(taxCode, current, deadline);
             if (response.statusCode() == 401) {
                 current = accessToken(deadline, current);
                 if (current == null) {
                     return Result.unavailable(activeQuotaWait());
                 }
-                response = lookupTaxpayer(resource, taxCode, current, deadline);
+                response = lookupBusiness(taxCode, current, deadline);
                 if (response.statusCode() == 401) {
                     token.compareAndSet(current, null);
                 }
             }
-            return toResult(type, resource, taxCode, response);
+            return toResult(taxCode, response);
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             log.warn("Casso IDKit lookup interrupted");
@@ -157,15 +156,15 @@ public class CassoBusinessTaxRegistry implements BusinessTaxRegistry {
         return cached != null && cached != rejected && Instant.now().isBefore(cached.refreshAt());
     }
 
-    private HttpResponse<String> lookupTaxpayer(String resource, String taxCode, Token current, long deadline)
+    private HttpResponse<String> lookupBusiness(String taxCode, Token current, long deadline)
             throws InterruptedException, TimeoutException, ExecutionException {
-        return send(request("/idkit/v1/" + resource + "/" + taxCode)
+        return send(request("/idkit/v1/business/" + taxCode)
                 .header("Authorization", "Bearer " + current.value()).GET(), deadline);
     }
 
-    private Result toResult(TaxpayerType type, String resource, String taxCode, HttpResponse<String> response) throws IOException {
+    private Result toResult(String taxCode, HttpResponse<String> response) throws IOException {
         if (response.statusCode() == 200) {
-            JsonNode taxpayer = readPayload(response).path(resource);
+            JsonNode taxpayer = readPayload(response).path("business");
             String registeredName = taxpayer.path("name").textValue();
             if (taxCode.equals(taxpayer.path("taxCode").textValue()) && registeredName != null && !registeredName.isBlank()) {
                 return Result.found(new Business(taxCode, registeredName, taxpayer.path("status").textValue(),
@@ -174,7 +173,7 @@ public class CassoBusinessTaxRegistry implements BusinessTaxRegistry {
             log.warn("Casso IDKit lookup returned an incomplete or mismatched tax record");
             return Result.unavailable(null);
         }
-        if (type == TaxpayerType.BUSINESS && response.statusCode() == 400
+        if (response.statusCode() == 400
                 && BUSINESS_NOT_FOUND.equals(readPayload(response).path("errorCode").textValue())) {
             return Result.notFound();
         }

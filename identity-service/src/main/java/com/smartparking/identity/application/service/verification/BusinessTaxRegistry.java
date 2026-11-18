@@ -5,9 +5,7 @@ import java.time.Instant;
 public interface BusinessTaxRegistry {
     boolean isEnabled();
 
-    Result lookup(String taxCode, TaxpayerType type);
-
-    enum TaxpayerType { BUSINESS, HOUSEHOLD }
+    Result lookup(String taxCode);
 
     enum Outcome { FOUND, NOT_FOUND, UNAVAILABLE }
 
