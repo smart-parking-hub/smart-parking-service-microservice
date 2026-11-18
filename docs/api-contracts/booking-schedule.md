@@ -1,6 +1,6 @@
 # Booking schedule contract
 
-- Owner: SmartParkingHub; last verified from source: 2026-11-17.
+- Owner: SmartParkingHub; last verified from source: 2026-11-18.
 - Implementation: `ScheduledReservationController`, `ScheduledSlotService`, `ParkingLotClient`, `BookingServiceImpl`, `ScheduledSlotLifecycle`.
 - All responses use the existing `ApiResponse<T>` envelope. SpringDoc exposes the controller/record schemas through the existing `/v3/api-docs`.
 
@@ -21,6 +21,8 @@ Both return:
   "timezone": "Asia/Ho_Chi_Minh",
   "blockMinutes": 30,
   "bufferMinutes": 30,
+  "checkInEarlyMinutes": 15,
+  "turnaroundMinutes": 15,
   "allocationMode": "PHYSICAL",
   "updatedAt": "2026-11-17T07:00:00",
   "remainingCapacity": 1,
@@ -29,15 +31,17 @@ Both return:
 }
 ```
 
+`bufferMinutes` remains the total gap for compatibility. `checkInEarlyMinutes` is the maximum early arrival and `turnaroundMinutes` is the cooldown after departure. Capacity covers both margins and honours each existing reservation’s saved protection window.
+
 Availability returns `slots` and an empty `blocks`. Timeline returns `blocks` and an empty `slots`; its top-level remainingCapacity is 0 and is not a whole-day availability count. A block contains `start`, `end`, `remainingCapacity`, and `status`: `AVAILABLE`, `FULL`, `BUFFER` or `PAST`. `GROUP` returns no invented physical slots. When explicit physical booking is disabled by the existing feature flag, availability omits selectable slots but can still support automatic allocation in physical mode.
 
 Reads are anonymous. No driver's identity, plate or booking identifier is included. Invalid dates/types/windows return 400, nonoperating lots are rejected, and the last write can return 409 even following a successful read.
 
 ## Booking create
 
-Existing `POST /api/v1/bookings` retains its request fields, including optional `physicalSlotId`. New bookings validate the half-hour grid on the server and save `schedulePolicyVersion=1`. A repeated request ID with identical intent returns the original booking, including historical bookings; changing its intent returns conflict. Existing owner/vehicle validation, hold quotas, pricing, refund and payment contracts remain authoritative.
+Existing `POST /api/v1/bookings` retains its request fields, including optional `physicalSlotId`. New bookings validate the half-hour grid on the server and save the policy confirmed by Parking. Policy 2 protects a 15-minute early-entry window and a 15-minute turnaround. A repeated request ID with identical intent returns the original booking, including historical bookings; changing its intent returns conflict. Existing owner/vehicle validation, hold quotas, pricing, refund and payment contracts remain authoritative.
 
-Booking DTO adds nullable `schedulePolicyVersion`, `checkInEarlyMinutes`, `bookingBlockMinutes`, `turnaroundMinutes`. Physical slot identifiers/codes already present on the backend are now retained by the FE schema. Policy 1 has early minutes 0; policy 0/null uses legacy entry rights. New paid QR deadlines never extend beyond the reserved end.
+Booking DTO adds nullable `schedulePolicyVersion`, `checkInEarlyMinutes`, `bookingBlockMinutes`, `turnaroundMinutes`. Physical slot identifiers/codes already present on the backend are now retained by the FE schema. Policy 2 has 15 early minutes and 15 turnaround minutes. Policy 1 has 0 early minutes and a 30-minute turnaround. Policy 0/null uses legacy entry rights. New paid QR deadlines never extend beyond the reserved end.
 
 ## Internal reservation writer
 
@@ -45,7 +49,7 @@ All `/api/v1/internal/**` operations require `X-Internal-Service-Token`. Booking
 
 | Method/path under `/api/v1/internal/parking-lots/{id}/slots` | Body / behavior |
 |---|---|
-| POST `/reservations` | `bookingId`, `vehicleType`, optional `physicalSlotId`, `startTime`, `endTime`, `holdExpiresAt`. Returns existing `SlotHoldResponse` with server tariff snapshot and allocated physical slot if applicable. |
+| POST `/reservations` | `bookingId`, `vehicleType`, optional `physicalSlotId`, `startTime`, `endTime`, `holdExpiresAt`, optional `schedulePolicyVersion` (defaults to 1 for older callers). Returns `SlotHoldResponse` with the accepted version, tariff snapshot and allocated physical slot if applicable. Booking interprets a missing response version as policy 1. |
 | POST `/reservations/{bookingId}/confirm` | Empty body. Idempotently mark a held schedule confirmed. Never revive a released reservation. |
 | POST `/reservations/{bookingId}/occupy` | `{ "token": "attempt-uuid" }`. Check allowed entry time/current occupancy/cooldown; allocate actual slot. |
 | POST `/reservations/{bookingId}/abort-occupation` | Same attempt token. Rollback compensation only; an old token cannot undo a newer attempt. |

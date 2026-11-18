@@ -66,7 +66,7 @@ class VehicleBookingConflictIntegrationTest {
         when(vehicles.require(anyLong())).thenAnswer(call -> new OwnedVehicleClient.Vehicle(
                 call.getArgument(0), "51C-482.91", VehicleTypeEnum.LIGHT_TRUCK, "ACTIVE"));
         when(lots.holdSlot(anyLong(), any())).thenReturn(ApiResponse.ok(SlotHoldResponse.builder()
-                .success(true).merchantId(99L).baseHourlyPrice(new BigDecimal("20000")).build()));
+                .success(true).merchantId(99L).baseHourlyPrice(new BigDecimal("20000")).schedulePolicyVersion(2).build()));
     }
 
     private CreateBookingRequest request(int startHours, int endHours) {
@@ -121,11 +121,41 @@ class VehicleBookingConflictIntegrationTest {
         rejects(intent);
     }
 
-    @ParameterizedTest
-    @CsvSource({"1,2", "4,5"})
-    void allowsAdjacentNonOverlappingReservations(int start, int end) {
+    @Test void allowsAnEarlierStayThatEndsAtTheOldTicketsStart() {
         existing(BookingStatusEnum.PENDING_CHECKIN, 2, 4);
-        assertNotNull(service.createBooking(7L, request(start, end)));
+        assertNotNull(service.createBooking(7L, request(1, 2)));
+    }
+
+    @Test void rejectsAConflictBetweenNewEarlyArrivalAndThePriorStay() {
+        existing(BookingStatusEnum.PENDING_CHECKIN, 2, 4);
+        rejects(request(4, 5));
+    }
+
+    @Test void rejectsAConflictWithTheEarlyArrivalWindowOfAnExistingNewTicket() {
+        var booking = existing(BookingStatusEnum.PENDING_CHECKIN, 2, 4);
+        booking.setSchedulePolicyVersion(2);
+        bookings.saveAndFlush(booking);
+        rejects(request(1, 2));
+    }
+
+    @Test void allowsAStayWhenThePreviousBookingEndsBeforeTheEarlyArrivalWindow() {
+        existing(BookingStatusEnum.PENDING_CHECKIN, 2, 4);
+        var intent = request(4, 5);
+        intent.setExpectedCheckInTime(now.plusHours(4).plusMinutes(30));
+        var ticket = service.createBooking(7L, intent);
+        assertEquals(2, ticket.getSchedulePolicyVersion());
+        assertEquals(15, ticket.getCheckInEarlyMinutes());
+        assertEquals(15, ticket.getTurnaroundMinutes());
+    }
+
+    @Test void fallsBackToTheOriginalPolicyForAnOlderParkingResponse() {
+        when(lots.holdSlot(anyLong(), any())).thenReturn(ApiResponse.ok(SlotHoldResponse.builder()
+                .success(true).merchantId(99L).baseHourlyPrice(new BigDecimal("20000")).build()));
+
+        var ticket = service.createBooking(7L, request(2, 3));
+        assertEquals(1, ticket.getSchedulePolicyVersion());
+        assertEquals(0, ticket.getCheckInEarlyMinutes());
+        assertEquals(30, ticket.getTurnaroundMinutes());
     }
 
     @ParameterizedTest

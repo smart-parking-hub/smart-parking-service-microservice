@@ -3,6 +3,7 @@ package com.smartparking.booking.application.service.impl;
 import com.smartparking.common.enums.BookingStatusEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
+import com.smartparking.common.util.BookingSchedulePolicy;
 import com.smartparking.booking.application.dto.CheckOutResponse;
 import com.smartparking.booking.application.service.CheckInOutService;
 import com.smartparking.booking.application.service.OutboxPublisherService;
@@ -55,14 +56,16 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        if (com.smartparking.booking.domain.BookingTimePolicy.tooEarly(now, booking.getExpectedCheckInTime(), Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) ? 0 : checkInEarlyMinutes)) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + com.smartparking.booking.domain.BookingTimePolicy.earlyMinutes(Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) ? 0 : checkInEarlyMinutes) + " phút)!");
+        int earlyMinutes = BookingSchedulePolicy.checkInEarlyMinutes(booking.getSchedulePolicyVersion(), checkInEarlyMinutes);
+        if (com.smartparking.booking.domain.BookingTimePolicy.tooEarly(now, booking.getExpectedCheckInTime(), earlyMinutes)) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa "
+                    + com.smartparking.booking.domain.BookingTimePolicy.earlyMinutes(earlyMinutes) + " phút)!");
         }
         if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");
         }
 
-        if (Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) && !now.isBefore(booking.getExpectedCheckOutTime()))
+        if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && !now.isBefore(booking.getExpectedCheckOutTime()))
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "Đã hết khung giờ đặt chỗ");
         com.smartparking.booking.application.service.ScheduledSlotLifecycle.occupy(booking, parkingLotClient);
         booking.setStatus(BookingStatusEnum.PARKING);

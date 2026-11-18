@@ -53,6 +53,32 @@ class CheckInOutServiceImplTest {
     private final Long parkingLotId = 50L;
 
     @ParameterizedTest
+    @CsvSource({"2, 0, true", "2, -1, false", "1, 0, false", "2, 8100, false", "1, 8100, false"})
+    void checksTheBookedVersionAtArrivalAndAtTheReservedEnd(int version, int secondsAfterEarlyStart,
+            boolean allowed) {
+        LocalDateTime expected = LocalDateTime.of(2026, 11, 18, 19, 0);
+        LocalDateTime now = expected.minusMinutes(15).plusSeconds(secondsAfterEarlyStart);
+        Booking booking = Booking.builder().id(1L).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PENDING_CHECKIN).schedulePolicyVersion(version)
+                .expectedCheckInTime(expected).expectedCheckOutTime(expected.plusHours(2))
+                .expiresAt(expected.plusHours(2)).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(now);
+            if (allowed) {
+                checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId);
+                assertEquals(BookingStatusEnum.PARKING, booking.getStatus());
+                assertEquals(now, booking.getCheckInTime());
+            } else {
+                assertThrows(AppException.class, () -> checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId));
+                assertEquals(BookingStatusEnum.PENDING_CHECKIN, booking.getStatus());
+                verifyNoInteractions(parkingLotClient);
+            }
+        }
+    }
+
+    @ParameterizedTest
     @CsvSource({"31000", "40000"})
     void rejectsCashAmountDifferentFromOutstandingBalance(String amount) {
         Booking booking = cashBooking();

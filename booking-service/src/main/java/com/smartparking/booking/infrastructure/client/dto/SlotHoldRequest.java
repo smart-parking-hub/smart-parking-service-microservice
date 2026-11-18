@@ -21,4 +21,5 @@ public class SlotHoldRequest {
     private java.time.LocalDateTime startTime;
     private java.time.LocalDateTime endTime;
     private java.time.LocalDateTime holdExpiresAt;
+    private Integer schedulePolicyVersion;
 }

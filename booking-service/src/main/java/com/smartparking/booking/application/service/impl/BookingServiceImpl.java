@@ -5,6 +5,7 @@ import com.smartparking.common.dto.PageResponse;
 import com.smartparking.common.enums.BookingStatusEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
+import com.smartparking.common.util.BookingSchedulePolicy;
 import com.smartparking.booking.application.dto.BookingDto;
 import com.smartparking.booking.application.dto.CancelBookingRequest;
 import com.smartparking.booking.application.dto.CancelBookingResponse;
@@ -66,7 +67,7 @@ public class BookingServiceImpl implements BookingService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         if (!request.getExpectedCheckOutTime().isAfter(request.getExpectedCheckInTime()) || request.getExpectedCheckInTime().isBefore(now))
             throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào phải ở tương lai và giờ ra phải sau giờ vào");
-        com.smartparking.common.util.BookingSchedulePolicy.validate(request.getExpectedCheckInTime(), request.getExpectedCheckOutTime());
+        BookingSchedulePolicy.validate(request.getExpectedCheckInTime(), request.getExpectedCheckOutTime());
         var vehicle = ownedVehicleClient.require(request.getVehicleId());
         if (vehicle.vehicleType() != request.getVehicleType())
             throw new AppException(ErrorCode.BAD_REQUEST, "Loại xe không khớp phương tiện đã đăng ký");
@@ -91,7 +92,8 @@ public class BookingServiceImpl implements BookingService {
         }
         holdPolicy.check(driverUserId, request.getVehicleId(), request.getParkingLotId(),
                 LocalDateTime.now(BUSINESS_ZONE));
-        if (holdPolicyStore.hasScheduleConflict(request.getVehicleId(), request.getExpectedCheckInTime(),
+        if (holdPolicyStore.hasScheduleConflict(request.getVehicleId(),
+                request.getExpectedCheckInTime().minusMinutes(BookingSchedulePolicy.EARLY_CHECK_IN_MINUTES),
                 request.getExpectedCheckOutTime(), LocalDateTime.now(BUSINESS_ZONE))) {
             throw new AppException(ErrorCode.CONFLICT,
                     "Xe này đã có booking trùng thời gian. Vui lòng chọn thời gian khác hoặc hoàn tất lượt đỗ hiện tại.");
@@ -109,7 +111,7 @@ public class BookingServiceImpl implements BookingService {
                 .parkingLotName(request.getParkingLotName())
                 .parkingLotAddress(request.getParkingLotAddress())
                 .status(BookingStatusEnum.PENDING_PAYMENT)
-                .schedulePolicyVersion(com.smartparking.common.util.BookingSchedulePolicy.VERSION)
+                .schedulePolicyVersion(BookingSchedulePolicy.VERSION)
                 .expectedCheckInTime(request.getExpectedCheckInTime())
                 .expectedCheckOutTime(request.getExpectedCheckOutTime())
                 .expiresAt(now.plusMinutes(15))
@@ -148,6 +150,7 @@ public class BookingServiceImpl implements BookingService {
                     .physicalSlotId(request.getPhysicalSlotId())
                     .startTime(request.getExpectedCheckInTime()).endTime(request.getExpectedCheckOutTime())
                     .holdExpiresAt(saved.getExpiresAt())
+                    .schedulePolicyVersion(saved.getSchedulePolicyVersion())
                     .build();
 
             ApiResponse<SlotHoldResponse> holdRes = parkingLotClient.holdSlot(request.getParkingLotId(), holdReq);
@@ -161,6 +164,8 @@ public class BookingServiceImpl implements BookingService {
             saved.setParkingLotAddress(quote.getParkingLotAddress()); saved.setHourlyRate(quote.getBaseHourlyPrice());
             saved.setSurgeMultiplier(quote.getSurgeMultiplier()); saved.setSurgeStartTime(quote.getSurgeStartTime());
             saved.setSurgeEndTime(quote.getSurgeEndTime()); saved.setOvertimePenaltyMultiplier(quote.getOvertimePenaltyMultiplier());
+            saved.setSchedulePolicyVersion(quote.getSchedulePolicyVersion() == null
+                    ? BookingSchedulePolicy.ON_TIME_VERSION : quote.getSchedulePolicyVersion());
             saved.setPhysicalSlotId(quote.getPhysicalSlotId());
             saved.setPhysicalSlotCode(quote.getPhysicalSlotCode());
             saved.setLayoutPublicationId(quote.getLayoutPublicationId());
