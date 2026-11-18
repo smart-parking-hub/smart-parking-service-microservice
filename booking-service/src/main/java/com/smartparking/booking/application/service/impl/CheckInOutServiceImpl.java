@@ -64,8 +64,7 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         }
         if (now.isBefore(opensAt)) {
             String remaining = formatCheckInWait(Duration.between(now, opensAt));
-            throw new AppException(ErrorCode.BAD_REQUEST,
-                    "Chưa đến giờ check-in. Còn " + remaining + " nữa mới có thể check-in.");
+            throw new AppException(ErrorCode.BAD_REQUEST, "Còn " + remaining + " đến giờ check-in.");
         }
         if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");

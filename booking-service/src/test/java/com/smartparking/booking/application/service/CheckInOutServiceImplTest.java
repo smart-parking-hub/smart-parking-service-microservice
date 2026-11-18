@@ -104,7 +104,7 @@ class CheckInOutServiceImplTest {
             var rejection = assertThrows(AppException.class,
                     () -> checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId));
             assertEquals(ErrorCode.BAD_REQUEST, rejection.getErrorCode());
-            assertEquals("Chưa đến giờ check-in. Còn " + remaining + " nữa mới có thể check-in.", rejection.getMessage());
+            assertEquals("Còn " + remaining + " đến giờ check-in.", rejection.getMessage());
             verifyNoInteractions(parkingLotClient, outboxPublisherService);
         }
     }
