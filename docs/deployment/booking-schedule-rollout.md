@@ -5,7 +5,7 @@
 
 ## Retained local p0 startup
 
-Use `scripts/dev/start-p0-local.bat`. It retains `compose.restore-p0.local.yaml` database URLs and appends `compose.schedule.local.yaml` and `compose.no-request-rate.local.yaml`, pinning the tested schedule images and the subsequent removal of booking request-rate blocking. It does not build or pull images. The helper exits successfully only after the application health endpoints report UP; startup timeout exits with code 1 and reports unready ports.
+Use `scripts/dev/start-p0-local.bat`. It retains `docker/compose/overlays/compose.restore-p0.local.yaml` database URLs and appends `docker/compose/overlays/compose.schedule.local.yaml` and `docker/compose/overlays/compose.no-request-rate.local.yaml`, pinning the tested schedule images and the subsequent removal of booking request-rate blocking. It does not build or pull images. The helper exits successfully only after the application health endpoints report UP; startup timeout exits with code 1 and reports unready ports.
 
 The schedule image tags are `smart-parking/parking-lot-service:schedule-local-20261117` and `smart-parking/booking-service:schedule-local-20261117`. The final local override selects `smart-parking/booking-service:no-request-rate-local-20261117`; omitting it would restore the old limiter. These tags are local artifacts, not published registry releases; build or retain the matching verified artifacts before using this local-data helper. Do not start the retained p0 dataset using only the base Compose file: that selects other database defaults and may select old images.
 
@@ -34,9 +34,13 @@ Reconciliation defaults on, with batches every 30 seconds. `app.schedule.reconci
 
 ## Early-arrival release (policy 2)
 
-Release Parking and Booking with policy 2 support together, Parking first, then the compatible frontend. No schema migration or historical rewrite is required. Older Booking callers omit the version and continue creating policy 1. If an older Parking responds without a version, Booking saves policy 1. Verify a new paid ticket permits entry at T−15, still respects an occupied slot or late cooldown, and retains its existing check-out and pricing rules.
+1. Deploy Parking with `APP_SCHEDULE_EARLY_ENABLED=false` (the default). Availability, timeline and new holds use policy 1 during the mixed-version window. Deploy Booking and the compatible frontend. Verify that an old caller and a policy 2-capable caller both create policy 1 tickets.
+2. After all Booking instances support policy 2, switch all Parking instances to `APP_SCHEDULE_EARLY_ENABLED=true`. Pause traffic to schedule reads and new creates during the switch, or switch the Parking fleet as one unit and drain the old fleet before resuming traffic. New holds from older Booking callers receive 409 once policy 2 is active.
+3. Verify that availability and timeline report 15 minutes early and 15 minutes of turnaround, a new paid 30-minute ticket expires at its scheduled end, and existing policy 1 tickets and late-vehicle cooldowns keep their stored rules. A 60-minute or longer booking still has its original limit of 60 minutes after the scheduled start.
 
-If an early-arrival release must be paused after issuing policy 2 tickets, retain policy 2 readers and gate/checkout behavior until all such reservations and cooldowns have ended. Rolling services back to pre-policy-2 builds during that window can change ticket display or turnaround behavior.
+No schema migration or bulk rewrite is required. If an older Parking responds without a version, Booking uses policy 1 and checks the vehicle against the accepted arrival window.
+
+If an early-arrival release must be paused after issuing policy 2 tickets, switch new holds and schedule reads back to policy 1 with the same coordinated traffic switch. Keep policy 2 readers and gate/checkout behavior until all such reservations and cooldowns have ended. Rolling services back to pre-policy-2 builds during that window can change ticket display or turnaround behavior.
 
 ## Rollback
 

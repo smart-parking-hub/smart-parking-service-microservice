@@ -14,6 +14,15 @@ class ScheduledSlotLifecycleTest {
             .checkOutTime(LocalDateTime.of(2026,11,20,12,0)).build();
     @BeforeEach void begin(){TransactionSynchronizationManager.initSynchronization();}
     @AfterEach void end(){TransactionSynchronizationManager.clearSynchronization();}
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"2,30,30", "2,60,60", "2,120,60", "1,30,30", "0,30,60"})
+    void checkInDeadlineNeverExceedsTheScheduledEnd(int version, int duration, int deadline) {
+        var start = LocalDateTime.of(2026, 11, 20, 19, 0);
+        var ticket = Booking.builder().schedulePolicyVersion(version).expectedCheckInTime(start)
+                .expectedCheckOutTime(start.plusMinutes(duration)).build();
+
+        Assertions.assertEquals(start.plusMinutes(deadline), ScheduledSlotLifecycle.checkInDeadline(ticket));
+    }
     @Test void rollbackCompensatesOnlyItsOccupationAttempt() {
         ScheduledSlotLifecycle.occupy(booking,client);
         var synchronizations=TransactionSynchronizationManager.getSynchronizations();

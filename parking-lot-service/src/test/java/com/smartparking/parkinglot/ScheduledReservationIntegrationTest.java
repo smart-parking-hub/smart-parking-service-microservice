@@ -2,6 +2,7 @@ package com.smartparking.parkinglot;
 
 import com.smartparking.common.enums.*;
 import com.smartparking.common.exception.AppException;
+import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.parkinglot.application.dto.ScheduledHoldRequest;
 import com.smartparking.parkinglot.application.service.ScheduledSlotService;
 import com.smartparking.parkinglot.domain.model.*;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @org.springframework.test.context.ActiveProfiles("test")
 @org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-@SpringBootTest(properties = {"app.schedule.reconciliation.enabled=false", "spring.kafka.listener.auto-startup=false", "app.parking-layout.physical-booking-enabled=true", "app.parking-layout.storage-provider=mock"})
+@SpringBootTest(properties = {"app.schedule.reconciliation.enabled=false", "spring.kafka.listener.auto-startup=false", "app.parking-layout.physical-booking-enabled=true", "app.parking-layout.storage-provider=mock", "app.schedule.early.enabled=true"})
 class ScheduledReservationIntegrationTest {
     @Autowired ScheduledSlotService service;
     @Autowired ParkingLotRepository lots;
@@ -95,20 +97,46 @@ class ScheduledReservationIntegrationTest {
         assertEquals(2,reservations.findBySlotGroupIdAndStateNot(yard.group().getId(),"RELEASED").size());
         assertEquals(1,groups.findById(yard.group().getId()).orElseThrow().getAvailableCapacity());
     }
-    @Test void missingPolicyVersionKeepsTheOldHoldAndItsFullCooldown() {
+    @Test void rolloutKeepsReadAndWriteOnTheSamePolicyAndPreservesExistingHolds() {
         var yard = yard(1, true);
+        var slot = yard.physicalIds().getFirst();
         var start = time(13, 0);
         var end = time(15, 0);
-        long id = IDS.incrementAndGet();
-        var hold = service.hold(yard.id(), new ScheduledHoldRequest(id, VehicleTypeEnum.CONTAINER,
-                yard.physicalIds().getFirst(), start, end, LocalDateTime.now(ZONE).plusMinutes(15), null));
+        var expires = LocalDateTime.now(ZONE).plusMinutes(15);
+        var legacy = new ScheduledHoldRequest(IDS.incrementAndGet(), VehicleTypeEnum.CONTAINER, slot, start, end, expires, null);
+        var adjacent = new ScheduledHoldRequest(IDS.incrementAndGet(), VehicleTypeEnum.CONTAINER, slot,
+                time(15, 30), time(16, 0), expires, VERSION);
 
-        assertEquals(1, hold.getSchedulePolicyVersion());
-        var stored = reservations.findById(id).orElseThrow();
+        ReflectionTestUtils.setField(service, "earlyArrivalEnabled", false);
+        try {
+            assertEquals(1, service.hold(yard.id(), legacy).getSchedulePolicyVersion());
+            var availability = service.available(yard.id(), VehicleTypeEnum.CONTAINER, adjacent.startTime(), adjacent.endTime(), slot);
+            assertEquals(1, availability.remainingCapacity());
+            assertEquals(0, availability.checkInEarlyMinutes());
+            assertEquals(30, availability.turnaroundMinutes());
+            var timeline = service.timeline(yard.id(), VehicleTypeEnum.CONTAINER, adjacent.startTime().toLocalDate(), slot);
+            assertEquals(0, timeline.checkInEarlyMinutes());
+            assertTrue(timeline.blocks().stream().anyMatch(block -> block.start().equals(adjacent.startTime())
+                    && block.remainingCapacity() == 1 && block.status().equals("AVAILABLE")));
+            assertEquals(1, service.hold(yard.id(), adjacent).getSchedulePolicyVersion());
+            service.release(yard.id(), adjacent.bookingId());
+        } finally {
+            ReflectionTestUtils.setField(service, "earlyArrivalEnabled", true);
+        }
+
+        var stored = reservations.findById(legacy.bookingId()).orElseThrow();
         assertEquals(start, stored.getProtectedStart());
         assertEquals(end.plusMinutes(30), stored.getProtectedUntil());
+        assertEquals(1, service.hold(yard.id(), legacy).getSchedulePolicyVersion());
         assertEquals(0, available(yard, 15, 30, 16, 0));
+        assertThrows(AppException.class, () -> hold(yard, slot, time(15, 30), time(16, 0)));
+
+        var afterBuffer = new ScheduledHoldRequest(IDS.incrementAndGet(), VehicleTypeEnum.CONTAINER, slot,
+                time(16, 0), time(16, 30), expires, null);
         assertEquals(1, available(yard, 16, 0, 16, 30));
+        var error = assertThrows(AppException.class, () -> service.hold(yard.id(), afterBuffer));
+        assertEquals(ErrorCode.CONFLICT, error.getErrorCode());
+        assertNotNull(hold(yard, slot, time(16, 0), time(16, 30)));
     }
 
     @Test void earlyArrivalWaitsForTheLateVehiclesActualCooldown() {

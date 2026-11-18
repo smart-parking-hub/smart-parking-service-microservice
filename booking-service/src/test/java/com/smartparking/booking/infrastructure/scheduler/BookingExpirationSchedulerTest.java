@@ -43,8 +43,8 @@ class BookingExpirationSchedulerTest {
             scheduler.expireNoShowBookings();
             verify(repository).findByStatusAndExpiresAtBefore(eq(BookingStatusEnum.PENDING_PAYMENT),
                     argThat(time -> !time.isBefore(now.minusMinutes(3)) && time.isBefore(now.minusMinutes(2))));
-            verify(repository).findByStatusAndExpiresAtBefore(eq(BookingStatusEnum.PENDING_CHECKIN),
-                    argThat(time -> !time.isBefore(now) && time.isBefore(now.plusMinutes(1))));
+            verify(repository).findNoShowCandidates(eq(BookingStatusEnum.PENDING_CHECKIN),
+                    argThat(time -> !time.isBefore(now) && time.isBefore(now.plusMinutes(1))), eq(1));
         } finally {
             java.util.TimeZone.setDefault(original);
         }
@@ -68,6 +68,26 @@ class BookingExpirationSchedulerTest {
         assertEquals(BookingStatusEnum.EXPIRED, booking.getStatus());
         verify(lots).releaseSlot(eq(2L), argThat(request -> request.getBookingId().equals(1L)));
         verify(queue).promoteNextInQueue(2L, VehicleTypeEnum.SEDAN_SUV);
+    }
+
+    @Test
+    void expiresPreviouslyIssuedPolicyTwoTicketAtItsScheduledEnd() {
+        var end = LocalDateTime.now(BUSINESS_ZONE).minusMinutes(1);
+        Booking ticket = candidate();
+        ticket.setStatus(BookingStatusEnum.PENDING_CHECKIN);
+        ticket.setSchedulePolicyVersion(2);
+        ticket.setExpectedCheckOutTime(end);
+        ticket.setExpiresAt(end.plusMinutes(30));
+        when(repository.findNoShowCandidates(eq(BookingStatusEnum.PENDING_CHECKIN), any(), eq(1)))
+                .thenReturn(List.of(ticket));
+        when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(ticket));
+
+        scheduler.expireNoShowBookings();
+
+        assertEquals(BookingStatusEnum.CANCELLED, ticket.getStatus());
+        assertEquals(end, ticket.getExpiresAt());
+        verify(lots).releaseSlot(eq(2L), argThat(request -> request.getBookingId().equals(1L)));
+        verify(events).publishBookingCancelled(eq(ticket), anyString());
     }
 
     @Test

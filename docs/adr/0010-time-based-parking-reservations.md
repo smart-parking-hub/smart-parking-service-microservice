@@ -16,7 +16,7 @@ Future holds do not decrement the current capacity counter. Actual occupation de
 
 ## Early arrival (2026-11-18)
 
-New holds use policy 2 and protect `[start - 15 minutes, end + 15 minutes)`. The booking grid remains 30 minutes and consecutive policy 2 reservations on the same slot still need a 30-minute separation. Entry can start 15 minutes early if the slot is ready. After checkout the protected end is `max(expectedEnd, actualCheckout) + 15 minutes`, so a late return can delay the next entry without taking away its reservation. Billing starts at actual entry using the existing tariff rules.
+With early arrival enabled, new holds use policy 2 and protect `[start - 15 minutes, end + 15 minutes)`. The booking grid remains 30 minutes and consecutive policy 2 reservations on the same slot still need a 30-minute separation. Entry can start 15 minutes early if the slot is ready. After checkout the protected end is `max(expectedEnd, actualCheckout) + 15 minutes`, so a late return can delay the next entry without taking away its reservation. Billing starts at actual entry using the existing tariff rules.
 
 Policy 1 continues to protect `[start, end + 30 minutes)`. Policy 0 and null retain their original rules. Mixed versions use their own stored intervals, so a slot with an existing reservation may need more separation during transition. Existing holds are read in place.
 

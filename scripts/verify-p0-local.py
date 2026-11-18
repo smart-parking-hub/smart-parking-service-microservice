@@ -1,5 +1,5 @@
 """Isolated localhost acceptance fixture. Never sends real payments or edits database rows.
-Requires compose.p0.local.yaml (DEMO payments) plus compose.email.local.yaml (local SMTP inbox).
+Requires docker/compose/overlays/compose.p0.local.yaml (DEMO payments) plus docker/compose/overlays/compose.email.local.yaml (local SMTP inbox).
 Secrets are saved only in git-ignored .env.p0-session.json; output is sanitized.
 """
 import json, uuid, secrets, time, urllib.request, urllib.error, re
