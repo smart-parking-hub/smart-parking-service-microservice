@@ -548,6 +548,15 @@ class MerchantWalletServiceImplTest {
         assertEquals(0, new BigDecimal("45000.00").compareTo(lot10.getOnlineTransferRevenue()));
         assertEquals(0, new BigDecimal("50000.00").compareTo(lot10.getPeriodOnlineTransferGrossRevenue()));
         assertEquals(0, new BigDecimal("45000.00").compareTo(lot10.getPeriodOnlineTransferRevenue()));
+
+        // Filtered directly to lot 10 must also report 50,000 / 5,000 / 45,000 for both all-time and period
+        var lot10Filtered = merchantWalletService.getRevenueSummary(merchantId, 10L, todayStr, todayStr, "DAY");
+        assertEquals(0, new BigDecimal("50000.00").compareTo(lot10Filtered.getTotalGrossRevenue()));
+        assertEquals(0, new BigDecimal("5000.00").compareTo(lot10Filtered.getTotalPlatformFee()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(lot10Filtered.getTotalNetRevenue()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(lot10Filtered.getPeriodTotalGrossRevenue()));
+        assertEquals(0, new BigDecimal("5000.00").compareTo(lot10Filtered.getPeriodTotalPlatformFee()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(lot10Filtered.getPeriodTotalNetRevenue()));
     }
 
     private WalletLedgerEntry settledEntry(
