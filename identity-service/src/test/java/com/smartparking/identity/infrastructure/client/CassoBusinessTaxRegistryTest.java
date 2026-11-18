@@ -2,7 +2,6 @@ package com.smartparking.identity.infrastructure.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.identity.application.service.verification.BusinessTaxRegistry.Outcome;
-import com.smartparking.identity.application.service.verification.BusinessTaxRegistry.TaxpayerType;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -68,8 +67,8 @@ class CassoBusinessTaxRegistryTest {
         });
         var registry = registry(Duration.ofSeconds(5));
 
-        var first = registry.lookup(TAX_CODE, TaxpayerType.BUSINESS);
-        var second = registry.lookup(TAX_CODE, TaxpayerType.BUSINESS);
+        var first = registry.lookup(TAX_CODE);
+        var second = registry.lookup(TAX_CODE);
 
         assertThat(first.outcome()).isEqualTo(Outcome.FOUND);
         assertThat(first.business().taxCode()).isEqualTo(TAX_CODE);
@@ -89,21 +88,21 @@ class CassoBusinessTaxRegistryTest {
     }
 
     @Test
-    void callsTheHouseholdEndpointAndMarksTrialResults() {
-        String taxCode = "012345678901";
-        server.createContext("/idkit/v1/household/" + taxCode, exchange -> reply(exchange, 200, """
-                {"requestId":"req-2","household":{"taxCode":"012345678901","name":"HỘ KINH DOANH MẪU",
+    void marksTrialBusinessResults() {
+        String taxCode = "0316794479";
+        server.createContext(LOOKUP_PATH + taxCode, exchange -> reply(exchange, 200, """
+                {"requestId":"req-2","business":{"taxCode":"0316794479","name":"DOANH NGHIỆP MẪU",
                 "status":"NNT đang hoạt động","source":"https://www.gdt.gov.vn","address":"Example"}}
                 """));
         URI uri = URI.create("http://127.0.0.1:" + server.getAddress().getPort());
         var registry = new CassoBusinessTaxRegistry(new ObjectMapper(), true, "trial-app_sample", "test-secret",
                 Duration.ofSeconds(5), uri);
 
-        var result = registry.lookup(taxCode, TaxpayerType.HOUSEHOLD);
+        var result = registry.lookup(taxCode);
 
         assertThat(result.outcome()).isEqualTo(Outcome.FOUND);
         assertThat(result.business().taxCode()).isEqualTo(taxCode);
-        assertThat(result.business().name()).isEqualTo("HỘ KINH DOANH MẪU");
+        assertThat(result.business().name()).isEqualTo("DOANH NGHIỆP MẪU");
         assertThat(result.business().source()).isEqualTo("https://www.gdt.gov.vn");
         assertThat(result.business().trial()).isTrue();
     }
@@ -119,7 +118,7 @@ class CassoBusinessTaxRegistryTest {
     })
     void distinguishesMissingBusinessFromProviderFailures(int httpStatus, String body, Outcome outcome) {
         server.createContext(LOOKUP_PATH, exchange -> reply(exchange, httpStatus, body));
-        assertThat(registry(Duration.ofSeconds(5)).lookup(TAX_CODE, TaxpayerType.BUSINESS).outcome()).isEqualTo(outcome);
+        assertThat(registry(Duration.ofSeconds(5)).lookup(TAX_CODE).outcome()).isEqualTo(outcome);
     }
 
     @Test
@@ -132,11 +131,11 @@ class CassoBusinessTaxRegistryTest {
         });
         var registry = registry(Duration.ofSeconds(5));
 
-        var response = registry.lookup(TAX_CODE, TaxpayerType.BUSINESS);
+        var response = registry.lookup(TAX_CODE);
 
         assertThat(response.outcome()).isEqualTo(Outcome.UNAVAILABLE);
         assertThat(response.retryAt()).isAfter(Instant.now().plusSeconds(50));
-        assertThat(registry.lookup("0316794479", TaxpayerType.BUSINESS)).isEqualTo(response);
+        assertThat(registry.lookup("0316794479")).isEqualTo(response);
         assertThat(businessCalls).hasValue(1);
     }
 
@@ -157,7 +156,7 @@ class CassoBusinessTaxRegistryTest {
         var registry = registry(Duration.ofSeconds(2));
         long start = System.nanoTime();
         try {
-            assertThat(registry.lookup(TAX_CODE, TaxpayerType.BUSINESS).outcome()).isEqualTo(Outcome.UNAVAILABLE);
+            assertThat(registry.lookup(TAX_CODE).outcome()).isEqualTo(Outcome.UNAVAILABLE);
             assertThat(requestReceived.getCount()).isZero();
             assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(5));
         } finally {

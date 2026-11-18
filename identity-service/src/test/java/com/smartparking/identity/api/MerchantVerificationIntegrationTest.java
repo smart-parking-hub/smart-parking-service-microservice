@@ -7,7 +7,6 @@ import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.identity.application.dto.verification.*;
 import com.smartparking.identity.application.service.verification.BusinessTaxRegistry;
-import com.smartparking.identity.application.service.verification.BusinessTaxRegistry.TaxpayerType;
 import com.smartparking.identity.application.service.verification.MerchantVerificationAssessmentWorker;
 import com.smartparking.identity.application.service.verification.OcrExtractionService;
 import com.smartparking.identity.application.service.verification.VerificationCloudinaryCleanup;
@@ -30,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -202,8 +201,8 @@ class MerchantVerificationIntegrationTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"0316794479-001,BUSINESS", "012345678901,HOUSEHOLD"})
-    void adminLooksUpOnlyTheCurrentSubmittedTaxCode(String taxCode, TaxpayerType type) throws Exception {
+    @ValueSource(strings = {"0316794479", "0316794479-001"})
+    void adminLooksUpOnlyTheCurrentSubmittedTaxCode(String taxCode) throws Exception {
         String merchantPath = "/api/v1/merchant/profile/verification";
         String adminPath = "/api/v1/admin/merchant-verifications";
         String merchantAuth = "Bearer " + merchantToken1;
@@ -215,8 +214,7 @@ class MerchantVerificationIntegrationTest {
                 .andExpect(status().isOk()).andReturn();
         long dossierId = objectMapper.readTree(draft.getResponse().getContentAsByteArray()).at("/data/id").asLong();
         String lookupPath = adminPath + "/" + dossierId + "/submissions/1/tax-lookup";
-        String confirmation = type == TaxpayerType.HOUSEHOLD
-                ? "{\"confirmedHouseholdTaxCode\":true}" : "{\"confirmedBusinessTaxCode\":true}";
+        String confirmation = "{\"confirmedBusinessTaxCode\":true}";
 
         mockMvc.perform(post(lookupPath).contentType(MediaType.APPLICATION_JSON).content(confirmation))
                 .andExpect(status().isUnauthorized());
@@ -246,7 +244,7 @@ class MerchantVerificationIntegrationTest {
         verifyNoInteractions(taxRegistry);
 
         when(taxRegistry.isEnabled()).thenReturn(true);
-        when(taxRegistry.lookup(taxCode, type)).thenAnswer(invocation -> {
+        when(taxRegistry.lookup(taxCode)).thenAnswer(invocation -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
             return BusinessTaxRegistry.Result.found(new BusinessTaxRegistry.Business(
                     taxCode, "CASSO BRANCH", "NNT đang hoạt động", "https://www.gdt.gov.vn", false));
@@ -278,7 +276,41 @@ class MerchantVerificationIntegrationTest {
         mockMvc.perform(post(lookupPath).header("Authorization", adminAuth)
                         .contentType(MediaType.APPLICATION_JSON).content(confirmation))
                 .andExpect(status().isConflict());
-        verify(taxRegistry, times(1)).lookup(taxCode, type);
+        verify(taxRegistry, times(1)).lookup(taxCode);
+    }
+
+    @Test
+    void adminManuallyApprovesATwelveDigitRegistrationWithoutCallingCasso() throws Exception {
+        String merchantPath = "/api/v1/merchant/profile/verification";
+        String merchantAuth = "Bearer " + merchantToken1;
+        String adminAuth = "Bearer " + adminToken;
+        String registrationNumber = "012345678901";
+        var details = UpdateVerificationDetailsRequest.builder().draftRevision(1L)
+                .businessRegistrationNumber(registrationNumber).legalName("HO KINH DOANH MAU").build();
+        var draft = mockMvc.perform(put(merchantPath + "/details").header("Authorization", merchantAuth)
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(details)))
+                .andExpect(status().isOk()).andReturn();
+        long dossierId = objectMapper.readTree(draft.getResponse().getContentAsByteArray()).at("/data/id").asLong();
+        String adminPath = "/api/v1/admin/merchant-verifications/" + dossierId;
+        uploadRegistration(merchantPath, merchantAuth, "registration.pdf", "HO KINH DOANH MAU", "2");
+        submit(merchantPath, merchantAuth, 3);
+
+        for (String confirmation : List.of("{\"confirmedBusinessTaxCode\":true}", "{\"confirmedHouseholdTaxCode\":true}")) {
+            mockMvc.perform(post(adminPath + "/submissions/1/tax-lookup").header("Authorization", adminAuth)
+                            .contentType(MediaType.APPLICATION_JSON).content(confirmation))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", containsString("đối chiếu trực tiếp trên giấy tờ")));
+        }
+
+        assessmentWorker.processNext();
+        mockMvc.perform(post(adminPath + "/approve").header("Authorization", adminAuth)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"submissionVersion":1,"documentsReviewed":true,"note":"Đã đối chiếu giấy tờ gốc."}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("VERIFIED"))
+                .andExpect(jsonPath("$.data.businessRegistrationNumber").value(registrationNumber));
+        verifyNoInteractions(taxRegistry);
     }
 
     @Test

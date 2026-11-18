@@ -4,7 +4,6 @@ import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.identity.application.dto.verification.AdminTaxLookupRequest;
 import com.smartparking.identity.application.dto.verification.AdminTaxLookupResponse;
-import com.smartparking.identity.application.service.verification.BusinessTaxRegistry.TaxpayerType;
 import com.smartparking.identity.domain.model.verification.VerificationStatus;
 import com.smartparking.identity.domain.repository.MerchantVerificationDossierRepository;
 import com.smartparking.identity.domain.repository.MerchantVerificationDossierRepository.TaxLookupTarget;
@@ -20,7 +19,7 @@ import java.util.regex.Pattern;
 @Service
 public class MerchantTaxLookupService {
     private static final Pattern BUSINESS_TAX_CODE = Pattern.compile("[0-9]{10}(?:-[0-9]{3})?");
-    private static final Pattern HOUSEHOLD_TAX_CODE = Pattern.compile("[0-9]{12}");
+    private static final Pattern TWELVE_DIGIT_REGISTRATION_NUMBER = Pattern.compile("[0-9]{12}");
 
     private final MerchantVerificationDossierRepository dossiers;
     private final BusinessTaxRegistry registry;
@@ -36,23 +35,25 @@ public class MerchantTaxLookupService {
     }
 
     public AdminTaxLookupResponse lookup(Long dossierId, Integer version, Long adminId, AdminTaxLookupRequest request) {
-        if (request.confirmedBusinessTaxCode() == request.confirmedHouseholdTaxCode()) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Vui lòng xác nhận đúng một loại mã số thuế trên giấy tờ.");
+        if (!request.confirmedBusinessTaxCode() && !request.confirmedHouseholdTaxCode()) {
+            throw new AppException(ErrorCode.BAD_REQUEST,
+                    "Vui lòng xác nhận đây là mã số thuế doanh nghiệp hoặc chi nhánh trên giấy tờ.");
         }
         var target = requireCurrentSubmission(dossierId, version);
         String declaredNumber = target.getBusinessRegistrationNumber();
         String taxCode = declaredNumber == null ? "" : declaredNumber.strip();
-        boolean household = request.confirmedHouseholdTaxCode();
-        Pattern expectedFormat = household ? HOUSEHOLD_TAX_CODE : BUSINESS_TAX_CODE;
-        if (!expectedFormat.matcher(taxCode).matches()) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Mã số đã khai không đúng định dạng của loại mã số thuế đã xác nhận.");
+        if (request.confirmedHouseholdTaxCode() || TWELVE_DIGIT_REGISTRATION_NUMBER.matcher(taxCode).matches()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Vui lòng đối chiếu trực tiếp trên giấy tờ.");
+        }
+        if (!BUSINESS_TAX_CODE.matcher(taxCode).matches()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Mã số đã khai không đúng định dạng MST doanh nghiệp hoặc chi nhánh.");
         }
 
         var result = BusinessTaxRegistry.Result.unavailable(null);
         if (registry.isEnabled()) {
             Instant retryAt = reserveLookup(adminId, dossierId, Instant.now());
             if (retryAt == null) {
-                result = registry.lookup(taxCode, household ? TaxpayerType.HOUSEHOLD : TaxpayerType.BUSINESS);
+                result = registry.lookup(taxCode);
                 requireCurrentSubmission(dossierId, version);
             } else {
                 result = BusinessTaxRegistry.Result.unavailable(retryAt);

@@ -212,7 +212,7 @@ Chi tiết bản nộp gần nhất gồm thông tin khai, tài liệu và kết
 
 ### Tra cứu MST trong bản nộp
 
-`POST /api/v1/admin/merchant-verifications/{dossierId}/submissions/{submissionVersion}/tax-lookup` yêu cầu Bearer JWT và `ROLE_ADMIN`. Admin xác nhận đúng một loại MST ghi trên giấy tờ. Dùng `{"confirmedBusinessTaxCode": true}` cho mã doanh nghiệp 10 số hoặc chi nhánh dạng 10 số-3 số, và `{"confirmedHouseholdTaxCode": true}` cho MST hộ kinh doanh 12 số. Identity lấy mã từ bản nộp hiện hành ở trạng thái `PENDING_REVIEW`. Có thể tra cứu từ bản nộp đầu, kể cả khi OCR đang xử lý.
+`POST /api/v1/admin/merchant-verifications/{dossierId}/submissions/{submissionVersion}/tax-lookup` yêu cầu Bearer JWT và `ROLE_ADMIN`. Dùng `{"confirmedBusinessTaxCode": true}` sau khi Admin xác nhận mã ghi trên giấy tờ là MST doanh nghiệp 10 số hoặc chi nhánh dạng 10 số-3 số. Identity lấy mã từ bản nộp hiện hành ở trạng thái `PENDING_REVIEW`. Có thể tra cứu từ bản nộp đầu, kể cả khi OCR đang xử lý.
 
 Phản hồi `200 OK` dùng envelope `ApiResponse` và `Cache-Control: private, no-store`. `data` gồm `dossierId`, `submissionVersion`, `checkedAt` (UTC), `outcome`, `business` và `retryAt` (UTC hoặc `null`).
 
@@ -220,9 +220,9 @@ Phản hồi `200 OK` dùng envelope `ApiResponse` và `Cache-Control: private, 
 | --- | --- |
 | `FOUND` | Casso trả đúng MST và có tên. `business` gồm `taxCode`, `name`, `status`, `source` và `trial`. `status` và `source` có thể là `null`. `trial: true` đánh dấu phản hồi dùng thử. |
 | `NOT_FOUND` | Lookup tại Casso trả HTTP 400 với `errorCode` là `IDKIT_BUSINESS_NOT_FOUND`. `business` là `null`. |
-| `UNAVAILABLE` | Tích hợp tắt, bị giới hạn, lỗi kết nối/xác thực, hoặc dữ liệu trả về thiếu hay lệch mã. Phản hồi lỗi từ endpoint hộ kinh doanh dùng trạng thái này khi chưa có hợp đồng lỗi xác nhận thiếu bản ghi. `business` là `null`. `retryAt` có giá trị nếu đang chờ hết giới hạn. |
+| `UNAVAILABLE` | Tích hợp tắt, bị giới hạn, lỗi kết nối/xác thực, hoặc dữ liệu trả về thiếu hay lệch mã. `business` là `null`. `retryAt` có giá trị nếu đang chờ hết giới hạn. |
 
-Request thiếu xác nhận hoặc sai định dạng mã nhận `400`. Hồ sơ chưa nộp hoặc không tồn tại nhận `404`. Bản nộp cũ hoặc hồ sơ đã rời hàng chờ nhận `409`. Identity kiểm tra điều kiện trước khi gọi Casso và kiểm tra lại phiên bản sau khi Casso phản hồi. Việc tra cứu chỉ đọc dữ liệu hồ sơ. Admin duyệt hoặc yêu cầu bổ sung qua API quyết định hiện tại.
+Request thiếu xác nhận hoặc sai định dạng mã nhận `400`. Với mã 12 số hoặc khi client cũ gửi `confirmedHouseholdTaxCode: true` cho bản nộp hiện hành, API trả `400` kèm hướng dẫn đối chiếu giấy tờ và dừng trước khi gọi Casso. Hồ sơ chưa nộp hoặc không tồn tại nhận `404`. Bản nộp cũ hoặc hồ sơ đã rời hàng chờ nhận `409`. Identity kiểm tra điều kiện trước khi gọi Casso và kiểm tra lại phiên bản sau khi Casso phản hồi. Việc tra cứu chỉ đọc dữ liệu hồ sơ. Admin duyệt hoặc yêu cầu bổ sung qua API quyết định hiện tại.
 
 ### 3.3 GET `/api/v1/admin/merchant-verifications/{dossierId}/submissions/{submissionVersion}/documents/{documentId}/content`
 Xem / tải tệp đính kèm thuộc một phiên bản nộp cụ thể của hồ sơ.
