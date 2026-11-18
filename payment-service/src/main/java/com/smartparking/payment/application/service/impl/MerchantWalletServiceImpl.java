@@ -585,7 +585,7 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
 
         for (WalletLedgerEntry entry : ledgerEntries) {
             if (entry == null) continue;
-            BigDecimal gross = safeAmount(entry.getGrossAmount());
+            BigDecimal gross = resolveSignedGross(entry);
             BigDecimal fee = safeAmount(entry.getFeeAmount());
             BigDecimal net = safeAmount(entry.getNetAmount());
             boolean isSettlementCredit = entry.getEntryType() == WalletLedgerEntryTypeEnum.SETTLEMENT_CREDIT;
@@ -889,6 +889,19 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
 
     private BigDecimal safeAmount(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
+    }
+
+    private BigDecimal resolveSignedGross(WalletLedgerEntry entry) {
+        BigDecimal gross = safeAmount(entry.getGrossAmount());
+        if (entry.getEntryType() == WalletLedgerEntryTypeEnum.ADJUSTMENT) {
+            BigDecimal fee = safeAmount(entry.getFeeAmount());
+            BigDecimal net = safeAmount(entry.getNetAmount());
+            // Post-settlement refund adjustments persist grossAmount as positive magnitude while fee/net are negative.
+            if (gross.signum() > 0 && (net.signum() < 0 || fee.signum() < 0)) {
+                return gross.negate();
+            }
+        }
+        return gross;
     }
 
     private ChannelBucket resolveChannel(String paymentChannel) {

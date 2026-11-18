@@ -8,11 +8,13 @@ import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.payment.application.dto.SettlementSplit;
 import com.smartparking.payment.application.service.impl.MerchantWalletServiceImpl;
 import com.smartparking.payment.domain.model.CashCheckoutReceipt;
+import com.smartparking.payment.domain.model.LedgerJournal;
 import com.smartparking.payment.domain.model.Payment;
 import com.smartparking.payment.domain.model.RefundRequest;
 import com.smartparking.payment.domain.model.Wallet;
 import com.smartparking.payment.domain.model.WalletLedgerEntry;
 import com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository;
+import com.smartparking.payment.domain.repository.LedgerJournalRepository;
 import com.smartparking.payment.domain.repository.PaymentRepository;
 import com.smartparking.payment.domain.repository.RefundRequestRepository;
 import com.smartparking.payment.domain.repository.WalletLedgerEntryRepository;
@@ -53,6 +55,9 @@ class MerchantWalletServiceImplTest {
 
     @Mock
     private RefundRequestRepository refundRequestRepository;
+
+    @Mock
+    private LedgerJournalRepository ledgerJournalRepository;
 
     @InjectMocks
     private MerchantWalletServiceImpl merchantWalletService;
@@ -461,6 +466,88 @@ class MerchantWalletServiceImplTest {
         assertEquals(1L, day2Point.getBookingCount());
         // Period-wide deduplication ensures booking 801 is NOT double-counted as 2!
         assertEquals(1L, summary.getCompletedBookings());
+    }
+
+    @Test
+    @DisplayName("End-to-end creditSettlement -> post-settlement recordRefundLiability -> getRevenueSummary reduces gross, fee, and net across all-time, period, and per-lot")
+    void testPostSettlementRefundAdjustmentReducesGrossFeeAndNetAcrossAllScopes() {
+        ReflectionTestUtils.setField(merchantWalletService, "ledgerJournalRepository", ledgerJournalRepository);
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime settledAt = today.atTime(10, 0);
+        Payment payment = Payment.builder()
+                .id(901L).merchantId(merchantId).parkingLotId(10L).bookingId(9001L)
+                .amount(new BigDecimal("100000.00")).paymentType(PaymentTypeEnum.DEPOSIT)
+                .paymentChannel("ONLINE_TRANSFER").status(PaymentStatusEnum.SUCCESS).build();
+        payment.setCreatedAt(settledAt);
+
+        Wallet wallet = Wallet.builder().merchantId(merchantId).balance(BigDecimal.ZERO).build();
+        java.util.List<WalletLedgerEntry> savedLedgerEntries = new java.util.ArrayList<>();
+        java.util.Map<String, LedgerJournal> savedJournals = new java.util.HashMap<>();
+
+        when(walletRepository.findByMerchantIdForUpdate(merchantId)).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByMerchantId(merchantId)).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(paymentRepository.getReferenceById(901L)).thenReturn(payment);
+        when(ledgerRepository.save(any(WalletLedgerEntry.class))).thenAnswer(inv -> {
+            WalletLedgerEntry entry = inv.getArgument(0);
+            if (entry.getCreatedAt() == null) {
+                entry.setCreatedAt(settledAt);
+            }
+            savedLedgerEntries.add(entry);
+            return entry;
+        });
+        when(ledgerJournalRepository.existsByJournalKey(anyString())).thenAnswer(inv -> savedJournals.containsKey(inv.getArgument(0)));
+        when(ledgerJournalRepository.findByJournalKey(anyString())).thenAnswer(inv -> Optional.ofNullable(savedJournals.get(inv.getArgument(0))));
+        when(ledgerJournalRepository.findByPaymentId(901L)).thenReturn(List.of());
+        when(ledgerJournalRepository.save(any(LedgerJournal.class))).thenAnswer(inv -> {
+            LedgerJournal j = inv.getArgument(0);
+            savedJournals.put(j.getJournalKey(), j);
+            return j;
+        });
+
+        // Step 1: Settle 100,000 VND (10% fee -> fee 10,000, net 90,000)
+        merchantWalletService.creditSettlement(merchantId, 9001L, payment, new BigDecimal("100000"), "Settle deposit");
+
+        // Step 2: Post-settlement partial refund of 50,000 VND (creates ADJUSTMENT with gross=+50,000, fee=-5,000, net=-45,000)
+        merchantWalletService.recordRefundLiability(merchantId, 9001L, 901L, new BigDecimal("50000"), "REFUND_REQ:9001", "Partial refund after settlement");
+
+        assertEquals(2, savedLedgerEntries.size());
+        WalletLedgerEntry refundAdjustment = savedLedgerEntries.get(1);
+        assertEquals(WalletLedgerEntryTypeEnum.ADJUSTMENT, refundAdjustment.getEntryType());
+        assertEquals(0, new BigDecimal("50000.00").compareTo(refundAdjustment.getGrossAmount()));
+        assertEquals(0, new BigDecimal("-5000.00").compareTo(refundAdjustment.getFeeAmount()));
+        assertEquals(0, new BigDecimal("-45000.00").compareTo(refundAdjustment.getNetAmount()));
+
+        // Step 3: Revenue summary over explicit date range covering today
+        when(ledgerRepository.findRevenueEntriesWithPaymentByMerchantId(merchantId)).thenReturn(savedLedgerEntries);
+        when(paymentRepository.findByMerchantIdAndStatusOrderByCreatedAtAsc(merchantId, PaymentStatusEnum.SUCCESS))
+                .thenReturn(List.of(payment));
+
+        String todayStr = today.toString();
+        var summary = merchantWalletService.getRevenueSummary(merchantId, null, todayStr, todayStr, "DAY");
+
+        // All-time totals: Gross must be 50,000 (NOT 150,000!), Fee = 5,000, Net = 45,000
+        assertEquals(0, new BigDecimal("50000.00").compareTo(summary.getTotalGrossRevenue()));
+        assertEquals(0, new BigDecimal("5000.00").compareTo(summary.getTotalPlatformFee()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(summary.getTotalNetRevenue()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(summary.getOnlineTransferGrossRevenue()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(summary.getOnlineTransferNetRevenue()));
+
+        // Period totals must also be 50,000 / 5,000 / 45,000
+        assertEquals(0, new BigDecimal("50000.00").compareTo(summary.getPeriodTotalGrossRevenue()));
+        assertEquals(0, new BigDecimal("5000.00").compareTo(summary.getPeriodTotalPlatformFee()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(summary.getPeriodTotalNetRevenue()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(summary.getPeriodOnlineTransferGrossRevenue()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(summary.getPeriodOnlineTransferNetRevenue()));
+
+        // Per-lot breakdown must match for both all-time and period
+        assertEquals(1, summary.getRevenueByParkingLot().size());
+        var lot10 = summary.getRevenueByParkingLot().get(0);
+        assertEquals(0, new BigDecimal("50000.00").compareTo(lot10.getOnlineTransferGrossRevenue()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(lot10.getOnlineTransferRevenue()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(lot10.getPeriodOnlineTransferGrossRevenue()));
+        assertEquals(0, new BigDecimal("45000.00").compareTo(lot10.getPeriodOnlineTransferRevenue()));
     }
 
     private WalletLedgerEntry settledEntry(
