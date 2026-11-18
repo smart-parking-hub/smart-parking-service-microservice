@@ -4,8 +4,19 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class BookingTimePolicyTest {
     final LocalDateTime arrival = LocalDateTime.of(2026, 11, 6, 10, 0);
-    @Test void exactlyThirtyMinutesEarlyIsAllowed() { assertFalse(BookingTimePolicy.tooEarly(arrival.minusMinutes(30), arrival, 30)); }
-    @Test void thirtyMinutesAndOneSecondEarlyIsRejected() { assertTrue(BookingTimePolicy.tooEarly(arrival.minusMinutes(30).minusSeconds(1), arrival, 60)); }
-    @Test void stricterLotConfigurationIsRespected() { assertTrue(BookingTimePolicy.tooEarly(arrival.minusMinutes(20), arrival, 15)); }
-    @Test void missingArrivalIsNeverAccepted() { assertTrue(BookingTimePolicy.tooEarly(arrival, null, 30)); }
+    @Test void capsTheEarlyWindowAtThirtyMinutes() {
+        assertEquals(arrival.minusMinutes(30), BookingTimePolicy.checkInOpensAt(arrival, 60));
+    }
+
+    @Test void respectsAShorterEarlyWindow() {
+        assertEquals(arrival.minusMinutes(15), BookingTimePolicy.checkInOpensAt(arrival, 15));
+    }
+
+    @Test void negativeEarlyWindowCannotDelayTheStart() {
+        assertEquals(arrival, BookingTimePolicy.checkInOpensAt(arrival, -1));
+    }
+
+    @Test void missingArrivalHasNoOpeningTime() {
+        assertNull(BookingTimePolicy.checkInOpensAt(null, 30));
+    }
 }

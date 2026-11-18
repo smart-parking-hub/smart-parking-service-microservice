@@ -7,6 +7,7 @@ import com.smartparking.common.util.BookingSchedulePolicy;
 import com.smartparking.booking.application.dto.CheckOutResponse;
 import com.smartparking.booking.application.service.CheckInOutService;
 import com.smartparking.booking.application.service.OutboxPublisherService;
+import com.smartparking.booking.domain.BookingTimePolicy;
 import com.smartparking.booking.domain.model.Booking;
 import com.smartparking.booking.domain.repository.BookingRepository;
 import com.smartparking.booking.infrastructure.client.ParkingLotClient;
@@ -57,9 +58,14 @@ public class CheckInOutServiceImpl implements CheckInOutService {
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         int earlyMinutes = BookingSchedulePolicy.checkInEarlyMinutes(booking.getSchedulePolicyVersion(), checkInEarlyMinutes);
-        if (com.smartparking.booking.domain.BookingTimePolicy.tooEarly(now, booking.getExpectedCheckInTime(), earlyMinutes)) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa "
-                    + com.smartparking.booking.domain.BookingTimePolicy.earlyMinutes(earlyMinutes) + " phút)!");
+        LocalDateTime opensAt = BookingTimePolicy.checkInOpensAt(booking.getExpectedCheckInTime(), earlyMinutes);
+        if (opensAt == null) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Không xác định được giờ check-in của lượt đặt chỗ này.");
+        }
+        if (now.isBefore(opensAt)) {
+            String remaining = formatCheckInWait(Duration.between(now, opensAt));
+            throw new AppException(ErrorCode.BAD_REQUEST,
+                    "Chưa đến giờ check-in. Còn " + remaining + " nữa mới có thể check-in.");
         }
         if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");
@@ -74,6 +80,13 @@ public class CheckInOutServiceImpl implements CheckInOutService {
 
         outboxPublisherService.publishBookingCheckedIn(booking);
         log.info("Booking {} checked-in successfully at lot {}", bookingCode, parkingLotId);
+    }
+
+    private static String formatCheckInWait(Duration wait) {
+        long hours = wait.toHours();
+        int minutes = wait.toMinutesPart();
+        if (hours == 0) return minutes == 0 ? "dưới 1 phút" : minutes + " phút";
+        return hours + " giờ" + (minutes == 0 ? "" : " " + minutes + " phút");
     }
 
     @Override

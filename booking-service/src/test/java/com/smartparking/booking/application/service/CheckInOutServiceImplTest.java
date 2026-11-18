@@ -79,6 +79,51 @@ class CheckInOutServiceImplTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "2, 1, dưới 1 phút",
+            "2, 1500, 25 phút",
+            "2, 3599, 59 phút",
+            "2, 3600, 1 giờ",
+            "2, 4500, 1 giờ 15 phút",
+            "1, 900, 15 phút",
+            "0, 300, 5 phút"
+    })
+    void reportsTheRemainingTimeUntilTheTicketCanCheckIn(int version, int waitSeconds, String remaining) {
+        var expected = LocalDateTime.of(2026, 11, 18, 19, 30);
+        var opensAt = expected.minusMinutes(version == 2 ? 15 : version == 0 ? 30 : 0);
+        var now = opensAt.minusSeconds(waitSeconds);
+        var booking = Booking.builder().id(1L).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PENDING_CHECKIN).schedulePolicyVersion(version)
+                .expectedCheckInTime(expected).expectedCheckOutTime(expected.plusHours(2))
+                .expiresAt(expected.plusHours(1)).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(checkInOutService, "checkInEarlyMinutes", 30);
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(now);
+            var rejection = assertThrows(AppException.class,
+                    () -> checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId));
+            assertEquals(ErrorCode.BAD_REQUEST, rejection.getErrorCode());
+            assertEquals("Chưa đến giờ check-in. Còn " + remaining + " nữa mới có thể check-in.", rejection.getMessage());
+            verifyNoInteractions(parkingLotClient, outboxPublisherService);
+        }
+    }
+
+    @Test
+    void givesAClearRejectionWhenTheTicketHasNoExpectedArrival() {
+        var booking = Booking.builder().id(1L).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PENDING_CHECKIN).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        var rejection = assertThrows(AppException.class,
+                () -> checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId));
+
+        assertEquals(ErrorCode.BAD_REQUEST, rejection.getErrorCode());
+        assertEquals("Không xác định được giờ check-in của lượt đặt chỗ này.", rejection.getMessage());
+        verifyNoInteractions(parkingLotClient, outboxPublisherService);
+    }
+
+    @ParameterizedTest
     @CsvSource({"31000", "40000"})
     void rejectsCashAmountDifferentFromOutstandingBalance(String amount) {
         Booking booking = cashBooking();

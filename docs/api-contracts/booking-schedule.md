@@ -43,6 +43,10 @@ Existing `POST /api/v1/bookings` retains its request fields, including optional 
 
 Booking DTO adds nullable `schedulePolicyVersion`, `checkInEarlyMinutes`, `bookingBlockMinutes`, `turnaroundMinutes`. Physical slot identifiers/codes already present on the backend are now retained by the FE schema. Policy 2 has 15 early minutes and 15 turnaround minutes. Policy 1 has 0 early minutes and a 30-minute turnaround. Policy 0/null uses legacy entry rights. New paid QR deadlines never extend beyond the reserved end.
 
+## Merchant check-in
+
+An early attempt to `POST /api/v1/merchant/check-in` returns HTTP 400. Its message reports the wait until the earliest entry time for that ticket, using minutes or hours and minutes. Less than a minute is shown as “dưới 1 phút”. Parking checks slot occupancy and cooldown when the entry window opens.
+
 ## Internal reservation writer
 
 All `/api/v1/internal/**` operations require `X-Internal-Service-Token`. Booking uses its existing circuit-breaker dependency around the Parking Feign transport, with 3-second connect and 5-second read timeouts and an 8-second RPC time limit. HTTP 409 remains a domain conflict; network/5xx failures do not fabricate availability.
