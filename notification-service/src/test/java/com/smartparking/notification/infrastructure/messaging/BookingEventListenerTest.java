@@ -45,15 +45,18 @@ class BookingEventListenerTest {
     }
 
     @Test
-    @DisplayName("Handles BOOKING_CREATED event")
+    @DisplayName("Handles BOOKING_CREATED event notifying both driver with hold message and merchant")
     void testBookingCreated() {
         when(processedEventRepository.existsByEventId("evt-1")).thenReturn(false);
 
-        String payload = "{\"eventId\":\"evt-1\",\"eventType\":\"BOOKING_CREATED\",\"userId\":10,\"bookingId\":50,\"licensePlate\":\"51A-12345\"}";
+        String payload = "{\"eventId\":\"evt-1\",\"eventType\":\"BOOKING_CREATED\",\"userId\":10,\"merchantId\":20,\"bookingId\":50,\"licensePlate\":\"51A-12345\"}";
         listener.handleBookingEvent(payload);
 
         verify(notificationService, times(1)).createNotification(
-                eq(10L), eq("Đặt chỗ thành công"), contains("51A-12345"), eq(NotificationTypeEnum.BOOKING), eq("IN_APP"), eq("BOOKING"), eq(50L)
+                eq(10L), eq("Yêu cầu giữ chỗ đã được tạo"), contains("51A-12345"), eq(NotificationTypeEnum.BOOKING), eq("IN_APP"), eq("BOOKING"), eq(50L)
+        );
+        verify(notificationService, times(1)).createNotification(
+                eq(20L), eq("Đơn giữ chỗ mới"), contains("51A-12345"), eq(NotificationTypeEnum.BOOKING), eq("IN_APP"), eq("BOOKING"), eq(50L)
         );
         verify(processedEventRepository, times(1)).save(any(ProcessedEvent.class));
     }

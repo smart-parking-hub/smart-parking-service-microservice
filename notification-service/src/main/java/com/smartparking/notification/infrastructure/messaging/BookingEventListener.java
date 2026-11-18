@@ -43,10 +43,11 @@ public class BookingEventListener {
                 switch (eventType) {
                     case "BOOKING_CREATED" -> {
                         String plate = root.has("licensePlate") ? root.get("licensePlate").asText() : "";
+                        String vehicleInfo = plate.isEmpty() ? "" : " cho phương tiện " + plate;
                         notificationService.createNotification(
                                 userId,
-                                "Đặt chỗ thành công",
-                                "Lượt đặt chỗ mã #" + bookingId + " cho phương tiện " + plate + " đã được tạo thành công.",
+                                "Yêu cầu giữ chỗ đã được tạo",
+                                "Yêu cầu giữ chỗ mã #" + bookingId + vehicleInfo + " đã được tạo. Vui lòng thanh toán cọc trong 10 phút để nhận mã QR.",
                                 NotificationTypeEnum.BOOKING,
                                 "IN_APP",
                                 "BOOKING",
@@ -55,8 +56,8 @@ public class BookingEventListener {
                         if (merchantId != null) {
                             notificationService.createNotification(
                                     merchantId,
-                                    "Đơn đặt chỗ mới",
-                                    "Bãi xe của bạn vừa có đơn đặt chỗ mới #" + bookingId + (plate.isEmpty() ? "" : " (Xe: " + plate + ")"),
+                                    "Đơn giữ chỗ mới",
+                                    "Bãi xe của bạn vừa có đơn giữ chỗ mới #" + bookingId + (plate.isEmpty() ? "" : " (Xe: " + plate + ")") + " đang chờ khách thanh toán cọc.",
                                     NotificationTypeEnum.BOOKING,
                                     "IN_APP",
                                     "BOOKING",
