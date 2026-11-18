@@ -1,5 +1,5 @@
 # Local-only OTP lab. Same identity database as compose.p0.local.yaml; no database reset.
-# docker compose --project-name docker --env-file .env.p0.local -f compose.email.local.yaml up -d --build
+# docker compose --project-directory . --project-name docker --env-file .env.p0.local -f docker/compose/overlays/compose.email.local.yaml up -d --build
 services:
   identity-service:
     build: ./identity-service
