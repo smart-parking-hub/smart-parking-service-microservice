@@ -98,4 +98,27 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     LocalDateTime findLatestPaymentCreatedAtByMerchantIdAndParkingLotId(
             @Param("merchantId") Long merchantId,
             @Param("parkingLotId") Long parkingLotId);
+
+    interface ChannelAggregation {
+        Long getParkingLotId();
+        String getPaymentChannel();
+        BigDecimal getTotalAmount();
+        Long getPaymentCount();
+    }
+
+    @Query("SELECT p.parkingLotId AS parkingLotId, COALESCE(p.paymentChannel, 'ONLINE_TRANSFER') AS paymentChannel, " +
+           "COALESCE(SUM(p.amount), 0) AS totalAmount, COUNT(p.id) AS paymentCount " +
+           "FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS' " +
+           "GROUP BY p.parkingLotId, COALESCE(p.paymentChannel, 'ONLINE_TRANSFER')")
+    List<ChannelAggregation> aggregateSuccessByMerchantGroupedByLotAndChannel(@Param("merchantId") Long merchantId);
+
+    @Query("SELECT p.parkingLotId AS parkingLotId, COALESCE(p.paymentChannel, 'ONLINE_TRANSFER') AS paymentChannel, " +
+           "COALESCE(SUM(p.amount), 0) AS totalAmount, COUNT(p.id) AS paymentCount " +
+           "FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS' " +
+           "AND p.createdAt >= :startDate AND p.createdAt <= :endDate " +
+           "GROUP BY p.parkingLotId, COALESCE(p.paymentChannel, 'ONLINE_TRANSFER')")
+    List<ChannelAggregation> aggregateSuccessByMerchantAndDateRangeGroupedByLotAndChannel(
+            @Param("merchantId") Long merchantId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 }

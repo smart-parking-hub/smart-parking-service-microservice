@@ -4,10 +4,12 @@ import com.smartparking.common.enums.PaymentStatusEnum;
 import com.smartparking.common.enums.WalletLedgerEntryTypeEnum;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
+import com.smartparking.payment.application.dto.LotRevenueBreakdownDto;
 import com.smartparking.payment.application.dto.MerchantRevenueResponse;
 import com.smartparking.payment.application.dto.RevenueSeriesPointDto;
 import com.smartparking.payment.application.dto.SettlementSplit;
 import com.smartparking.payment.application.service.MerchantWalletService;
+import com.smartparking.payment.domain.model.CashCheckoutReceipt;
 import com.smartparking.payment.domain.model.LedgerAccountCode;
 import com.smartparking.payment.domain.model.LedgerJournal;
 import com.smartparking.payment.domain.model.LedgerPosting;
@@ -15,6 +17,7 @@ import com.smartparking.payment.domain.model.Payment;
 import com.smartparking.payment.domain.model.PostingDirection;
 import com.smartparking.payment.domain.model.Wallet;
 import com.smartparking.payment.domain.model.WalletLedgerEntry;
+import com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository;
 import com.smartparking.payment.domain.repository.LedgerJournalRepository;
 import com.smartparking.payment.domain.repository.LedgerPostingRepository;
 import com.smartparking.payment.domain.repository.PaymentRepository;
@@ -55,6 +58,9 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
 
     @Autowired(required = false)
     private com.smartparking.payment.infrastructure.persistence.PaymentAttemptGuard attemptGuard;
+
+    @Autowired(required = false)
+    private CashCheckoutReceiptRepository cashCheckoutReceiptRepository;
 
     @Override
     public SettlementSplit split(BigDecimal grossAmount) {
@@ -500,6 +506,9 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
     @Override
     @Transactional(readOnly = true)
     public MerchantRevenueResponse getRevenueSummary(Long merchantId, Long parkingLotId, String startDate, String endDate, String granularity) {
+        BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
+        BigDecimal feeMultiplier = BigDecimal.valueOf(100).subtract(feePercent);
+
         BigDecimal totalGross;
         BigDecimal totalFee;
         BigDecimal totalNet;
@@ -507,9 +516,7 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         if (parkingLotId != null) {
             BigDecimal lotGross = paymentRepository.sumTotalRevenueByMerchantIdAndParkingLotId(merchantId, parkingLotId);
             totalGross = lotGross != null ? lotGross : BigDecimal.ZERO;
-            BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
-            totalNet = totalGross.multiply(BigDecimal.valueOf(100).subtract(feePercent))
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            totalNet = computeNet(totalGross, feeMultiplier);
             totalFee = totalGross.subtract(totalNet);
         } else {
             BigDecimal rawGross = paymentRepository.sumTotalRevenueByMerchantId(merchantId);
@@ -523,6 +530,148 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         BigDecimal currentBalance = getWalletBalance(merchantId);
         BigDecimal safeGross = totalGross;
         BigDecimal safeNet = totalNet;
+
+        boolean isExplicitDateRange = (startDate != null && !startDate.isBlank()) || (endDate != null && !endDate.isBlank());
+        LocalDate[] explicitRange = isExplicitDateRange ? parseDateRange(startDate, endDate) : null;
+
+        List<PaymentRepository.ChannelAggregation> allTimeChannels =
+                safeList(paymentRepository.aggregateSuccessByMerchantGroupedByLotAndChannel(merchantId));
+        List<PaymentRepository.ChannelAggregation> periodChannels = explicitRange != null
+                ? safeList(paymentRepository.aggregateSuccessByMerchantAndDateRangeGroupedByLotAndChannel(
+                        merchantId,
+                        explicitRange[0].atStartOfDay(),
+                        explicitRange[1].atTime(23, 59, 59, 999999999)))
+                : allTimeChannels;
+
+        List<CashCheckoutReceiptRepository.LotCashAggregation> allTimeCash = cashCheckoutReceiptRepository != null
+                ? safeList(cashCheckoutReceiptRepository.aggregateCompletedByMerchantGroupedByLot(merchantId))
+                : Collections.emptyList();
+        List<CashCheckoutReceiptRepository.LotCashAggregation> periodCash = cashCheckoutReceiptRepository != null
+                ? (explicitRange != null
+                        ? safeList(cashCheckoutReceiptRepository.aggregateCompletedByMerchantAndDateRangeGroupedByLot(
+                                merchantId,
+                                explicitRange[0].atStartOfDay(),
+                                explicitRange[1].atTime(23, 59, 59, 999999999)))
+                        : allTimeCash)
+                : Collections.emptyList();
+
+        Map<Long, LotRevenueBreakdownDto> lotMap = new TreeMap<>();
+
+        BigDecimal onlineGrossTotal = BigDecimal.ZERO;
+        BigDecimal onlineNetTotal = BigDecimal.ZERO;
+        long onlineCountTotal = 0L;
+        BigDecimal counterQrGrossTotal = BigDecimal.ZERO;
+        BigDecimal counterQrNetTotal = BigDecimal.ZERO;
+        long counterQrCountTotal = 0L;
+
+        for (var row : allTimeChannels) {
+            if (row == null) continue;
+            BigDecimal gross = row.getTotalAmount() != null ? row.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal net = computeNet(gross, feeMultiplier);
+            long count = row.getPaymentCount() != null ? row.getPaymentCount() : 0L;
+            boolean isCounterQr = isCounterQr(row.getPaymentChannel());
+            Long rowLotId = row.getParkingLotId();
+
+            if (rowLotId != null) {
+                LotRevenueBreakdownDto lotDto = lotMap.computeIfAbsent(rowLotId, id -> LotRevenueBreakdownDto.builder().parkingLotId(id).build());
+                if (isCounterQr) {
+                    lotDto.setCounterQrGrossRevenue(lotDto.getCounterQrGrossRevenue().add(gross));
+                    lotDto.setCounterQrRevenue(lotDto.getCounterQrRevenue().add(net));
+                    lotDto.setCounterQrCount(lotDto.getCounterQrCount() + count);
+                } else {
+                    lotDto.setOnlineTransferGrossRevenue(lotDto.getOnlineTransferGrossRevenue().add(gross));
+                    lotDto.setOnlineTransferRevenue(lotDto.getOnlineTransferRevenue().add(net));
+                    lotDto.setOnlineTransferCount(lotDto.getOnlineTransferCount() + count);
+                }
+            }
+
+            if (parkingLotId == null || Objects.equals(parkingLotId, rowLotId)) {
+                if (isCounterQr) {
+                    counterQrGrossTotal = counterQrGrossTotal.add(gross);
+                    counterQrNetTotal = counterQrNetTotal.add(net);
+                    counterQrCountTotal += count;
+                } else {
+                    onlineGrossTotal = onlineGrossTotal.add(gross);
+                    onlineNetTotal = onlineNetTotal.add(net);
+                    onlineCountTotal += count;
+                }
+            }
+        }
+
+        BigDecimal periodOnlineNetTotal = BigDecimal.ZERO;
+        long periodOnlineCountTotal = 0L;
+        BigDecimal periodCounterQrNetTotal = BigDecimal.ZERO;
+        long periodCounterQrCountTotal = 0L;
+
+        for (var row : periodChannels) {
+            if (row == null) continue;
+            BigDecimal gross = row.getTotalAmount() != null ? row.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal net = computeNet(gross, feeMultiplier);
+            long count = row.getPaymentCount() != null ? row.getPaymentCount() : 0L;
+            boolean isCounterQr = isCounterQr(row.getPaymentChannel());
+            Long rowLotId = row.getParkingLotId();
+
+            if (rowLotId != null) {
+                LotRevenueBreakdownDto lotDto = lotMap.computeIfAbsent(rowLotId, id -> LotRevenueBreakdownDto.builder().parkingLotId(id).build());
+                if (isCounterQr) {
+                    lotDto.setPeriodCounterQrRevenue(lotDto.getPeriodCounterQrRevenue().add(net));
+                    lotDto.setPeriodCounterQrCount(lotDto.getPeriodCounterQrCount() + count);
+                } else {
+                    lotDto.setPeriodOnlineTransferRevenue(lotDto.getPeriodOnlineTransferRevenue().add(net));
+                    lotDto.setPeriodOnlineTransferCount(lotDto.getPeriodOnlineTransferCount() + count);
+                }
+            }
+
+            if (parkingLotId == null || Objects.equals(parkingLotId, rowLotId)) {
+                if (isCounterQr) {
+                    periodCounterQrNetTotal = periodCounterQrNetTotal.add(net);
+                    periodCounterQrCountTotal += count;
+                } else {
+                    periodOnlineNetTotal = periodOnlineNetTotal.add(net);
+                    periodOnlineCountTotal += count;
+                }
+            }
+        }
+
+        BigDecimal totalCash = BigDecimal.ZERO;
+        long totalCashCount = 0L;
+        for (var row : allTimeCash) {
+            if (row == null) continue;
+            BigDecimal amount = row.getTotalAmount() != null ? row.getTotalAmount() : BigDecimal.ZERO;
+            long count = row.getBookingCount() != null ? row.getBookingCount() : 0L;
+            Long rowLotId = row.getParkingLotId();
+
+            if (rowLotId != null) {
+                LotRevenueBreakdownDto lotDto = lotMap.computeIfAbsent(rowLotId, id -> LotRevenueBreakdownDto.builder().parkingLotId(id).build());
+                lotDto.setCashRevenue(lotDto.getCashRevenue().add(amount));
+                lotDto.setCashBookingCount(lotDto.getCashBookingCount() + count);
+            }
+
+            if (parkingLotId == null || Objects.equals(parkingLotId, rowLotId)) {
+                totalCash = totalCash.add(amount);
+                totalCashCount += count;
+            }
+        }
+
+        BigDecimal periodCashTotal = BigDecimal.ZERO;
+        long periodCashCount = 0L;
+        for (var row : periodCash) {
+            if (row == null) continue;
+            BigDecimal amount = row.getTotalAmount() != null ? row.getTotalAmount() : BigDecimal.ZERO;
+            long count = row.getBookingCount() != null ? row.getBookingCount() : 0L;
+            Long rowLotId = row.getParkingLotId();
+
+            if (rowLotId != null) {
+                LotRevenueBreakdownDto lotDto = lotMap.computeIfAbsent(rowLotId, id -> LotRevenueBreakdownDto.builder().parkingLotId(id).build());
+                lotDto.setPeriodCashRevenue(lotDto.getPeriodCashRevenue().add(amount));
+                lotDto.setPeriodCashBookingCount(lotDto.getPeriodCashBookingCount() + count);
+            }
+
+            if (parkingLotId == null || Objects.equals(parkingLotId, rowLotId)) {
+                periodCashTotal = periodCashTotal.add(amount);
+                periodCashCount += count;
+            }
+        }
 
         List<RevenueSeriesPointDto> series = calculateRevenueSeries(merchantId, parkingLotId, startDate, endDate);
 
@@ -541,31 +690,45 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                 .completedBookings(completedBookings)
                 .platformFeePercent(platformFeePercent)
                 .minWithdrawalAmount(BigDecimal.valueOf(50000))
+                .onlineTransferGrossRevenue(onlineGrossTotal)
+                .onlineTransferNetRevenue(onlineNetTotal)
+                .onlineTransferCount(onlineCountTotal)
+                .periodOnlineTransferNetRevenue(periodOnlineNetTotal)
+                .periodOnlineTransferCount(periodOnlineCountTotal)
+                .counterQrGrossRevenue(counterQrGrossTotal)
+                .counterQrNetRevenue(counterQrNetTotal)
+                .counterQrCount(counterQrCountTotal)
+                .periodCounterQrNetRevenue(periodCounterQrNetTotal)
+                .periodCounterQrCount(periodCounterQrCountTotal)
+                .totalCashRevenue(totalCash)
+                .totalCashBookings(totalCashCount)
+                .periodCashRevenue(periodCashTotal)
+                .periodCashBookings(periodCashCount)
+                .revenueByParkingLot(new ArrayList<>(lotMap.values()))
                 .series(series)
                 .build();
     }
 
-    private List<RevenueSeriesPointDto> calculateRevenueSeries(Long merchantId, Long parkingLotId, String startDate, String endDate) {
+    private BigDecimal computeNet(BigDecimal gross, BigDecimal feeMultiplier) {
+        if (gross == null || gross.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return gross.multiply(feeMultiplier).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    private boolean isCounterQr(String paymentChannel) {
+        return "COUNTER_QR".equalsIgnoreCase(paymentChannel);
+    }
+
+    private <T> List<T> safeList(List<T> input) {
+        return input != null ? input : Collections.emptyList();
+    }
+
+    private LocalDate[] parseDateRange(String startDate, String endDate) {
         LocalDate today = LocalDate.now();
         LocalDate startLocalDate = today.minusDays(6);
         LocalDate endLocalDate = today;
-
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-
-        boolean isExplicitDateRange = (startDate != null && !startDate.isBlank()) || (endDate != null && !endDate.isBlank());
-        if (!isExplicitDateRange) {
-            LocalDateTime latestCreatedAt = parkingLotId != null
-                    ? paymentRepository.findLatestPaymentCreatedAtByMerchantIdAndParkingLotId(merchantId, parkingLotId)
-                    : paymentRepository.findLatestPaymentCreatedAtByMerchantId(merchantId);
-
-            if (latestCreatedAt != null) {
-                LocalDate latestDate = latestCreatedAt.toLocalDate();
-                if (latestDate.isBefore(today.minusDays(6))) {
-                    endLocalDate = latestDate;
-                    startLocalDate = latestDate.minusDays(6);
-                }
-            }
-        }
 
         if (startDate != null && !startDate.isBlank()) {
             try {
@@ -581,11 +744,48 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                 log.warn("Invalid endDate format: {}, fallback to today", endDate);
             }
         }
-
         if (startLocalDate.isAfter(endLocalDate)) {
             LocalDate temp = startLocalDate;
             startLocalDate = endLocalDate;
             endLocalDate = temp;
+        }
+        return new LocalDate[]{startLocalDate, endLocalDate};
+    }
+
+    private List<RevenueSeriesPointDto> calculateRevenueSeries(Long merchantId, Long parkingLotId, String startDate, String endDate) {
+        LocalDate today = LocalDate.now();
+        LocalDate startLocalDate = today.minusDays(6);
+        LocalDate endLocalDate = today;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        boolean isExplicitDateRange = (startDate != null && !startDate.isBlank()) || (endDate != null && !endDate.isBlank());
+        if (!isExplicitDateRange) {
+            LocalDateTime latestPaymentAt = parkingLotId != null
+                    ? paymentRepository.findLatestPaymentCreatedAtByMerchantIdAndParkingLotId(merchantId, parkingLotId)
+                    : paymentRepository.findLatestPaymentCreatedAtByMerchantId(merchantId);
+            LocalDateTime latestCashAt = cashCheckoutReceiptRepository != null
+                    ? (parkingLotId != null
+                            ? cashCheckoutReceiptRepository.findLatestCompletedUpdatedAtByMerchantIdAndParkingLotId(merchantId, parkingLotId)
+                            : cashCheckoutReceiptRepository.findLatestCompletedUpdatedAtByMerchantId(merchantId))
+                    : null;
+
+            LocalDateTime latestActivity = latestPaymentAt;
+            if (latestCashAt != null && (latestActivity == null || latestCashAt.isAfter(latestActivity))) {
+                latestActivity = latestCashAt;
+            }
+
+            if (latestActivity != null) {
+                LocalDate latestDate = latestActivity.toLocalDate();
+                if (latestDate.isBefore(today.minusDays(6))) {
+                    endLocalDate = latestDate;
+                    startLocalDate = latestDate.minusDays(6);
+                }
+            }
+        } else {
+            LocalDate[] parsed = parseDateRange(startDate, endDate);
+            startLocalDate = parsed[0];
+            endLocalDate = parsed[1];
         }
 
         LocalDateTime rangeStart = startLocalDate.atStartOfDay();
@@ -599,6 +799,12 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                     .period(periodKey)
                     .revenue(BigDecimal.ZERO)
                     .bookingCount(0L)
+                    .onlineTransferRevenue(BigDecimal.ZERO)
+                    .counterQrRevenue(BigDecimal.ZERO)
+                    .cashRevenue(BigDecimal.ZERO)
+                    .onlineTransferCount(0L)
+                    .counterQrCount(0L)
+                    .cashBookingCount(0L)
                     .build());
             curr = curr.plusDays(1);
         }
@@ -612,35 +818,85 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                     merchantId, PaymentStatusEnum.SUCCESS, rangeStart, rangeEnd);
         }
 
-        if (payments != null && !payments.isEmpty()) {
-            Map<String, List<Payment>> paymentsByDay = payments.stream()
-                    .filter(p -> p.getCreatedAt() != null)
-                    .collect(Collectors.groupingBy(p -> p.getCreatedAt().toLocalDate().format(formatter)));
+        List<CashCheckoutReceipt> cashReceipts = Collections.emptyList();
+        if (cashCheckoutReceiptRepository != null) {
+            cashReceipts = parkingLotId != null
+                    ? safeList(cashCheckoutReceiptRepository.findByMerchantIdAndParkingLotIdAndStatusAndUpdatedAtBetweenOrderByUpdatedAtAsc(
+                            merchantId, parkingLotId, "COMPLETED", rangeStart, rangeEnd))
+                    : safeList(cashCheckoutReceiptRepository.findByMerchantIdAndStatusAndUpdatedAtBetweenOrderByUpdatedAtAsc(
+                            merchantId, "COMPLETED", rangeStart, rangeEnd));
+        }
 
-            BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
-            BigDecimal feeMultiplier = BigDecimal.valueOf(100).subtract(feePercent);
+        Map<String, List<Payment>> paymentsByDay = safeList(payments).stream()
+                .filter(p -> p.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(p -> p.getCreatedAt().toLocalDate().format(formatter)));
 
-            paymentsByDay.forEach((dayKey, dayPayments) -> {
-                BigDecimal dayNetTotal = BigDecimal.ZERO;
-                Set<Long> uniqueBookingIds = new HashSet<>();
+        Map<String, List<CashCheckoutReceipt>> cashByDay = cashReceipts.stream()
+                .filter(r -> r.getUpdatedAt() != null)
+                .collect(Collectors.groupingBy(r -> r.getUpdatedAt().toLocalDate().format(formatter)));
 
-                for (Payment p : dayPayments) {
-                    BigDecimal paymentGross = p.getAmount() != null ? p.getAmount() : BigDecimal.ZERO;
-                    BigDecimal net = paymentGross.multiply(feeMultiplier)
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                    dayNetTotal = dayNetTotal.add(net);
-                    if (p.getBookingId() != null) {
-                        uniqueBookingIds.add(p.getBookingId());
-                    }
+        BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
+        BigDecimal feeMultiplier = BigDecimal.valueOf(100).subtract(feePercent);
+
+        Set<String> activeDays = new LinkedHashSet<>();
+        activeDays.addAll(paymentsByDay.keySet());
+        activeDays.addAll(cashByDay.keySet());
+
+        for (String dayKey : activeDays) {
+            List<Payment> dayPayments = paymentsByDay.getOrDefault(dayKey, Collections.emptyList());
+            List<CashCheckoutReceipt> dayCash = cashByDay.getOrDefault(dayKey, Collections.emptyList());
+
+            BigDecimal dayOnlineNet = BigDecimal.ZERO;
+            BigDecimal dayCounterQrNet = BigDecimal.ZERO;
+            long dayOnlineCount = 0L;
+            long dayCounterQrCount = 0L;
+            Set<Long> uniqueBookingIds = new HashSet<>();
+            long anonymousCount = 0L;
+
+            for (Payment p : dayPayments) {
+                BigDecimal paymentGross = p.getAmount() != null ? p.getAmount() : BigDecimal.ZERO;
+                BigDecimal net = computeNet(paymentGross, feeMultiplier);
+                if (isCounterQr(p.getPaymentChannel())) {
+                    dayCounterQrNet = dayCounterQrNet.add(net);
+                    dayCounterQrCount++;
+                } else {
+                    dayOnlineNet = dayOnlineNet.add(net);
+                    dayOnlineCount++;
                 }
+                if (p.getBookingId() != null) {
+                    uniqueBookingIds.add(p.getBookingId());
+                } else {
+                    anonymousCount++;
+                }
+            }
 
-                long bookingCount = uniqueBookingIds.isEmpty() ? dayPayments.size() : uniqueBookingIds.size();
-                pointsMap.put(dayKey, RevenueSeriesPointDto.builder()
-                        .period(dayKey)
-                        .revenue(dayNetTotal)
-                        .bookingCount(bookingCount)
-                        .build());
-            });
+            BigDecimal dayCashTotal = BigDecimal.ZERO;
+            long dayCashCount = 0L;
+            for (CashCheckoutReceipt r : dayCash) {
+                BigDecimal amount = r.getAmount() != null ? r.getAmount() : BigDecimal.ZERO;
+                dayCashTotal = dayCashTotal.add(amount);
+                dayCashCount++;
+                if (r.getBookingId() != null) {
+                    uniqueBookingIds.add(r.getBookingId());
+                } else {
+                    anonymousCount++;
+                }
+            }
+
+            long bookingCount = uniqueBookingIds.size() + anonymousCount;
+            BigDecimal daySystemNet = dayOnlineNet.add(dayCounterQrNet);
+
+            pointsMap.put(dayKey, RevenueSeriesPointDto.builder()
+                    .period(dayKey)
+                    .revenue(daySystemNet)
+                    .bookingCount(bookingCount)
+                    .onlineTransferRevenue(dayOnlineNet)
+                    .counterQrRevenue(dayCounterQrNet)
+                    .cashRevenue(dayCashTotal)
+                    .onlineTransferCount(dayOnlineCount)
+                    .counterQrCount(dayCounterQrCount)
+                    .cashBookingCount(dayCashCount)
+                    .build());
         }
 
         return new ArrayList<>(pointsMap.values());

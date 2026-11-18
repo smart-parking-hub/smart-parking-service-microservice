@@ -331,4 +331,46 @@ class PaymentServiceImplTest {
         assertThrows(AppException.class,()->paymentService.handleWebhook("{}"));
         verifyNoInteractions(paymentRepository,merchantWalletService,outboxPublisherService);
     }
+
+    @Test
+    @DisplayName("Gate final payment link records COUNTER_QR channel on creation and when reusing pending attempt")
+    void gateFinalPaymentLinkRecordsCounterQrChannel() {
+        when(bookingPaymentVerifier.requireMerchantFinalPayment(bookingId, merchantUserId)).thenReturn(
+                new com.smartparking.payment.infrastructure.client.BookingPaymentVerifier.Quote(
+                        bookingId, driverUserId, merchantUserId, 10L, "AWAITING_FINAL_PAYMENT",
+                        new BigDecimal("50000"), new BigDecimal("150000"), java.time.LocalDateTime.now().plusHours(1)));
+        when(cashReceipts.findCurrentForUpdate(bookingId)).thenReturn(Optional.empty());
+        when(payOSConfig.getReturnUrl()).thenReturn("http://localhost:3000/payment-result");
+        when(payOSConfig.getCancelUrl()).thenReturn("http://localhost:3000/payment-cancel");
+        when(attemptGuard.nextOrderCode()).thenReturn(999111L);
+
+        var requests = mock(vn.payos.service.blocking.v2.paymentRequests.PaymentRequestsService.class);
+        var resp = mock(vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.class);
+        when(payOS.paymentRequests()).thenReturn(requests);
+        when(requests.create(any())).thenReturn(resp);
+        when(resp.getOrderCode()).thenReturn(999111L);
+        when(resp.getAmount()).thenReturn(100000L);
+        when(resp.getCheckoutUrl()).thenReturn("https://pay.payos.vn/web/counter-qr");
+        when(paymentRepository.findAttemptsForUpdate(bookingId, PaymentTypeEnum.FINAL_PAYMENT)).thenReturn(List.of());
+
+        String url = paymentService.createGateFinalPaymentLink(merchantUserId, bookingId);
+        assertEquals("https://pay.payos.vn/web/counter-qr", url);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(captor.capture());
+        assertEquals("COUNTER_QR", captor.getValue().getPaymentChannel());
+
+        // Reusing an existing ONLINE_TRANSFER PENDING attempt upgrades it to COUNTER_QR
+        Payment existingPending = Payment.builder()
+                .id(55L).bookingId(bookingId).driverId(driverUserId).merchantId(merchantUserId).parkingLotId(10L)
+                .gateway(PaymentGatewayEnum.PAYOS).paymentType(PaymentTypeEnum.FINAL_PAYMENT)
+                .paymentChannel("ONLINE_TRANSFER").amount(new BigDecimal("100000"))
+                .status(PaymentStatusEnum.PENDING).checkoutUrl("https://pay.payos.vn/web/existing").build();
+        when(paymentRepository.findAttemptsForUpdate(bookingId, PaymentTypeEnum.FINAL_PAYMENT))
+                .thenReturn(List.of(existingPending));
+
+        String reusedUrl = paymentService.createGateFinalPaymentLink(merchantUserId, bookingId);
+        assertEquals("https://pay.payos.vn/web/existing", reusedUrl);
+        assertEquals("COUNTER_QR", existingPending.getPaymentChannel());
+    }
 }

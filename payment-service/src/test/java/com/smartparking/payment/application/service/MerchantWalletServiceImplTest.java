@@ -5,8 +5,10 @@ import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.payment.application.dto.SettlementSplit;
 import com.smartparking.payment.application.service.impl.MerchantWalletServiceImpl;
+import com.smartparking.payment.domain.model.CashCheckoutReceipt;
 import com.smartparking.payment.domain.model.Payment;
 import com.smartparking.payment.domain.model.Wallet;
+import com.smartparking.payment.domain.repository.CashCheckoutReceiptRepository;
 import com.smartparking.payment.domain.repository.PaymentRepository;
 import com.smartparking.payment.domain.repository.WalletLedgerEntryRepository;
 import com.smartparking.payment.domain.repository.WalletRepository;
@@ -41,6 +43,9 @@ class MerchantWalletServiceImplTest {
     @Mock
     private PaymentRepository paymentRepository;
 
+    @Mock
+    private CashCheckoutReceiptRepository cashCheckoutReceiptRepository;
+
     @InjectMocks
     private MerchantWalletServiceImpl merchantWalletService;
 
@@ -49,6 +54,7 @@ class MerchantWalletServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(merchantWalletService, "platformFeePercent", new BigDecimal("10.0"));
+        ReflectionTestUtils.setField(merchantWalletService, "cashCheckoutReceiptRepository", cashCheckoutReceiptRepository);
     }
 
     @Test
@@ -273,5 +279,120 @@ class MerchantWalletServiceImplTest {
 
         assertNotNull(split);
         verify(walletRepository, atLeastOnce()).save(any(Wallet.class));
+    }
+
+    @Test
+    @DisplayName("Get revenue summary splits ONLINE_TRANSFER, COUNTER_QR, and CASH_AT_GATE across all lots and per lot without altering wallet balance")
+    void testGetRevenueSummaryThreeChannelsAllLotsAndFilteredLot() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayNoon = today.atTime(12, 0);
+
+        PaymentRepository.ChannelAggregation lot10Online = channelAgg(10L, "ONLINE_TRANSFER", new BigDecimal("100000"), 1L);
+        PaymentRepository.ChannelAggregation lot10CounterQr = channelAgg(10L, "COUNTER_QR", new BigDecimal("50000"), 1L);
+        PaymentRepository.ChannelAggregation lot20Online = channelAgg(20L, "ONLINE_TRANSFER", new BigDecimal("200000"), 2L);
+
+        CashCheckoutReceiptRepository.LotCashAggregation lot10Cash = cashAgg(10L, new BigDecimal("40000"), 1L);
+        CashCheckoutReceiptRepository.LotCashAggregation lot20Cash = cashAgg(20L, new BigDecimal("85000"), 2L);
+
+        when(paymentRepository.sumTotalRevenueByMerchantId(merchantId)).thenReturn(new BigDecimal("350000"));
+        when(ledgerRepository.sumPlatformFeeByMerchantId(merchantId)).thenReturn(new BigDecimal("35000"));
+        when(ledgerRepository.sumNetAmountByMerchantId(merchantId)).thenReturn(new BigDecimal("315000"));
+        when(walletRepository.findByMerchantId(merchantId))
+                .thenReturn(Optional.of(Wallet.builder().merchantId(merchantId).balance(new BigDecimal("315000")).build()));
+        when(paymentRepository.aggregateSuccessByMerchantGroupedByLotAndChannel(merchantId))
+                .thenReturn(List.of(lot10Online, lot10CounterQr, lot20Online));
+        when(cashCheckoutReceiptRepository.aggregateCompletedByMerchantGroupedByLot(merchantId))
+                .thenReturn(List.of(lot10Cash, lot20Cash));
+
+        // Same bookingId 501 has both online deposit and cash checkout on today -> should count as 1 unique booking
+        Payment pOnline = Payment.builder().id(1L).merchantId(merchantId).parkingLotId(10L).bookingId(501L)
+                .amount(new BigDecimal("100000")).paymentChannel("ONLINE_TRANSFER").status(PaymentStatusEnum.SUCCESS).build();
+        pOnline.setCreatedAt(todayNoon);
+        Payment pQr = Payment.builder().id(2L).merchantId(merchantId).parkingLotId(10L).bookingId(502L)
+                .amount(new BigDecimal("50000")).paymentChannel("COUNTER_QR").status(PaymentStatusEnum.SUCCESS).build();
+        pQr.setCreatedAt(todayNoon);
+        CashCheckoutReceipt cashSameBooking = CashCheckoutReceipt.builder().bookingId(501L).merchantId(merchantId)
+                .parkingLotId(10L).amount(new BigDecimal("40000")).status("COMPLETED").updatedAt(todayNoon).build();
+
+        when(paymentRepository.findByMerchantIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
+                eq(merchantId), eq(PaymentStatusEnum.SUCCESS), any(), any()))
+                .thenReturn(List.of(pOnline, pQr));
+        when(cashCheckoutReceiptRepository.findByMerchantIdAndStatusAndUpdatedAtBetweenOrderByUpdatedAtAsc(
+                eq(merchantId), eq("COMPLETED"), any(), any()))
+                .thenReturn(List.of(cashSameBooking));
+
+        var allLots = merchantWalletService.getRevenueSummary(merchantId, null, null, null, "DAY");
+
+        // Wallet & ledger totals remain untouched by cash
+        assertEquals(new BigDecimal("315000"), allLots.getTotalNetRevenue());
+        assertEquals(new BigDecimal("315000"), allLots.getCurrentWalletBalance());
+        assertEquals(new BigDecimal("35000"), allLots.getTotalPlatformFee());
+
+        // 3 channels all lots
+        assertEquals(new BigDecimal("300000"), allLots.getOnlineTransferGrossRevenue());
+        assertEquals(new BigDecimal("270000.00"), allLots.getOnlineTransferNetRevenue());
+        assertEquals(3L, allLots.getOnlineTransferCount());
+        assertEquals(new BigDecimal("50000"), allLots.getCounterQrGrossRevenue());
+        assertEquals(new BigDecimal("45000.00"), allLots.getCounterQrNetRevenue());
+        assertEquals(1L, allLots.getCounterQrCount());
+        assertEquals(new BigDecimal("125000"), allLots.getTotalCashRevenue());
+        assertEquals(3L, allLots.getTotalCashBookings());
+        assertEquals(new BigDecimal("125000"), allLots.getPeriodCashRevenue());
+        assertEquals(3L, allLots.getPeriodCashBookings());
+
+        // Per-lot breakdown contains both lot 10 and lot 20
+        assertEquals(2, allLots.getRevenueByParkingLot().size());
+        var lot10Dto = allLots.getRevenueByParkingLot().get(0);
+        assertEquals(10L, lot10Dto.getParkingLotId());
+        assertEquals(new BigDecimal("90000.00"), lot10Dto.getOnlineTransferRevenue());
+        assertEquals(new BigDecimal("45000.00"), lot10Dto.getCounterQrRevenue());
+        assertEquals(new BigDecimal("40000"), lot10Dto.getCashRevenue());
+        assertEquals(1L, lot10Dto.getCashBookingCount());
+
+        // Series point deduplicates bookingId 501 across payment + cash receipt
+        var todayPoint = allLots.getSeries().stream()
+                .filter(pt -> pt.getPeriod().equals(today.toString()))
+                .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("135000.00"), todayPoint.getRevenue());
+        assertEquals(new BigDecimal("90000.00"), todayPoint.getOnlineTransferRevenue());
+        assertEquals(new BigDecimal("45000.00"), todayPoint.getCounterQrRevenue());
+        assertEquals(new BigDecimal("40000"), todayPoint.getCashRevenue());
+        assertEquals(1L, todayPoint.getCashBookingCount());
+        assertEquals(2L, todayPoint.getBookingCount()); // 501 + 502
+
+        // Filter to lot 10 only
+        when(paymentRepository.sumTotalRevenueByMerchantIdAndParkingLotId(merchantId, 10L))
+                .thenReturn(new BigDecimal("150000"));
+        when(paymentRepository.findByMerchantIdAndParkingLotIdAndStatusAndCreatedAtBetweenOrderByCreatedAtAsc(
+                eq(merchantId), eq(10L), eq(PaymentStatusEnum.SUCCESS), any(), any()))
+                .thenReturn(List.of(pOnline, pQr));
+        when(cashCheckoutReceiptRepository.findByMerchantIdAndParkingLotIdAndStatusAndUpdatedAtBetweenOrderByUpdatedAtAsc(
+                eq(merchantId), eq(10L), eq("COMPLETED"), any(), any()))
+                .thenReturn(List.of(cashSameBooking));
+
+        var lot10Only = merchantWalletService.getRevenueSummary(merchantId, 10L, null, null, "DAY");
+        assertEquals(new BigDecimal("90000.00"), lot10Only.getOnlineTransferNetRevenue());
+        assertEquals(new BigDecimal("45000.00"), lot10Only.getCounterQrNetRevenue());
+        assertEquals(new BigDecimal("40000"), lot10Only.getTotalCashRevenue());
+        assertEquals(1L, lot10Only.getTotalCashBookings());
+        // Breakdown still includes all lots for dashboard comparison
+        assertEquals(2, lot10Only.getRevenueByParkingLot().size());
+    }
+
+    private PaymentRepository.ChannelAggregation channelAgg(Long lotId, String channel, BigDecimal total, Long count) {
+        return new PaymentRepository.ChannelAggregation() {
+            @Override public Long getParkingLotId() { return lotId; }
+            @Override public String getPaymentChannel() { return channel; }
+            @Override public BigDecimal getTotalAmount() { return total; }
+            @Override public Long getPaymentCount() { return count; }
+        };
+    }
+
+    private CashCheckoutReceiptRepository.LotCashAggregation cashAgg(Long lotId, BigDecimal total, Long count) {
+        return new CashCheckoutReceiptRepository.LotCashAggregation() {
+            @Override public Long getParkingLotId() { return lotId; }
+            @Override public BigDecimal getTotalAmount() { return total; }
+            @Override public Long getBookingCount() { return count; }
+        };
     }
 }

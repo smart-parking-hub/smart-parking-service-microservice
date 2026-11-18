@@ -58,6 +58,7 @@ public class DriverWalletPaymentService {
             var created = payments.saveAndFlush(Payment.builder().bookingId(bookingId).driverId(driverId)
                     .merchantId(quote.merchantId()).parkingLotId(quote.parkingLotId()).amount(amount)
                     .gateway(PaymentGatewayEnum.WALLET).paymentType(PaymentTypeEnum.DEPOSIT)
+                    .paymentChannel("ONLINE_TRANSFER")
                     .status(PaymentStatusEnum.PENDING).walletRefund(true).bookingExpiresAt(quote.expiresAt())
                     .idempotencyKey("wallet:booking:" + bookingId).transactionCode("WALLET-" + bookingId).build());
             wallet.post(driverId, bookingId, created.getId(), "WALLET:HOLD:" + created.getId(), "HOLD", amount,
