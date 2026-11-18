@@ -414,8 +414,9 @@ class MerchantWalletServiceImplTest {
 
         var summary = merchantWalletService.getRevenueSummary(merchantId);
 
-        // Ledger-backed settled figures (NOT raw 100k * 90% = 90k!)
-        assertEquals(0, new BigDecimal("50000").compareTo(summary.getTotalGrossRevenue()));
+        // Contract cumulative gross includes all SUCCESS payments (50k settled + 50k pending = 100k)
+        assertEquals(0, new BigDecimal("100000").compareTo(summary.getTotalGrossRevenue()));
+        assertEquals(0, new BigDecimal("50000").compareTo(summary.getTotalSettledGrossRevenue()));
         assertEquals(0, new BigDecimal("5000").compareTo(summary.getTotalPlatformFee()));
         assertEquals(0, new BigDecimal("40000").compareTo(summary.getTotalNetRevenue()));
         assertEquals(0, new BigDecimal("40000").compareTo(summary.getOnlineTransferNetRevenue()));
@@ -557,6 +558,44 @@ class MerchantWalletServiceImplTest {
         assertEquals(0, new BigDecimal("50000.00").compareTo(lot10Filtered.getPeriodTotalGrossRevenue()));
         assertEquals(0, new BigDecimal("5000.00").compareTo(lot10Filtered.getPeriodTotalPlatformFee()));
         assertEquals(0, new BigDecimal("45000.00").compareTo(lot10Filtered.getPeriodTotalNetRevenue()));
+    }
+
+    @Test
+    @DisplayName("F-01: Unsettled SUCCESS payment made today is included in totalGrossRevenue, today's series point, and completedBookings")
+    void testUnsettledPaymentIncludedInRealtimeSeriesAndCumulativeGross() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayMorning = today.atTime(10, 30);
+
+        Payment unsettled = Payment.builder()
+                .id(999L).merchantId(merchantId).parkingLotId(10L).bookingId(9991L)
+                .amount(new BigDecimal("120000")).paymentType(PaymentTypeEnum.DEPOSIT)
+                .paymentChannel("ONLINE_TRANSFER").status(PaymentStatusEnum.SUCCESS).build();
+        unsettled.setCreatedAt(todayMorning);
+
+        when(ledgerRepository.findRevenueEntriesWithPaymentByMerchantId(merchantId)).thenReturn(List.of());
+        when(paymentRepository.findByMerchantIdAndStatusOrderByCreatedAtAsc(merchantId, PaymentStatusEnum.SUCCESS))
+                .thenReturn(List.of(unsettled));
+        when(walletRepository.findByMerchantId(merchantId))
+                .thenReturn(Optional.of(Wallet.builder().merchantId(merchantId).balance(BigDecimal.ZERO).build()));
+
+        var summary = merchantWalletService.getRevenueSummary(merchantId);
+
+        // Cumulative gross includes the unsettled payment
+        assertEquals(0, new BigDecimal("120000").compareTo(summary.getTotalGrossRevenue()));
+        assertEquals(0, new BigDecimal("120000").compareTo(summary.getPendingSettlementGrossRevenue()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(summary.getTotalSettledGrossRevenue()));
+        assertEquals(1L, summary.getCompletedBookings());
+
+        // Today's series point contains the unsettled payment
+        String todayKey = today.toString();
+        var todayPoint = summary.getSeries().stream()
+                .filter(pt -> pt.getPeriod().equals(todayKey))
+                .findFirst().orElseThrow();
+        // 120,000 * 90% = 108,000.00 net
+        assertEquals(0, new BigDecimal("108000.00").compareTo(todayPoint.getRevenue()));
+        assertEquals(1L, todayPoint.getBookingCount());
+        assertEquals(0, new BigDecimal("108000.00").compareTo(todayPoint.getOnlineTransferRevenue()));
+        assertEquals(1L, todayPoint.getOnlineTransferCount());
     }
 
     private WalletLedgerEntry settledEntry(

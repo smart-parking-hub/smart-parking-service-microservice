@@ -27,6 +27,10 @@ public class MerchantRevenueResponse {
     private BigDecimal minWithdrawalAmount;
 
     @Builder.Default
+    private BigDecimal totalSettledGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal periodTotalSettledGrossRevenue = BigDecimal.ZERO;
+    @Builder.Default
     private BigDecimal periodTotalGrossRevenue = BigDecimal.ZERO;
     @Builder.Default
     private BigDecimal periodTotalPlatformFee = BigDecimal.ZERO;

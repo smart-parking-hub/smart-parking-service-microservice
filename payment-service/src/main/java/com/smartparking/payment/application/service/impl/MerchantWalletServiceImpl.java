@@ -662,12 +662,26 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         // Compute pre-settlement (escrow) collected gross separately, deducting valid refunds just like DailySettlementServiceImpl.
         List<Payment> unsettledPayments = new ArrayList<>();
         Set<Long> unsettledBookingIds = new HashSet<>();
-        for (Payment p : successPayments) {
-            if (p == null) continue;
-            if (p.getId() != null && settledPaymentIds.contains(p.getId())) continue;
-            unsettledPayments.add(p);
-            if (p.getBookingId() != null) {
-                unsettledBookingIds.add(p.getBookingId());
+        try {
+            List<Payment> dbUnsettled = safeList(paymentRepository.findUnsettledSuccessPaymentsByMerchantId(merchantId));
+            for (Payment p : dbUnsettled) {
+                if (p == null) continue;
+                unsettledPayments.add(p);
+                if (p.getBookingId() != null) {
+                    unsettledBookingIds.add(p.getBookingId());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("findUnsettledSuccessPaymentsByMerchantId fallback: {}", e.getMessage());
+        }
+        if (unsettledPayments.isEmpty() && !successPayments.isEmpty()) {
+            for (Payment p : successPayments) {
+                if (p == null) continue;
+                if (p.getId() != null && settledPaymentIds.contains(p.getId())) continue;
+                unsettledPayments.add(p);
+                if (p.getBookingId() != null) {
+                    unsettledBookingIds.add(p.getBookingId());
+                }
             }
         }
 
@@ -756,20 +770,26 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         }
 
         SeriesComputation seriesComputation = calculateRevenueSeries(
-                merchantId, parkingLotId, startDate, endDate, scopedLedgerEntries, paymentByBookingId, latestScopedLedgerAt);
+                merchantId, parkingLotId, startDate, endDate, scopedLedgerEntries, paymentByBookingId, latestScopedLedgerAt,
+                unsettledPayments, refundsByBookingId);
+
+        BigDecimal allTimeGrossRevenue = totalGross.add(pendingSettlementGrossTotal);
+        BigDecimal periodCumulativeGrossRevenue = periodTotalGross.add(periodPendingSettlementGrossTotal);
 
         return MerchantRevenueResponse.builder()
                 .merchantId(merchantId)
-                .totalGrossRevenue(totalGross)
+                .totalGrossRevenue(allTimeGrossRevenue)
                 .totalPlatformFee(totalFee)
                 .totalNetRevenue(totalNet)
-                .periodTotalGrossRevenue(periodTotalGross)
+                .totalSettledGrossRevenue(totalGross)
+                .periodTotalGrossRevenue(periodCumulativeGrossRevenue)
+                .periodTotalSettledGrossRevenue(periodTotalGross)
                 .periodTotalPlatformFee(periodTotalFee)
                 .periodTotalNetRevenue(periodTotalNet)
                 .pendingSettlementGrossRevenue(pendingSettlementGrossTotal)
                 .periodPendingSettlementGrossRevenue(periodPendingSettlementGrossTotal)
                 .currentWalletBalance(currentBalance)
-                .totalRevenue(totalGross)
+                .totalRevenue(allTimeGrossRevenue)
                 .walletBalance(currentBalance)
                 .completedBookings(seriesComputation.distinctPeriodBookings())
                 .platformFeePercent(platformFeePercent)
@@ -953,7 +973,9 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
             String endDate,
             List<WalletLedgerEntry> scopedLedgerEntries,
             Map<Long, Payment> paymentByBookingId,
-            LocalDateTime latestScopedLedgerAt) {
+            LocalDateTime latestScopedLedgerAt,
+            List<Payment> unsettledPayments,
+            Map<Long, RefundRequest> refundsByBookingId) {
         LocalDate today = LocalDate.now();
         LocalDate startLocalDate = today.minusDays(6);
         LocalDate endLocalDate = today;
@@ -971,6 +993,20 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
             LocalDateTime latestActivity = latestScopedLedgerAt;
             if (latestCashAt != null && (latestActivity == null || latestCashAt.isAfter(latestActivity))) {
                 latestActivity = latestCashAt;
+            }
+
+            LocalDateTime latestUnsettledAt = null;
+            for (Payment p : safeList(unsettledPayments)) {
+                if (p != null && p.getCreatedAt() != null) {
+                    if (parkingLotId == null || Objects.equals(parkingLotId, p.getParkingLotId())) {
+                        if (latestUnsettledAt == null || p.getCreatedAt().isAfter(latestUnsettledAt)) {
+                            latestUnsettledAt = p.getCreatedAt();
+                        }
+                    }
+                }
+            }
+            if (latestUnsettledAt != null && (latestActivity == null || latestUnsettledAt.isAfter(latestActivity))) {
+                latestActivity = latestUnsettledAt;
             }
 
             if (latestActivity != null) {
@@ -1020,6 +1056,15 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
             ledgerByDay.computeIfAbsent(dayKey, k -> new ArrayList<>()).add(entry);
         }
 
+        Map<String, List<Payment>> unsettledByDay = new LinkedHashMap<>();
+        for (Payment p : safeList(unsettledPayments)) {
+            if (p == null || p.getCreatedAt() == null) continue;
+            if (!isWithinRange(p.getCreatedAt(), rangeStart, rangeEnd)) continue;
+            if (parkingLotId != null && !Objects.equals(parkingLotId, p.getParkingLotId())) continue;
+            String dayKey = p.getCreatedAt().toLocalDate().format(formatter);
+            unsettledByDay.computeIfAbsent(dayKey, k -> new ArrayList<>()).add(p);
+        }
+
         List<CashCheckoutReceipt> cashReceipts = Collections.emptyList();
         if (cashCheckoutReceiptRepository != null) {
             cashReceipts = parkingLotId != null
@@ -1036,6 +1081,7 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         Set<String> activeDays = new LinkedHashSet<>();
         activeDays.addAll(ledgerByDay.keySet());
         activeDays.addAll(cashByDay.keySet());
+        activeDays.addAll(unsettledByDay.keySet());
 
         // Period-wide booking deduplication prevents overnight deposit + next-day cash from double counting.
         Set<Long> periodUniqueBookingIds = new HashSet<>();
@@ -1044,6 +1090,7 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
         for (String dayKey : activeDays) {
             List<WalletLedgerEntry> dayLedger = ledgerByDay.getOrDefault(dayKey, Collections.emptyList());
             List<CashCheckoutReceipt> dayCash = cashByDay.getOrDefault(dayKey, Collections.emptyList());
+            List<Payment> dayUnsettled = unsettledByDay.getOrDefault(dayKey, Collections.emptyList());
 
             BigDecimal dayOnlineNet = BigDecimal.ZERO;
             BigDecimal dayCounterQrNet = BigDecimal.ZERO;
@@ -1085,6 +1132,38 @@ public class MerchantWalletServiceImpl implements MerchantWalletService {
                     dayUniqueBookingIds.add(bookingId);
                     periodUniqueBookingIds.add(bookingId);
                 } else if (isSettlementCredit) {
+                    dayAnonymousCount++;
+                    periodAnonymousCount++;
+                }
+            }
+
+            for (Payment p : dayUnsettled) {
+                BigDecimal settleableGross = computeSettleableGross(p, refundsByBookingId);
+                if (settleableGross.signum() <= 0) continue;
+                BigDecimal feePercent = platformFeePercent != null ? platformFeePercent : BigDecimal.valueOf(10.0);
+                BigDecimal estFee = settleableGross.multiply(feePercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                BigDecimal net = settleableGross.subtract(estFee);
+                ChannelBucket channel = resolveChannel(p.getPaymentChannel());
+
+                switch (channel) {
+                    case ONLINE_TRANSFER -> {
+                        dayOnlineNet = dayOnlineNet.add(net);
+                        dayOnlineCount += 1L;
+                    }
+                    case COUNTER_QR -> {
+                        dayCounterQrNet = dayCounterQrNet.add(net);
+                        dayCounterQrCount += 1L;
+                    }
+                    case UNKNOWN -> {
+                        dayUnclassifiedNet = dayUnclassifiedNet.add(net);
+                        dayUnclassifiedCount += 1L;
+                    }
+                }
+
+                if (p.getBookingId() != null) {
+                    dayUniqueBookingIds.add(p.getBookingId());
+                    periodUniqueBookingIds.add(p.getBookingId());
+                } else {
                     dayAnonymousCount++;
                     periodAnonymousCount++;
                 }
