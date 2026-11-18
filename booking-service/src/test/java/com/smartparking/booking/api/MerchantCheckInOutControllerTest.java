@@ -5,6 +5,7 @@ import com.smartparking.booking.application.dto.BookingDto;
 import com.smartparking.booking.application.dto.CheckInRequest;
 import com.smartparking.booking.application.dto.CheckOutResponse;
 import com.smartparking.booking.application.dto.ConfirmCashRequest;
+import com.smartparking.booking.application.dto.MerchantBookingSummaryResponse;
 import com.smartparking.booking.application.service.BookingService;
 import com.smartparking.booking.application.service.CheckInOutService;
 import com.smartparking.booking.infrastructure.security.AuthenticatedUser;
@@ -89,6 +90,26 @@ class MerchantCheckInOutControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().getData().getContent().size());
+    }
+
+    @Test
+    @DisplayName("getMerchantBookingSummary returns server-aggregated counts across all statuses")
+    void testGetMerchantBookingSummary() {
+        MerchantBookingSummaryResponse summary = MerchantBookingSummaryResponse.builder()
+                .total(725L)
+                .pendingCheckIn(15L)
+                .parking(10L)
+                .completed(680L)
+                .build();
+        when(bookingService.getMerchantBookingSummary(200L, 10L)).thenReturn(summary);
+
+        ResponseEntity<ApiResponse<MerchantBookingSummaryResponse>> response =
+                controller.getMerchantBookingSummary(user, 10L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(725L, response.getBody().getData().getTotal());
+        assertEquals(680L, response.getBody().getData().getCompleted());
+        verify(bookingService).getMerchantBookingSummary(200L, 10L);
     }
 
     @Test

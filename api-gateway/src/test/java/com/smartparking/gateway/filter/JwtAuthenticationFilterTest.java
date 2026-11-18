@@ -91,4 +91,32 @@ class JwtAuthenticationFilterTest {
 
         filter.filter(exchange, chain).block();
     }
+
+    @Test
+    @DisplayName("Filter blocks external access to internal endpoints with 403 FORBIDDEN")
+    void testFilterBlocksInternalPaths() {
+        String token = Jwts.builder()
+                .subject("999")
+                .claim("role", "DRIVER")
+                .claim("email", "driver@example.com")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600000))
+                .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        MockServerHttpRequest request = MockServerHttpRequest
+                .get("/api/v1/payments/internal/merchants/1/revenue")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .build();
+        MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+        GatewayFilterChain chain = mutatedExchange -> {
+            fail("Gateway must not forward internal endpoints");
+            return Mono.empty();
+        };
+
+        filter.filter(exchange, chain).block();
+
+        assertEquals(HttpStatus.FORBIDDEN, exchange.getResponse().getStatusCode());
+    }
 }

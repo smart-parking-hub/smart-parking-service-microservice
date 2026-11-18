@@ -148,6 +148,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = Payment.builder().bookingId(request.getBookingId()).driverId(driverUserId)
                 .merchantId(quote.merchantId()).parkingLotId(quote.parkingLotId()).gateway(PaymentGatewayEnum.PAYOS)
                 .transactionCode(String.valueOf(orderCode)).orderCode(orderCode).amount(amount).paymentType(type)
+                .paymentChannel("ONLINE_TRANSFER")
                 .status(PaymentStatusEnum.PENDING).idempotencyKey(attempts.isEmpty() ? key : key + ":attempt:" + orderCode)
                 .bookingExpiresAt(type == PaymentTypeEnum.DEPOSIT ? quote.expiresAt() : null).build();
         // Persist the reservation even if PayOS times out (noRollbackFor above). Never lose an ambiguous order.
@@ -207,6 +208,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment latest = attempts.isEmpty() ? null : attempts.getFirst();
         if (latest != null && latest.getStatus() == PaymentStatusEnum.PENDING && latest.getCheckoutUrl() != null
                 && latest.getAmount() != null && latest.getAmount().compareTo(amount) == 0) {
+            // Preserve immutable origination channel when reusing an existing pending payment link.
             return latest.getCheckoutUrl();
         }
 
@@ -222,6 +224,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orderCode(orderCode)
                 .amount(amount)
                 .paymentType(PaymentTypeEnum.FINAL_PAYMENT)
+                .paymentChannel("COUNTER_QR")
                 .status(PaymentStatusEnum.PENDING)
                 .idempotencyKey(attempts.isEmpty() ? key : key + ":attempt:" + orderCode)
                 .bookingExpiresAt(quote.expiresAt())
@@ -344,6 +347,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orderCode(orderCode)
                 .amount(amount)
                 .paymentType(PaymentTypeEnum.DEPOSIT)
+                .paymentChannel("ONLINE_TRANSFER")
                 .status(PaymentStatusEnum.SUCCESS)
                 .idempotencyKey(key).bookingExpiresAt(quote.expiresAt())
                 .build();

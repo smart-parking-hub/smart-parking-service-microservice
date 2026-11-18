@@ -4,7 +4,6 @@ import com.smartparking.common.dto.ApiResponse;
 import com.smartparking.common.dto.PageResponse;
 import com.smartparking.payment.api.controller.PaymentController;
 import com.smartparking.payment.application.dto.*;
-import com.smartparking.payment.application.service.MerchantWalletService;
 import com.smartparking.payment.application.service.PaymentService;
 import com.smartparking.payment.infrastructure.security.AuthenticatedUser;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,9 +29,6 @@ class PaymentControllerTest {
 
     @Mock
     private PaymentService paymentService;
-
-    @Mock
-    private MerchantWalletService merchantWalletService;
 
     @InjectMocks
     private PaymentController controller;
@@ -127,17 +123,5 @@ class PaymentControllerTest {
 
         assertEquals(HttpStatus.OK, res.getStatusCode());
         verify(paymentService, times(1)).handleWebhook("{\"test\": 1}");
-    }
-
-    @Test
-    @DisplayName("getMerchantRevenue internal RPC endpoint")
-    void testGetMerchantRevenue() {
-        MerchantRevenueResponse rev = MerchantRevenueResponse.builder().merchantId(50L).build();
-        when(merchantWalletService.getRevenueSummary(50L)).thenReturn(rev);
-
-        ResponseEntity<ApiResponse<MerchantRevenueResponse>> res = controller.getMerchantRevenue(50L);
-
-        assertEquals(HttpStatus.OK, res.getStatusCode());
-        assertEquals(50L, res.getBody().getData().getMerchantId());
     }
 }

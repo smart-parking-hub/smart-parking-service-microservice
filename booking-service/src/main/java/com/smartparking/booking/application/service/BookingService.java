@@ -5,6 +5,7 @@ import com.smartparking.booking.application.dto.BookingDto;
 import com.smartparking.booking.application.dto.CancelBookingRequest;
 import com.smartparking.booking.application.dto.CancelBookingResponse;
 import com.smartparking.booking.application.dto.CreateBookingRequest;
+import com.smartparking.booking.application.dto.MerchantBookingSummaryResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface BookingService {
@@ -17,6 +18,7 @@ public interface BookingService {
         return getMerchantBookings(merchantUserId, null, pageable);
     }
     PageResponse<BookingDto> getMerchantBookings(Long merchantUserId, Long parkingLotId, Pageable pageable);
+    MerchantBookingSummaryResponse getMerchantBookingSummary(Long merchantUserId, Long parkingLotId);
     BookingDto getBookingDetail(Long userId, Long bookingId);
     BookingDto getMerchantBookingDetail(Long merchantUserId, Long bookingId);
     CancelBookingResponse cancelBooking(Long driverUserId, Long bookingId, CancelBookingRequest request);
