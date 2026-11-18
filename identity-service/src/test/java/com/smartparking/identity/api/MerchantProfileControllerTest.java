@@ -73,6 +73,7 @@ class MerchantProfileControllerTest {
         ResponseEntity<ApiResponse<MerchantProfileResponse>> res = controller.uploadDocuments(user, "GPKD-123", file);
 
         assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals("Đã lưu giấy tờ vào bản nháp hồ sơ xác minh", res.getBody().getMessage());
         assertEquals(200L, res.getBody().getData().getUserId());
     }
 }

@@ -5,43 +5,34 @@ import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.identity.application.dto.MerchantProfileResponse;
 import com.smartparking.identity.application.dto.UpdateMerchantProfileRequest;
 import com.smartparking.identity.application.service.MerchantProfileService;
+import com.smartparking.identity.application.service.verification.VerificationDocumentStorage;
 import com.smartparking.identity.domain.model.Merchant;
 import com.smartparking.identity.domain.model.User;
+import com.smartparking.identity.domain.model.verification.DocumentType;
+import com.smartparking.identity.domain.model.verification.MerchantVerificationDossier;
+import com.smartparking.identity.domain.model.verification.VerificationStatus;
 import com.smartparking.identity.domain.repository.MerchantRepository;
+import com.smartparking.identity.domain.repository.MerchantVerificationDossierRepository;
 import com.smartparking.identity.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MerchantProfileServiceImpl implements MerchantProfileService {
 
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "application/pdf",
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-    );
-
     private final MerchantRepository merchantRepository;
     private final UserRepository userRepository;
-
-    @Value("${app.storage.merchant-documents-dir:uploads/merchant-documents}")
-    private String documentsDirectory;
+    private final MerchantVerificationDossierRepository dossierRepository;
+    private final VerificationDocumentStorage documentStorage;
 
     @Override
     @Transactional(readOnly = true)
@@ -52,7 +43,8 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
     @Override
     @Transactional
     public MerchantProfileResponse updateProfile(Long merchantUserId, UpdateMerchantProfileRequest request) {
-        Merchant merchant = requireMerchant(merchantUserId);
+        Merchant merchant = merchantRepository.findByUserIdForUpdate(merchantUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy hồ sơ chủ bãi xe!"));
         User user = merchant.getUser();
 
         // 1. Pre-validate banking fields if present (atomic / no partial update)
@@ -113,7 +105,7 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
             });
             merchant.setCitizenId(citizenId);
         }
-        if (request.getBusinessLicense() != null) {
+        if (request.getBusinessLicense() != null && dossierRepository.findByMerchantId(merchant.getId()).isEmpty()) {
             merchant.setBusinessLicense(blankToNull(request.getBusinessLicense()));
         }
 
@@ -137,30 +129,37 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
     @Override
     @Transactional
     public MerchantProfileResponse uploadDocument(Long merchantUserId, String businessLicense, MultipartFile file) {
-        Merchant merchant = requireMerchant(merchantUserId);
+        Merchant merchant = merchantRepository.findByUserIdForUpdate(merchantUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy hồ sơ chủ bãi xe!"));
+
+        MerchantVerificationDossier dossier = dossierRepository.findByMerchantIdForUpdate(merchant.getId())
+                .orElseGet(() -> {
+                    MerchantVerificationDossier newDossier = MerchantVerificationDossier.builder()
+                            .merchant(merchant)
+                            .user(merchant.getUser())
+                            .status(VerificationStatus.DRAFT)
+                            .draftRevision(1L)
+                            .businessRegistrationNumber(merchant.getBusinessLicense())
+                            .build();
+                    return dossierRepository.save(newDossier);
+                });
+
+        if (dossier.getStatus() != VerificationStatus.DRAFT) {
+            throw new AppException(ErrorCode.CONFLICT, "Chỉ có thể lưu giấy tờ qua hồ sơ cũ khi hồ sơ xác minh còn là bản nháp!");
+        }
 
         if (businessLicense != null && !businessLicense.isBlank()) {
-            merchant.setBusinessLicense(businessLicense.trim());
+            String trimmed = businessLicense.trim();
+            merchant.setBusinessLicense(trimmed);
+            dossier.setBusinessRegistrationNumber(trimmed);
         }
 
-        if (file != null && !file.isEmpty()) {
-            validateFile(file);
-            try {
-                Path dir = Paths.get(documentsDirectory);
-                Files.createDirectories(dir);
-
-                String ext = extensionOf(file.getOriginalFilename());
-                String filename = "merchant_" + merchant.getId() + "_" + UUID.randomUUID() + ext;
-                Path target = dir.resolve(filename);
-                file.transferTo(target);
-
-                log.info("Uploaded document for merchant {}: {}", merchant.getId(), target);
-            } catch (IOException e) {
-                log.error("Failed to store merchant document: {}", e.getMessage());
-                throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Không thể lưu tệp đính kèm!");
-            }
+        if (file != null) {
+            documentStorage.replaceGroup(dossier, DocumentType.BUSINESS_REGISTRATION, List.of(file));
         }
 
+        dossier.setDraftRevision(dossier.getDraftRevision() + 1);
+        dossierRepository.save(dossier);
         merchantRepository.save(merchant);
         return toResponse(merchant);
     }
@@ -175,9 +174,32 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
         String citizenId = merchant.getCitizenId();
         String bankAccount = merchant.getBankAccountNum();
 
-        String verificationStatus = (merchant.getBusinessLicense() != null && !merchant.getBusinessLicense().isBlank())
-                ? "VERIFIED" : "PENDING";
-        String verificationLabel = "VERIFIED".equals(verificationStatus) ? "Đã xác thực" : "Chờ xác thực";
+        Optional<MerchantVerificationDossier> dossierOpt = dossierRepository.findByMerchantId(merchant.getId());
+
+        String verificationStatus;
+        String verificationLabel;
+        String businessLicense = merchant.getBusinessLicense();
+
+        if (dossierOpt.isPresent()) {
+            MerchantVerificationDossier dossier = dossierOpt.get();
+            businessLicense = dossier.getBusinessRegistrationNumber();
+            if (dossier.getStatus() == VerificationStatus.VERIFIED) {
+                verificationStatus = "VERIFIED";
+                verificationLabel = "Đã xác thực";
+            } else if (dossier.getStatus() == VerificationStatus.PENDING_REVIEW) {
+                verificationStatus = "PENDING";
+                verificationLabel = "Chờ duyệt";
+            } else if (dossier.getStatus() == VerificationStatus.CHANGES_REQUESTED) {
+                verificationStatus = "CHANGES_REQUESTED";
+                verificationLabel = "Cần bổ sung";
+            } else {
+                verificationStatus = "NOT_SUBMITTED";
+                verificationLabel = "Chờ xác thực";
+            }
+        } else {
+            verificationStatus = "NOT_SUBMITTED";
+            verificationLabel = "Chờ xác thực";
+        }
 
         return MerchantProfileResponse.builder()
                 .merchantId(merchant.getId())
@@ -187,7 +209,7 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
                 .email(user.getEmail())
                 .citizenId(citizenId)
                 .maskedCitizenId(mask(citizenId, 4))
-                .businessLicense(merchant.getBusinessLicense())
+                .businessLicense(businessLicense)
                 .bankName(merchant.getBankName())
                 .bankAccountNum(bankAccount)
                 .accountHolderName(merchant.getAccountHolderName())
@@ -201,25 +223,6 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
                 .build();
     }
 
-    private void validateFile(MultipartFile file) {
-        String rawContentType = file.getContentType();
-        String contentType = rawContentType != null ? rawContentType.toLowerCase(Locale.ROOT) : "";
-        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ chấp nhận PDF hoặc ảnh JPEG/PNG/WEBP!");
-        }
-        if (file.getSize() > 5 * 1024 * 1024L) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "File tối đa 5MB!");
-        }
-    }
-
-    private static String extensionOf(String filename) {
-        if (filename == null) return "";
-        int idx = filename.lastIndexOf('.');
-        if (idx < 0) return "";
-        String ext = filename.substring(idx).toLowerCase(Locale.ROOT);
-        if (ext.length() > 10) return "";
-        return ext;
-    }
 
     private static String blankToNull(String value) {
         String trimmed = value.trim();

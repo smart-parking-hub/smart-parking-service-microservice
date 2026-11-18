@@ -6,9 +6,14 @@ import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.identity.application.dto.MerchantProfileResponse;
 import com.smartparking.identity.application.dto.UpdateMerchantProfileRequest;
 import com.smartparking.identity.application.service.impl.MerchantProfileServiceImpl;
+import com.smartparking.identity.application.service.verification.VerificationDocumentStorage;
 import com.smartparking.identity.domain.model.Merchant;
 import com.smartparking.identity.domain.model.User;
+import com.smartparking.identity.domain.model.verification.DocumentType;
+import com.smartparking.identity.domain.model.verification.MerchantVerificationDossier;
+import com.smartparking.identity.domain.model.verification.VerificationStatus;
 import com.smartparking.identity.domain.repository.MerchantRepository;
+import com.smartparking.identity.domain.repository.MerchantVerificationDossierRepository;
 import com.smartparking.identity.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,10 +24,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,6 +42,12 @@ class MerchantProfileServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private MerchantVerificationDossierRepository dossierRepository;
+
+    @Mock
+    private VerificationDocumentStorage documentStorage;
+
     @InjectMocks
     private MerchantProfileServiceImpl merchantProfileService;
 
@@ -47,12 +58,12 @@ class MerchantProfileServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(merchantProfileService, "documentsDirectory", tempDir.toString());
+
     }
 
     @Test
-    @DisplayName("Get profile successfully with masked citizenId, bank account, and accountHolderName")
-    void testGetProfileSuccess() {
+    @DisplayName("AC1: Get profile with businessLicense only does NOT return VERIFIED (returns NOT_SUBMITTED)")
+    void testGetProfileSuccessWithoutVerifiedDossier() {
         User user = User.builder()
                 .id(merchantUserId)
                 .fullName("Bui Thi Chu Bai")
@@ -73,6 +84,7 @@ class MerchantProfileServiceImplTest {
                 .build();
 
         when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(dossierRepository.findByMerchantId(15L)).thenReturn(Optional.empty());
 
         MerchantProfileResponse response = merchantProfileService.getProfile(merchantUserId);
 
@@ -82,7 +94,49 @@ class MerchantProfileServiceImplTest {
         assertEquals("BUI THI CHU BAI", response.getAccountHolderName());
         assertEquals("********9999", response.getMaskedCitizenId());
         assertEquals("********4555", response.getMaskedBankAccount());
+        assertEquals("NOT_SUBMITTED", response.getVerificationStatus());
+        assertEquals("Chờ xác thực", response.getVerificationLabel());
+    }
+
+    @Test
+    @DisplayName("AC1: Get profile with verified dossier returns VERIFIED")
+    void testGetProfileSuccessWithVerifiedDossier() {
+        User user = User.builder()
+                .id(merchantUserId)
+                .fullName("Bui Thi Chu Bai")
+                .phone("0988776655")
+                .email("chubai@example.com")
+                .status(UserStatusEnum.ACTIVE)
+                .build();
+
+        Merchant merchant = Merchant.builder()
+                .id(15L)
+                .user(user)
+                .citizenId("079200009999")
+                .bankName("Techcombank")
+                .bankAccountNum("190333444555")
+                .accountHolderName("BUI THI CHU BAI")
+                .walletBalance(new BigDecimal("1500000"))
+                .businessLicense("GPKD-12345")
+                .build();
+
+        MerchantVerificationDossier dossier = MerchantVerificationDossier.builder()
+                .id(1L)
+                .merchant(merchant)
+                .user(user)
+                .status(VerificationStatus.VERIFIED)
+                .businessRegistrationNumber("0101234567")
+                .build();
+
+        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(dossierRepository.findByMerchantId(15L)).thenReturn(Optional.of(dossier));
+
+        MerchantProfileResponse response = merchantProfileService.getProfile(merchantUserId);
+
+        assertNotNull(response);
         assertEquals("VERIFIED", response.getVerificationStatus());
+        assertEquals("Đã xác thực", response.getVerificationLabel());
+        assertEquals("0101234567", response.getBusinessLicense());
     }
 
     @Test
@@ -99,7 +153,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileSuccess() {
         User user = User.builder().id(merchantUserId).email("old@example.com").build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setFullName("Nguyen Van Owner");
@@ -139,7 +193,7 @@ class MerchantProfileServiceImplTest {
                 .bankAccountNum("0071001234567")
                 .accountHolderName("OLD ACCOUNT HOLDER")
                 .build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setBankName("MB Bank");
@@ -159,7 +213,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfilePreservesLeadingZeros() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setBankAccountNum("0071001234567");
@@ -176,7 +230,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileTrimsAndPreservesDiacritics() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setBankName("  Ngân Hàng Ngoại Thương  ");
@@ -196,7 +250,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileWhitespaceBankNameFails() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setBankName("   ");
@@ -211,7 +265,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileWhitespaceAccountHolderNameFails() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setAccountHolderName("   ");
@@ -226,7 +280,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileWhitespaceBankAccountNumFails() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setBankAccountNum("   ");
@@ -241,7 +295,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileInvalidBankAccountNumPatternFails() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest reqShort = new UpdateMerchantProfileRequest();
         reqShort.setBankAccountNum("12345"); // < 6 digits
@@ -261,7 +315,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileAtomicPartialFailure() {
         User user = User.builder().id(merchantUserId).fullName("Old Name").build();
         Merchant merchant = Merchant.builder().id(15L).user(user).bankName("Old Bank").build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         UpdateMerchantProfileRequest req = new UpdateMerchantProfileRequest();
         req.setFullName("New Name");
@@ -280,7 +334,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileEmailConflict() {
         User user = User.builder().id(merchantUserId).email("old@example.com").build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         User otherUser = User.builder().id(999L).email("taken@example.com").build();
         when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(otherUser));
@@ -297,7 +351,7 @@ class MerchantProfileServiceImplTest {
     void testUpdateProfileCitizenIdConflict() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
 
         Merchant otherMerchant = Merchant.builder().id(99L).build();
         when(merchantRepository.findByCitizenId("012345678999")).thenReturn(Optional.of(otherMerchant));
@@ -314,11 +368,15 @@ class MerchantProfileServiceImplTest {
     void testUploadDocumentInvalidContentType() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(dossierRepository.findByMerchantIdForUpdate(15L)).thenReturn(Optional.empty());
+        when(dossierRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "script.sh", "application/x-sh", "echo 'hello'".getBytes()
         );
+        doThrow(new AppException(ErrorCode.BAD_REQUEST, "Chỉ chấp nhận PDF hoặc ảnh JPEG/PNG/WEBP!"))
+                .when(documentStorage).replaceGroup(any(), eq(DocumentType.BUSINESS_REGISTRATION), eq(List.of(file)));
 
         AppException ex = assertThrows(AppException.class, () ->
                 merchantProfileService.uploadDocument(merchantUserId, "GPKD-123", file));
@@ -330,12 +388,16 @@ class MerchantProfileServiceImplTest {
     void testUploadDocumentFileTooLarge() {
         User user = User.builder().id(merchantUserId).build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(dossierRepository.findByMerchantIdForUpdate(15L)).thenReturn(Optional.empty());
+        when(dossierRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         byte[] bigData = new byte[6 * 1024 * 1024];
         MockMultipartFile file = new MockMultipartFile(
                 "file", "large.pdf", "application/pdf", bigData
         );
+        doThrow(new AppException(ErrorCode.BAD_REQUEST, "File tối đa 5MB!"))
+                .when(documentStorage).replaceGroup(any(), eq(DocumentType.BUSINESS_REGISTRATION), eq(List.of(file)));
 
         AppException ex = assertThrows(AppException.class, () ->
                 merchantProfileService.uploadDocument(merchantUserId, "GPKD-123", file));
@@ -347,7 +409,17 @@ class MerchantProfileServiceImplTest {
     void testUploadDocumentSuccess() {
         User user = User.builder().id(merchantUserId).fullName("Chu Bai").build();
         Merchant merchant = Merchant.builder().id(15L).user(user).build();
-        when(merchantRepository.findByUserId(merchantUserId)).thenReturn(Optional.of(merchant));
+        MerchantVerificationDossier dossier = MerchantVerificationDossier.builder()
+                .id(1L)
+                .merchant(merchant)
+                .user(user)
+                .status(VerificationStatus.DRAFT)
+                .draftRevision(1L)
+                .build();
+
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(dossierRepository.findByMerchantIdForUpdate(15L)).thenReturn(Optional.of(dossier));
+        when(dossierRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "license.pdf", "application/pdf", "dummy pdf content".getBytes()
@@ -359,5 +431,23 @@ class MerchantProfileServiceImplTest {
         assertNotNull(response);
         assertEquals("GPKD-9999", response.getBusinessLicense());
         verify(merchantRepository, times(1)).save(merchant);
+        verify(documentStorage).replaceGroup(dossier, DocumentType.BUSINESS_REGISTRATION, List.of(file));
     }
+    @Test
+    void rejectsLegacyUploadDuringCorrectionsBeforeChangingBusinessLicense() {
+        var merchant = Merchant.builder().id(15L).businessLicense("Original").build();
+        var dossier = MerchantVerificationDossier.builder().status(VerificationStatus.CHANGES_REQUESTED)
+                .draftRevision(5L).businessRegistrationNumber("Original").build();
+        when(merchantRepository.findByUserIdForUpdate(merchantUserId)).thenReturn(Optional.of(merchant));
+        when(dossierRepository.findByMerchantIdForUpdate(15L)).thenReturn(Optional.of(dossier));
+
+        var error = assertThrows(AppException.class,
+                () -> merchantProfileService.uploadDocument(merchantUserId, "Modified", null));
+
+        assertEquals(ErrorCode.CONFLICT, error.getErrorCode());
+        assertEquals("Original", merchant.getBusinessLicense());
+        assertEquals("Original", dossier.getBusinessRegistrationNumber());
+        assertEquals(5L, dossier.getDraftRevision());
+    }
+
 }

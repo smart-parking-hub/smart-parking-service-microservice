@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.common.event.AdminOperationEvent;
 import com.smartparking.common.event.AdminRecipientSnapshot;
 import com.smartparking.common.event.DomainEvent;
+import com.smartparking.common.event.MerchantVerificationEvent;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,7 @@ import java.util.Set;
 /** Uses only the importing service's datasource and its current business transaction. */
 public class TransactionalEventOutbox {
     private static final Set<String> TOPICS = Set.of(AdminOperationEvent.TOPIC, AdminRecipientSnapshot.TOPIC,
-            com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC);
+            com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC, MerchantVerificationEvent.TOPIC);
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
 

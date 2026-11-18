@@ -2,6 +2,7 @@ package com.smartparking.notification.infrastructure.messaging;
 
 import com.smartparking.common.event.AdminOperationEvent;
 import com.smartparking.common.event.AdminRecipientSnapshot;
+import com.smartparking.common.event.MerchantVerificationEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -52,6 +53,8 @@ public class AdminOperationsKafkaConfiguration {
                 TopicBuilder.name("booking.events.DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name("payment.events.DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name("user.events.DLT").partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name(MerchantVerificationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name(MerchantVerificationEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminOperationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
