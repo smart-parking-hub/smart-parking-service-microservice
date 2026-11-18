@@ -62,7 +62,7 @@ class VehicleBookingConflictIntegrationTest {
     @BeforeEach void setup() {
         bookings.deleteAll();
         jdbc.update("DELETE FROM booking_hold_policy_locks");
-        now = LocalDateTime.now(BUSINESS_ZONE).withNano(0);
+        now = LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0);
         when(vehicles.require(anyLong())).thenAnswer(call -> new OwnedVehicleClient.Vehicle(
                 call.getArgument(0), "51C-482.91", VehicleTypeEnum.LIGHT_TRUCK, "ACTIVE"));
         when(lots.holdSlot(anyLong(), any())).thenReturn(ApiResponse.ok(SlotHoldResponse.builder()
@@ -151,7 +151,7 @@ class VehicleBookingConflictIntegrationTest {
     @Test void earlyCheckinCountsAsOccupiedBeforeTheReservedStart() {
         var parked = existing(BookingStatusEnum.PARKING, 2, 4);
         parked.setCheckInTime(now.plusMinutes(90)); bookings.saveAndFlush(parked);
-        var intent = request(1, 2); intent.setExpectedCheckInTime(now.plusMinutes(100));
+        var intent = request(1, 2); intent.setExpectedCheckInTime(now.plusMinutes(90));
         rejects(intent);
     }
 

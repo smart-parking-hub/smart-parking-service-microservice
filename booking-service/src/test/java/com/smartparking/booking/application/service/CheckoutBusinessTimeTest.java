@@ -31,7 +31,7 @@ class CheckoutBusinessTimeTest {
         TimeZone original = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-            LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+            LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
             Booking booking = Booking.builder().bookingCode("BK-TIME").merchantId(7L).parkingLotId(8L)
                     .status(BookingStatusEnum.OVERTIME).checkInTime(now.minusMinutes(90))
                     .expectedCheckOutTime(now.minusMinutes(20)).hourlyRate(new BigDecimal("20000"))
@@ -48,7 +48,7 @@ class CheckoutBusinessTimeTest {
     }
 
     @Test void successfulCheckInCannotBeRepeatedOrChangeEntryTime() {
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         Booking booking = Booking.builder().bookingCode("BK-ONCE").merchantId(7L).parkingLotId(8L)
                 .status(BookingStatusEnum.PENDING_CHECKIN).expectedCheckInTime(now.minusMinutes(1))
                 .expiresAt(now.plusHours(1)).build();

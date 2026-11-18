@@ -55,13 +55,16 @@ public class CheckInOutServiceImpl implements CheckInOutService {
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        if (com.smartparking.booking.domain.BookingTimePolicy.tooEarly(now, booking.getExpectedCheckInTime(), checkInEarlyMinutes)) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + com.smartparking.booking.domain.BookingTimePolicy.earlyMinutes(checkInEarlyMinutes) + " phút)!");
+        if (com.smartparking.booking.domain.BookingTimePolicy.tooEarly(now, booking.getExpectedCheckInTime(), Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) ? 0 : checkInEarlyMinutes)) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Chưa đến giờ check-in (chỉ được vào bãi trước tối đa " + com.smartparking.booking.domain.BookingTimePolicy.earlyMinutes(Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) ? 0 : checkInEarlyMinutes) + " phút)!");
         }
         if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");
         }
 
+        if (Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) && !now.isBefore(booking.getExpectedCheckOutTime()))
+            throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "Đã hết khung giờ đặt chỗ");
+        com.smartparking.booking.application.service.ScheduledSlotLifecycle.occupy(booking, parkingLotClient);
         booking.setStatus(BookingStatusEnum.PARKING);
         booking.setCheckInTime(now.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
         bookingRepository.save(booking);
@@ -111,8 +114,9 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID, "Booking không ở trạng thái đang đỗ!");
         }
 
-        LocalDateTime checkOutTime = LocalDateTime.now(BUSINESS_ZONE);
+        LocalDateTime checkOutTime = LocalDateTime.now(BUSINESS_ZONE).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         booking.setCheckOutTime(checkOutTime);
+        com.smartparking.booking.application.service.ScheduledSlotLifecycle.checkoutAfterCommit(booking, parkingLotClient);
 
         long minutes = Math.max(0, Duration.between(
                 booking.getCheckInTime() != null ? booking.getCheckInTime() : checkOutTime.minusHours(1),
@@ -154,8 +158,8 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                         .vehicleType(booking.getVehicleType())
                         .bookingId(booking.getId())
                         .build();
-                parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
-                queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+                if (booking.getSchedulePolicyVersion() == null) parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+                if (booking.getSchedulePolicyVersion() == null) queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
             } catch (Exception ex) {
                 throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa giải phóng được chỗ đỗ. Vui lòng thử lại.");
             }
@@ -220,8 +224,8 @@ public class CheckInOutServiceImpl implements CheckInOutService {
                     .vehicleType(booking.getVehicleType())
                     .bookingId(booking.getId())
                     .build();
-            parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
-            queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+            if (booking.getSchedulePolicyVersion() == null) parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+            if (booking.getSchedulePolicyVersion() == null) queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
         } catch (Exception ex) {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa giải phóng được chỗ đỗ. Vui lòng thử lại.");
         }

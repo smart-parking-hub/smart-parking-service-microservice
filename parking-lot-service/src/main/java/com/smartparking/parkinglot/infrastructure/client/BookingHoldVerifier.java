@@ -19,4 +19,12 @@ public class BookingHoldVerifier {
                 .header("X-Internal-Service-Token",serviceToken).retrieve().body(new ParameterizedTypeReference<ApiResponse<String>>() {});
             return response != null && ("ABSENT".equals(response.getData()) || "CANCELLED".equals(response.getData()) || "EXPIRED".equals(response.getData()) || "COMPLETED".equals(response.getData()));
     }
+    public record Snapshot(String status, java.time.LocalDateTime checkoutTime, java.time.LocalDateTime checkInTime, Integer schedulePolicyVersion) {}
+    public Snapshot snapshot(Long bookingId) {
+        if (serviceToken == null || serviceToken.isBlank()) return null;
+        var response = client.get().uri("/api/v1/internal/bookings/{id}/schedule-status", bookingId)
+                .header("X-Internal-Service-Token", serviceToken).retrieve()
+                .body(new ParameterizedTypeReference<ApiResponse<Snapshot>>() {});
+        return response == null ? null : response.getData();
+    }
 }

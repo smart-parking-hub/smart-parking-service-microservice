@@ -143,7 +143,6 @@ class BookingCancellationPolicyAndOutboxTest {
         BookingServiceImpl bookingService = new BookingServiceImpl(
                 bookingRepository,
                 mock(com.smartparking.booking.application.service.UnpaidHoldPolicy.class),
-                mock(com.smartparking.booking.application.service.HoldRateLimiter.class),
                 mock(com.smartparking.booking.application.service.BookingCreationTransaction.class),
                 mock(com.smartparking.booking.infrastructure.persistence.HoldPolicyStore.class),
                 ownedVehicleClient,
@@ -180,7 +179,6 @@ class BookingCancellationPolicyAndOutboxTest {
         BookingServiceImpl bookingService = new BookingServiceImpl(
                 bookingRepository,
                 mock(com.smartparking.booking.application.service.UnpaidHoldPolicy.class),
-                mock(com.smartparking.booking.application.service.HoldRateLimiter.class),
                 mock(com.smartparking.booking.application.service.BookingCreationTransaction.class),
                 mock(com.smartparking.booking.infrastructure.persistence.HoldPolicyStore.class),
                 ownedVehicleClient,

@@ -14,6 +14,8 @@ import java.util.Optional;
 
 @Repository
 public interface SlotRepository extends JpaRepository<Slot, Long> {
+    @Query("SELECT s.vehicleType FROM Slot s WHERE s.id = :id")
+    Optional<VehicleTypeEnum> findVehicleType(@Param("id") Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Slot s WHERE s.parkingLot.id = :parkingLotId AND s.vehicleType = :vehicleType")

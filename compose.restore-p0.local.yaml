@@ -1,0 +1,30 @@
+# Retained local p0 dataset. Validated with exact image migrations on private copies.
+# Use with docker/compose/local/compose.yaml, --env-file .env and project name docker.
+# Keep the historical identity artifact and the Payment V6/V7 lineage together
+# with these databases; neither Flyway repair nor checksum edits are required.
+services:
+  identity-service:
+    image: smart-parking/identity-service:withdrawal-notifications-20261113
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_p0_20261106?useSSL=false&allowPublicKeyRetrieval=true
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
+  parking-lot-service:
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_lot_p0_20261106?useSSL=false&allowPublicKeyRetrieval=true
+  booking-service:
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_booking_p0_20261106?useSSL=false&allowPublicKeyRetrieval=true
+  payment-service:
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking_payment_p0_20261106?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_FLYWAY_LOCATIONS: classpath:db/local-v6-v7-compatible
+  notification-service:
+    environment:
+      # Restore the local SMTP inbox used by p0 integration.
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM: no-reply@smartparking.test
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      MAIL_SMTP_AUTH: "false"
+      MAIL_STARTTLS_ENABLE: "false"

@@ -23,6 +23,11 @@ public class Booking extends BaseEntity {
     @Column(name = "request_key", unique = true, length = 100)
     private String requestKey;
 
+    @Column(name = "schedule_policy_version")
+    private Integer schedulePolicyVersion;
+    @Column(name = "schedule_queue_notified_at")
+    private LocalDateTime scheduleQueueNotifiedAt;
+
     @Column(name = "booking_code", nullable = false, unique = true, length = 50)
     private String bookingCode;
 

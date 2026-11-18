@@ -59,10 +59,12 @@ public class BookingExpirationScheduler {
                             .vehicleType(booking.getVehicleType())
                             .bookingId(booking.getId())
                             .build();
-                    parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+                    if (booking.getSchedulePolicyVersion() != null) {
+                        com.smartparking.booking.application.service.ScheduledSlotLifecycle.releaseAfterCommit(booking, parkingLotClient, queueService);
+                    } else parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
 
                     // Promote next waiting driver in queue if any
-                    queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+                    if (booking.getSchedulePolicyVersion() == null) queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
                 } catch (Exception ex) {
                     log.warn("Failed to release slot or promote queue for expired booking {} (kept EXPIRED): {}",
                             booking.getBookingCode(), ex.getMessage());
@@ -117,9 +119,11 @@ public class BookingExpirationScheduler {
                             .vehicleType(booking.getVehicleType())
                             .bookingId(booking.getId())
                             .build();
-                    parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
+                    if (booking.getSchedulePolicyVersion() != null) {
+                        com.smartparking.booking.application.service.ScheduledSlotLifecycle.releaseAfterCommit(booking, parkingLotClient, queueService);
+                    } else parkingLotClient.releaseSlot(booking.getParkingLotId(), releaseReq);
 
-                    queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
+                    if (booking.getSchedulePolicyVersion() == null) queueService.promoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType());
                 } catch (Exception ex) {
                     log.warn("Failed to release slot or promote queue for no-show booking {} (kept CANCELLED): {}",
                             booking.getBookingCode(), ex.getMessage());

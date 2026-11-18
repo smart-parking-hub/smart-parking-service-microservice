@@ -51,6 +51,16 @@ class SlotServiceImplTest {
     @Mock
     private com.smartparking.parkinglot.domain.repository.CurrentSlotAllocationRepository currentSlotAllocationRepository;
 
+    @Mock private com.smartparking.parkinglot.application.service.ScheduledSlotService scheduledSlots;
+
+    @org.junit.jupiter.api.BeforeEach
+    void lockedLegacyLedgerLookup() {
+        org.mockito.Mockito.lenient().when(parkingLayoutRepository.findByParkingLotIdForUpdate(org.mockito.ArgumentMatchers.anyLong()))
+                .thenAnswer(call -> parkingLayoutRepository.findByParkingLotId(call.getArgument(0)));
+        org.mockito.Mockito.lenient().when(slotHoldRepository.findByIdForUpdate(org.mockito.ArgumentMatchers.anyLong()))
+                .thenAnswer(call -> slotHoldRepository.findById(call.getArgument(0)));
+    }
+
     @InjectMocks
     private SlotServiceImpl slotService;
 

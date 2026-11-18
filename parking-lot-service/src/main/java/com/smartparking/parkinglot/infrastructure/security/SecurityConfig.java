@@ -31,6 +31,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/search").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/{id}").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/{id}/slots").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/{id}/availability", "/api/v1/parking-lots/{id}/timeline").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/{id}/pricing").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/{id}/layout").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/parking-lots/{id}/layout/background").permitAll()

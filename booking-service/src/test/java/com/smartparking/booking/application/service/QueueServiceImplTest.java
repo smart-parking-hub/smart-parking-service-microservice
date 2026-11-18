@@ -29,6 +29,14 @@ class QueueServiceImplTest {
     @Mock
     private QueueRepository queueRepository;
 
+    @Mock private com.smartparking.booking.infrastructure.client.ParkingLotClient parkingLotClient;
+
+    @org.junit.jupiter.api.BeforeEach
+    void verifiedAvailability() {
+        org.mockito.Mockito.lenient().when(parkingLotClient.available(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(com.smartparking.common.dto.ApiResponse.success(new com.smartparking.booking.infrastructure.client.ParkingLotClient.ReservationAvailability(1)));
+    }
+
     @InjectMocks
     private QueueServiceImpl queueService;
 

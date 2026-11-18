@@ -22,6 +22,7 @@ import java.util.List;
 public class QueueServiceImpl implements QueueService {
 
     private final QueueRepository queueRepository;
+    private final com.smartparking.booking.infrastructure.client.ParkingLotClient parkingLotClient;
 
     @Override
     @Transactional
@@ -86,15 +87,31 @@ public class QueueServiceImpl implements QueueService {
     @Override
     @Transactional
     public void promoteNextInQueue(Long parkingLotId, com.smartparking.common.enums.VehicleTypeEnum vehicleType) {
+        tryPromoteNextInQueue(parkingLotId,vehicleType);
+    }
+
+    @Override
+    @Transactional
+    public boolean tryPromoteNextInQueue(Long parkingLotId, com.smartparking.common.enums.VehicleTypeEnum vehicleType) {
         List<Queue> waitingList = queueRepository.findByParkingLotIdAndVehicleTypeAndStatusOrderByJoinedAtAsc(
                 parkingLotId, vehicleType, QueueStatusEnum.WAITING);
         if (!waitingList.isEmpty()) {
+            var now = LocalDateTime.now(com.smartparking.common.util.BookingSchedulePolicy.ZONE);
+            var start = now.withSecond(0).withNano(0).plusMinutes(30 - now.getMinute() % 30);
+            try {
+                var available = parkingLotClient.available(parkingLotId, vehicleType, start.toString(), start.plusMinutes(30).toString());
+                if (available == null || available.getData() == null || available.getData().remainingCapacity() <= 0) return false;
+            } catch (RuntimeException failure) {
+                log.warn("Queue promotion deferred until availability can be verified: lot={}", parkingLotId, failure);
+                return false;
+            }
             Queue next = waitingList.get(0);
             next.setStatus(QueueStatusEnum.NOTIFIED);
-            next.setResponseDeadline(LocalDateTime.now().plusMinutes(15));
+            next.setResponseDeadline(now.plusMinutes(15));
             queueRepository.save(next);
             log.info("Queue entry {} for driver {} in lot {} promoted to NOTIFIED (15m deadline)",
                     next.getId(), next.getDriverId(), parkingLotId);
         }
+        return true;
     }
 }

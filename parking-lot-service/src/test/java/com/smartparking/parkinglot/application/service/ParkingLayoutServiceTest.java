@@ -64,6 +64,8 @@ class ParkingLayoutServiceTest {
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
+    @Mock private com.smartparking.parkinglot.application.service.ScheduledSlotService scheduledSlots;
+
     @InjectMocks
     private ParkingLayoutServiceImpl layoutService;
 

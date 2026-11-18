@@ -34,6 +34,7 @@ public class SlotServiceImpl implements SlotService {
     private static final BigDecimal DEFAULT_OVERTIME_PENALTY_MULTIPLIER = new BigDecimal("1.50");
 
     private final SlotRepository slotRepository;
+    private final com.smartparking.parkinglot.application.service.ScheduledSlotService scheduledSlots;
     private final com.smartparking.parkinglot.domain.repository.SlotHoldRepository slotHoldRepository;
     private final PricingRuleRepository pricingRuleRepository;
     private final ParkingLotRepository parkingLotRepository;
@@ -73,7 +74,7 @@ public class SlotServiceImpl implements SlotService {
     private SlotDto configureSlotForLot(ParkingLot lot, SlotConfigRequest request) {
         Long parkingLotId = lot.getId();
 
-        var layoutOpt = parkingLayoutRepository.findByParkingLotId(parkingLotId);
+        var layoutOpt = parkingLayoutRepository.findByParkingLotIdForUpdate(parkingLotId);
         if (layoutOpt.isPresent() && layoutOpt.get().getActivePublicationId() != null) {
             int physicalSlotCount = physicalParkingSlotRepository
                     .findByParkingLotIdAndVehicleType(parkingLotId, request.getVehicleType()).size();
@@ -88,6 +89,7 @@ public class SlotServiceImpl implements SlotService {
 
         Slot savedSlot = slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, request.getVehicleType())
                 .map(slot -> {
+                    scheduledSlots.assertConfigurationSafe(slot.getId(), request.getTotalCapacity());
                     int occupiedCapacity = slot.getTotalCapacity() - slot.getAvailableCapacity();
                     if (request.getTotalCapacity() < occupiedCapacity) {
                         throw new AppException(ErrorCode.BAD_REQUEST,
@@ -224,6 +226,7 @@ public class SlotServiceImpl implements SlotService {
                     .build();
         }
 
+        scheduledSlots.assertLegacyHoldAllowed(slot.getId());
         if (slot.getAvailableCapacity() <= 0) {
             return SlotHoldResponse.builder().success(false).remainingCapacity(0).message("Hết chỗ trống cho loại xe này").build();
         }
@@ -309,9 +312,13 @@ public class SlotServiceImpl implements SlotService {
     @Override
     @Transactional
     public void releaseSlot(Long parkingLotId, VehicleTypeEnum vehicleType, Long bookingId) {
+        if (scheduledSlots.contains(bookingId)) {
+            scheduledSlots.release(parkingLotId, bookingId);
+            return;
+        }
         Slot slot = slotRepository.findByParkingLotIdAndVehicleTypeForUpdate(parkingLotId, vehicleType)
                 .orElseThrow(() -> new AppException(ErrorCode.SLOT_NOT_AVAILABLE, "Không tìm thấy chỗ đỗ"));
-        var hold = slotHoldRepository.findById(bookingId);
+        var hold = slotHoldRepository.findByIdForUpdate(bookingId);
         if (hold.isEmpty()) {
             log.warn("No slot hold ledger found for booking {}: reconciliation required", bookingId);
             throw new AppException(ErrorCode.CONFLICT, "Booking cũ thiếu sổ giữ chỗ; cần đối soát trước khi nhả slot");

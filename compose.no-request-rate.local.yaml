@@ -1,0 +1,4 @@
+# Append after the current local schedule overlay. Changes only booking-service's image.
+services:
+  booking-service:
+    image: smart-parking/booking-service:no-request-rate-local-20261117

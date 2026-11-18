@@ -34,14 +34,25 @@ import static org.mockito.Mockito.*;
 class BookingServiceImplTest {
 
     @Test
+    void rejectsMinutesOutsideHalfHourBlocksBeforeHoldingCapacity() {
+        var start = LocalDateTime.now(BUSINESS_ZONE).plusDays(1).withHour(8).withMinute(15).withSecond(0).withNano(0);
+        var request = CreateBookingRequest.builder().parkingLotId(100L).vehicleId(10L)
+                .vehicleType(VehicleTypeEnum.CONTAINER).expectedCheckInTime(start)
+                .expectedCheckOutTime(start.plusHours(1)).build();
+        var error = assertThrows(AppException.class, () -> bookingService.createBooking(500L, request));
+        assertEquals(ErrorCode.BAD_REQUEST, error.getErrorCode());
+        verifyNoInteractions(parkingLotClient);
+    }
+
+    @Test
     void paymentDeadlineUsesVietnamTimeOnUtcHost() {
         java.util.TimeZone original = java.util.TimeZone.getDefault();
         try {
             java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
             LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
             var request = CreateBookingRequest.builder().parkingLotId(100L).vehicleId(10L)
-                    .vehicleType(VehicleTypeEnum.CONTAINER).expectedCheckInTime(now.plusHours(1))
-                    .expectedCheckOutTime(now.plusHours(3)).build();
+                    .vehicleType(VehicleTypeEnum.CONTAINER).expectedCheckInTime(now.withMinute(0).withSecond(0).withNano(0).plusHours(1))
+                    .expectedCheckOutTime(now.withMinute(0).withSecond(0).withNano(0).plusHours(3)).build();
             when(bookingRepository.saveAndFlush(any())).thenAnswer(inv -> { Booking b = inv.getArgument(0); b.setId(1L); return b; });
             when(bookingRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(parkingLotClient.holdSlot(eq(100L), any())).thenReturn(ApiResponse.success(
@@ -70,7 +81,6 @@ class BookingServiceImplTest {
     private com.smartparking.booking.infrastructure.client.OwnedVehicleClient ownedVehicleClient;
 
     @Mock private com.smartparking.booking.application.service.UnpaidHoldPolicy holdPolicy;
-    @Mock private com.smartparking.booking.application.service.HoldRateLimiter holdRateLimiter;
     @Mock private com.smartparking.booking.application.service.BookingCreationTransaction creationTransaction;
     @Mock private com.smartparking.booking.infrastructure.persistence.HoldPolicyStore holdPolicyStore;
 
@@ -94,8 +104,8 @@ class BookingServiceImplTest {
                 .parkingLotId(parkingLotId)
                 .vehicleId(10L)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
-                .expectedCheckInTime(LocalDateTime.now().plusHours(3))
-                .expectedCheckOutTime(LocalDateTime.now().plusHours(1))
+                .expectedCheckInTime(LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(3))
+                .expectedCheckOutTime(LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1))
                 .build();
 
         AppException ex = assertThrows(AppException.class, () -> bookingService.createBooking(driverUserId, req));
@@ -110,8 +120,8 @@ class BookingServiceImplTest {
                 .parkingLotId(parkingLotId)
                 .vehicleId(10L)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
-                .expectedCheckInTime(LocalDateTime.now().plusHours(1))
-                .expectedCheckOutTime(LocalDateTime.now().plusHours(2))
+                .expectedCheckInTime(LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1))
+                .expectedCheckOutTime(LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(2))
                 .build();
 
         Booking saved = Booking.builder()
@@ -139,8 +149,8 @@ class BookingServiceImplTest {
                 .parkingLotId(parkingLotId)
                 .vehicleId(10L)
                 .vehicleType(VehicleTypeEnum.CONTAINER)
-                .expectedCheckInTime(LocalDateTime.now().plusHours(1))
-                .expectedCheckOutTime(LocalDateTime.now().plusHours(2))
+                .expectedCheckInTime(LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(1))
+                .expectedCheckOutTime(LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(2))
                 .build();
 
         Booking saved = Booking.builder()
@@ -303,7 +313,7 @@ class BookingServiceImplTest {
     @Test
     @DisplayName("AC5 & AC6: Create booking snapshots physicalSlotId, physicalSlotCode, and layoutPublicationId")
     void testCreateBookingWithPhysicalSlotSuccess() {
-        LocalDateTime checkIn = LocalDateTime.now().plusHours(2);
+        LocalDateTime checkIn = LocalDateTime.now(BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0).plusHours(2);
         LocalDateTime checkOut = checkIn.plusHours(2);
 
         CreateBookingRequest req = CreateBookingRequest.builder()

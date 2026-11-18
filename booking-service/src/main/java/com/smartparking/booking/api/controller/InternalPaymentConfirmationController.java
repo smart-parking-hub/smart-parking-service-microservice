@@ -36,7 +36,7 @@ public class InternalPaymentConfirmationController {
             if (booking.getStatus() == BookingStatusEnum.PENDING_CHECKIN || booking.getStatus() == BookingStatusEnum.PARKING || booking.getStatus() == BookingStatusEnum.COMPLETED) return ApiResponse.ok(true);
             if (booking.getStatus() != BookingStatusEnum.PENDING_PAYMENT || booking.getExpiresAt() == null || !booking.getExpiresAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))) return ApiResponse.ok(false);
             booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
-            booking.setExpiresAt(booking.getExpectedCheckInTime().plusMinutes(60));
+            booking.setExpiresAt(com.smartparking.booking.application.service.ScheduledSlotLifecycle.checkInDeadline(booking));
             repository.save(booking);
             return ApiResponse.ok(true);
         }
@@ -60,6 +60,15 @@ public class InternalPaymentConfirmationController {
     private void authenticate(String token) {
         if (serviceToken == null || serviceToken.isBlank() || token == null || !MessageDigest.isEqual(serviceToken.getBytes(StandardCharsets.UTF_8), token.getBytes(StandardCharsets.UTF_8)))
             throw new AppException(ErrorCode.FORBIDDEN, "Không có quyền xác nhận thanh toán nội bộ");
+    }
+    public record ScheduleStatus(String status, LocalDateTime checkoutTime, LocalDateTime checkInTime, Integer schedulePolicyVersion) {}
+    @GetMapping("/{id}/schedule-status")
+    public ApiResponse<ScheduleStatus> scheduleStatus(@PathVariable Long id,
+            @RequestHeader(value = "X-Internal-Service-Token", required = false) String token) {
+        authenticate(token);
+        return ApiResponse.ok(repository.findById(id)
+                .map(booking -> new ScheduleStatus(booking.getStatus().name(), booking.getCheckOutTime(), booking.getCheckInTime(), booking.getSchedulePolicyVersion()))
+                .orElse(new ScheduleStatus("ABSENT", null, null, null)));
     }
     @GetMapping("/{id}/hold-status")
     public ApiResponse<String> holdStatus(@PathVariable Long id,

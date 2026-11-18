@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BookingDto {
     private Long id;
+    private Integer schedulePolicyVersion;
+    private Integer checkInEarlyMinutes;
+    private Integer bookingBlockMinutes;
+    private Integer turnaroundMinutes;
     private String bookingCode;
     private Long driverId;
     private Long vehicleId;
@@ -60,6 +64,10 @@ public class BookingDto {
     public static BookingDto fromEntity(Booking entity) {
         return BookingDto.builder()
                 .id(entity.getId())
+                .schedulePolicyVersion(entity.getSchedulePolicyVersion())
+                .checkInEarlyMinutes(Integer.valueOf(1).equals(entity.getSchedulePolicyVersion()) ? 0 : 30)
+                .bookingBlockMinutes(entity.getSchedulePolicyVersion() == null ? null : 30)
+                .turnaroundMinutes(entity.getSchedulePolicyVersion() == null ? null : 30)
                 .bookingCode(entity.getBookingCode())
                 .driverId(entity.getDriverId())
                 .vehicleId(entity.getVehicleId())

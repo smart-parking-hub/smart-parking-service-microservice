@@ -48,7 +48,7 @@ public class WalletPaymentConfirmationController {
                 && booking.getExpiresAt().isAfter(LocalDateTime.now(BUSINESS_ZONE));
         if (accepted) {
             booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
-            booking.setExpiresAt(booking.getExpectedCheckInTime().plusMinutes(60));
+            booking.setExpiresAt(com.smartparking.booking.application.service.ScheduledSlotLifecycle.checkInDeadline(booking));
             bookings.save(booking);
         }
         jdbc.update("INSERT INTO wallet_payment_receipts(payment_id,booking_id,accepted,created_at) VALUES(?,?,?,?)",

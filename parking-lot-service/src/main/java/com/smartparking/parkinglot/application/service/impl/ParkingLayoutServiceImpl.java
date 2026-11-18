@@ -47,6 +47,7 @@ public class ParkingLayoutServiceImpl implements ParkingLayoutService {
     private final ParkingLayoutPublicationRepository parkingLayoutPublicationRepository;
     private final PhysicalParkingSlotRepository physicalParkingSlotRepository;
     private final CurrentSlotAllocationRepository currentSlotAllocationRepository;
+    private final com.smartparking.parkinglot.application.service.ScheduledSlotService scheduledSlots;
     private final SlotHoldRepository slotHoldRepository;
     private final StoragePort storagePort;
     private final ObjectMapper objectMapper;
@@ -397,6 +398,8 @@ public class ParkingLayoutServiceImpl implements ParkingLayoutService {
                     .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST,
                             "Bãi đỗ xe chưa cấu hình bảng giá cho loại xe " + vt));
         }
+
+        scheduledSlots.assertLayoutSafe(parkingLotId);
 
         // 4. Physical slot preservation & active allocation guard
         List<CurrentSlotAllocation> activeAllocations = currentSlotAllocationRepository.findByParkingLotId(parkingLotId);
@@ -780,6 +783,7 @@ public class ParkingLayoutServiceImpl implements ParkingLayoutService {
             }
         }
 
+        scheduledSlots.assertLayoutSafe(parkingLotId);
         layout.setAllocationMode(AllocationMode.PHYSICAL);
         parkingLayoutRepository.save(layout);
         log.info("Activated PHYSICAL allocation mode for parking lot {}", parkingLotId);
