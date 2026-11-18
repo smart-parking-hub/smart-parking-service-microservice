@@ -5,7 +5,7 @@
 
 ## Retained local p0 startup
 
-Use `scripts/dev/start-p0-local.bat`. It retains `compose.restore-p0.local.yaml` database URLs and appends `compose.schedule.local.yaml` and `compose.no-request-rate.local.yaml`, pinning the tested schedule images and the subsequent removal of booking request-rate blocking. It does not build or pull images. The helper exits successfully only after the application health endpoints report UP; startup timeout exits with code 1 and reports unready ports.
+Use `scripts/dev/start-p0-local.bat`. It retains `docker/compose/overlays/compose.restore-p0.local.yaml` database URLs and appends `docker/compose/overlays/compose.schedule.local.yaml` and `docker/compose/overlays/compose.no-request-rate.local.yaml`, pinning the tested schedule images and the subsequent removal of booking request-rate blocking. It does not build or pull images. The helper exits successfully only after the application health endpoints report UP; startup timeout exits with code 1 and reports unready ports.
 
 The schedule image tags are `smart-parking/parking-lot-service:schedule-local-20261117` and `smart-parking/booking-service:schedule-local-20261117`. The final local override selects `smart-parking/booking-service:no-request-rate-local-20261117`; omitting it would restore the old limiter. These tags are local artifacts, not published registry releases; build or retain the matching verified artifacts before using this local-data helper. Do not start the retained p0 dataset using only the base Compose file: that selects other database defaults and may select old images.
 

@@ -17,7 +17,7 @@ Released V6/V7 resources are retained byte-for-byte under `db/local-v6-v7-histor
 
 Gradle processResources generates `db/local-v6-v7-compatible` from the unchanged canonical scripts plus those two resources, omitting only V16 because the identical outbox DDL is already represented by V6. It still includes canonical V17 and V18. The default `classpath:db/migration` remains unchanged. Both locations ship in the same bootJar/image.
 
-Use `compose.payos-local-v6-v7.yaml` with the normal local compose configuration, or set `SPRING_FLYWAY_LOCATIONS=classpath:db/local-v6-v7-compatible` for this retained local database only. Do not use it for canonical databases or change default migration configuration globally. Future migration additions are copied by the build; never edit released V6/V7 resources.
+Use `docker/compose/overlays/compose.payos-local-v6-v7.yaml` with the normal local compose configuration, or set `SPRING_FLYWAY_LOCATIONS=classpath:db/local-v6-v7-compatible` for this retained local database only. Do not use it for canonical databases or change default migration configuration globally. Future migration additions are copied by the build; never edit released V6/V7 resources.
 
 ## Verified local rollout
 
