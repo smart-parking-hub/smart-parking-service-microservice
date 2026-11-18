@@ -1,0 +1,13 @@
+# Local SMTP override: apply LAST, after the Compose files used by your lab.
+# Load credentials from the ignored .env.email.local; see
+# docs/implementation/local-smtp-delivery.md. This overlay changes only mail.
+services:
+  notification-service:
+    environment:
+      MAIL_HOST: ${MAIL_HOST:?Set SMTP host in .env.email.local}
+      MAIL_PORT: ${MAIL_PORT:?Set SMTP port in .env.email.local}
+      MAIL_FROM: ${MAIL_FROM:?Set sender address in .env.email.local}
+      MAIL_USERNAME: ${MAIL_USERNAME:?Set SMTP username in .env.email.local}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?Set SMTP password in .env.email.local}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
