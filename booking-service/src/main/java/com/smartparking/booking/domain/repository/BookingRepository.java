@@ -74,4 +74,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     long countByParkingLotIdAndStatusIn(Long parkingLotId, Collection<BookingStatusEnum> statuses);
 
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
+
+    @Query("""
+            SELECT b FROM Booking b WHERE b.status = :status AND
+                (b.expiresAt < :now OR
+                    (b.schedulePolicyVersion >= :firstScheduledVersion AND b.expectedCheckOutTime <= :now))
+            """)
+    List<Booking> findNoShowCandidates(@Param("status") BookingStatusEnum status,
+            @Param("now") LocalDateTime now, @Param("firstScheduledVersion") int firstScheduledVersion);
 }

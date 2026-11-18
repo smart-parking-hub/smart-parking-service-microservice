@@ -37,9 +37,9 @@ public class HoldPolicyStore {
                 (row,index) -> new ActiveBooking(row.getLong(1),row.getLong(2)), driverId);
     }
     /** Read under the VEHICLE key lock using the earliest permitted arrival. */
-    public boolean hasScheduleConflict(Long vehicleId, LocalDateTime start, LocalDateTime end, LocalDateTime now) {
+    public boolean hasScheduleConflict(Long vehicleId, String bookingCode, LocalDateTime start, LocalDateTime end, LocalDateTime now) {
         return Boolean.TRUE.equals(jdbc.queryForObject("""
-                SELECT EXISTS(SELECT 1 FROM bookings WHERE vehicle_id=? AND (
+                SELECT EXISTS(SELECT 1 FROM bookings WHERE vehicle_id=? AND booking_code<>? AND (
                     (status IN ('PENDING_PAYMENT','PENDING_CHECKIN')
                         AND (CASE WHEN schedule_policy_version = ?
                             THEN TIMESTAMPADD(MINUTE, ?, expected_check_in_time)
@@ -50,7 +50,7 @@ public class HoldPolicyStore {
                         AND (expected_check_out_time IS NULL OR expected_check_out_time > ?
                             OR expected_check_out_time <= ?))
                 ))
-                """, Boolean.class, vehicleId, BookingSchedulePolicy.VERSION,
+                """, Boolean.class, vehicleId, bookingCode, BookingSchedulePolicy.VERSION,
                 -BookingSchedulePolicy.EARLY_CHECK_IN_MINUTES, end, start, end, start, now));
     }
     public Optional<RateWindow> rateWindow(Long driverId) {

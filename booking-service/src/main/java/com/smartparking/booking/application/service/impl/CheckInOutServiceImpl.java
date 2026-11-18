@@ -66,12 +66,9 @@ public class CheckInOutServiceImpl implements CheckInOutService {
             String remaining = formatCheckInWait(Duration.between(now, opensAt));
             throw new AppException(ErrorCode.BAD_REQUEST, "Còn " + remaining + " đến giờ check-in.");
         }
-        if (booking.getExpiresAt() != null && booking.getExpiresAt().isBefore(now)) {
+        if (BookingTimePolicy.isCheckInExpired(booking, now)) {
             throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "QR Code đặt chỗ đã hết hạn!");
         }
-
-        if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && !now.isBefore(booking.getExpectedCheckOutTime()))
-            throw new AppException(ErrorCode.BOOKING_HOLD_EXPIRED, "Đã hết khung giờ đặt chỗ");
         com.smartparking.booking.application.service.ScheduledSlotLifecycle.occupy(booking, parkingLotClient);
         booking.setStatus(BookingStatusEnum.PARKING);
         booking.setCheckInTime(now.truncatedTo(java.time.temporal.ChronoUnit.MICROS));

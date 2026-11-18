@@ -92,13 +92,8 @@ public class BookingServiceImpl implements BookingService {
         }
         holdPolicy.check(driverUserId, request.getVehicleId(), request.getParkingLotId(),
                 LocalDateTime.now(BUSINESS_ZONE));
-        if (holdPolicyStore.hasScheduleConflict(request.getVehicleId(),
-                request.getExpectedCheckInTime().minusMinutes(BookingSchedulePolicy.EARLY_CHECK_IN_MINUTES),
-                request.getExpectedCheckOutTime(), LocalDateTime.now(BUSINESS_ZONE))) {
-            throw new AppException(ErrorCode.CONFLICT,
-                    "Xe này đã có booking trùng thời gian. Vui lòng chọn thời gian khác hoặc hoàn tất lượt đỗ hiện tại.");
-        }
         String bookingCode = "BK" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
+        requireNoVehicleScheduleConflict(request, bookingCode, 0);
 
         Booking booking = Booking.builder()
                 .bookingCode(bookingCode).requestKey(requestKey)
@@ -164,8 +159,15 @@ public class BookingServiceImpl implements BookingService {
             saved.setParkingLotAddress(quote.getParkingLotAddress()); saved.setHourlyRate(quote.getBaseHourlyPrice());
             saved.setSurgeMultiplier(quote.getSurgeMultiplier()); saved.setSurgeStartTime(quote.getSurgeStartTime());
             saved.setSurgeEndTime(quote.getSurgeEndTime()); saved.setOvertimePenaltyMultiplier(quote.getOvertimePenaltyMultiplier());
-            saved.setSchedulePolicyVersion(quote.getSchedulePolicyVersion() == null
-                    ? BookingSchedulePolicy.ON_TIME_VERSION : quote.getSchedulePolicyVersion());
+            int acceptedVersion = quote.getSchedulePolicyVersion() == null
+                    ? BookingSchedulePolicy.ON_TIME_VERSION : quote.getSchedulePolicyVersion();
+            if (acceptedVersion != BookingSchedulePolicy.ON_TIME_VERSION && acceptedVersion != BookingSchedulePolicy.VERSION) {
+                throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Không xác minh được chính sách đặt lịch của bãi");
+            }
+            int earlyMinutes = BookingSchedulePolicy.checkInEarlyMinutes(acceptedVersion, 0);
+            // The VEHICLE key is still locked. Recheck only when the granted arrival window extends the first check.
+            if (earlyMinutes > 0) requireNoVehicleScheduleConflict(request, bookingCode, earlyMinutes);
+            saved.setSchedulePolicyVersion(acceptedVersion);
             saved.setPhysicalSlotId(quote.getPhysicalSlotId());
             saved.setPhysicalSlotCode(quote.getPhysicalSlotCode());
             saved.setLayoutPublicationId(quote.getLayoutPublicationId());
@@ -203,6 +205,15 @@ public class BookingServiceImpl implements BookingService {
 
         return BookingDto.fromEntity(saved);
         });
+    }
+
+    private void requireNoVehicleScheduleConflict(CreateBookingRequest request, String bookingCode, int earlyMinutes) {
+        if (holdPolicyStore.hasScheduleConflict(request.getVehicleId(), bookingCode,
+                request.getExpectedCheckInTime().minusMinutes(earlyMinutes),
+                request.getExpectedCheckOutTime(), LocalDateTime.now(BUSINESS_ZONE))) {
+            throw new AppException(ErrorCode.CONFLICT,
+                    "Xe này đã có booking trùng thời gian. Vui lòng chọn thời gian khác hoặc hoàn tất lượt đỗ hiện tại.");
+        }
     }
 
     private void releaseFailedHold(CreateBookingRequest request, Long bookingId) {

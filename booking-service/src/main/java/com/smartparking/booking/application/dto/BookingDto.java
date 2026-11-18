@@ -2,6 +2,7 @@ package com.smartparking.booking.application.dto;
 
 import com.smartparking.common.enums.BookingStatusEnum;
 import com.smartparking.common.enums.VehicleTypeEnum;
+import com.smartparking.booking.domain.BookingTimePolicy;
 import com.smartparking.booking.domain.model.Booking;
 import com.smartparking.common.util.BookingSchedulePolicy;
 import lombok.AllArgsConstructor;
@@ -92,7 +93,8 @@ public class BookingDto {
                 .overtimePenaltyMultiplier(entity.getOvertimePenaltyMultiplier())
                 .expectedCheckInTime(entity.getExpectedCheckInTime())
                 .expectedCheckOutTime(entity.getExpectedCheckOutTime())
-                .expiresAt(entity.getExpiresAt())
+                .expiresAt(entity.getStatus() == BookingStatusEnum.PENDING_CHECKIN
+                        ? BookingTimePolicy.capCheckInDeadline(entity, entity.getExpiresAt()) : entity.getExpiresAt())
                 .checkInTime(entity.getCheckInTime())
                 .checkOutTime(entity.getCheckOutTime())
                 .cancelledAt(entity.getCancelledAt())

@@ -9,6 +9,7 @@ import com.smartparking.parkinglot.application.dto.*;
 import com.smartparking.parkinglot.domain.model.*;
 import com.smartparking.parkinglot.domain.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,12 @@ public class ScheduledSlotService {
     private final CurrentSlotAllocationRepository allocations;
     private final PricingRuleRepository prices;
     private final com.smartparking.parkinglot.infrastructure.config.ParkingLayoutProperties layoutProperties;
+    @Value("${app.schedule.early.enabled:false}")
+    private boolean earlyArrivalEnabled;
+
+    private int newReservationPolicy() {
+        return earlyArrivalEnabled ? VERSION : ON_TIME_VERSION;
+    }
 
     private LocalDateTime now() { return LocalDateTime.now(ZONE); }
     private AppException conflict(String message) { return new AppException(ErrorCode.SLOT_NOT_AVAILABLE, message); }
@@ -63,9 +70,12 @@ public class ScheduledSlotService {
         requireAccepting(group);
         if (!request.startTime().isAfter(now()) || !request.holdExpiresAt().isAfter(now()))
             throw new AppException(ErrorCode.BAD_REQUEST, "Giờ vào và hạn giữ chỗ phải ở tương lai");
-        int version = request.schedulePolicyVersion() == null ? ON_TIME_VERSION : request.schedulePolicyVersion();
-        if (version != ON_TIME_VERSION && version != VERSION)
+        Integer requestedVersion = request.schedulePolicyVersion();
+        if (requestedVersion != null && requestedVersion != ON_TIME_VERSION && requestedVersion != VERSION)
             throw new AppException(ErrorCode.BAD_REQUEST, "Phiên bản đặt lịch không được hỗ trợ");
+        int version = newReservationPolicy();
+        if (version == VERSION && !Integer.valueOf(VERSION).equals(requestedVersion))
+            throw new AppException(ErrorCode.CONFLICT, "Dịch vụ đặt chỗ chưa hỗ trợ chính sách vào sớm đang áp dụng");
         LocalDateTime from = request.startTime().minusMinutes(checkInEarlyMinutes(version, 0));
         LocalDateTime until = request.endTime().plusMinutes(bufferMinutes(version));
         var context = context(group, from, until);
@@ -170,9 +180,10 @@ public class ScheduledSlotService {
     public ScheduleAvailability available(Long lotId, VehicleTypeEnum type, LocalDateTime start, LocalDateTime end, String physicalId) {
         BookingSchedulePolicy.validate(start, end);
         var group = group(lotId, type, false); requireAccepting(group);
-        var from = start.minusMinutes(EARLY_CHECK_IN_MINUTES);
-        var until = end.plusMinutes(BUFFER_MINUTES);
-        var result = availability(context(group, from, until), from, until, physicalId, VERSION);
+        int version = newReservationPolicy();
+        var from = start.minusMinutes(checkInEarlyMinutes(version, 0));
+        var until = end.plusMinutes(bufferMinutes(version));
+        var result = availability(context(group, from, until), from, until, physicalId, version);
         return layoutProperties.isPhysicalBookingEnabled() ? result : new ScheduleAvailability(result.timezone(), result.blockMinutes(),
                 result.bufferMinutes(), result.checkInEarlyMinutes(), result.turnaroundMinutes(), result.allocationMode(),
                 result.updatedAt(),
@@ -183,13 +194,16 @@ public class ScheduledSlotService {
     public ScheduleAvailability timeline(Long lotId, VehicleTypeEnum type, LocalDate date, String physicalId) {
         LocalDateTime from = date.atStartOfDay(), until = from.plusDays(1);
         var group = group(lotId, type, false); requireAccepting(group);
-        var context = context(group, from.minusMinutes(EARLY_CHECK_IN_MINUTES), until.plusMinutes(BUFFER_MINUTES));
+        int version = newReservationPolicy();
+        int early = checkInEarlyMinutes(version, 0);
+        int turnaround = bufferMinutes(version);
+        var context = context(group, from.minusMinutes(early), until.plusMinutes(turnaround));
         List<ScheduleAvailability.TimeBlock> blocks = new ArrayList<>();
         for (var start = from; start.isBefore(until); start = start.plusMinutes(BLOCK_MINUTES)) {
             var end = start.plusMinutes(BLOCK_MINUTES);
-            var protectedFrom = start.minusMinutes(EARLY_CHECK_IN_MINUTES);
-            var protectedUntil = end.plusMinutes(BUFFER_MINUTES);
-            var result = availability(context, protectedFrom, protectedUntil, physicalId, VERSION);
+            var protectedFrom = start.minusMinutes(early);
+            var protectedUntil = end.plusMinutes(turnaround);
+            var result = availability(context, protectedFrom, protectedUntil, physicalId, version);
             final var blockStart = start;
             boolean buffer = context.bookings().stream().anyMatch(b -> (physicalId == null || physicalId.equals(b.getPhysicalSlotId()))
                     && !"OCCUPIED".equals(b.getState())
@@ -198,8 +212,8 @@ public class ScheduledSlotService {
             String status = !start.isAfter(now()) ? "PAST" : result.remainingCapacity() > 0 ? "AVAILABLE" : buffer ? "BUFFER" : "FULL";
             blocks.add(new ScheduleAvailability.TimeBlock(start, end, result.remainingCapacity(), status));
         }
-        return new ScheduleAvailability(ZONE.getId(), BLOCK_MINUTES, EARLY_CHECK_IN_MINUTES + BUFFER_MINUTES,
-                EARLY_CHECK_IN_MINUTES, BUFFER_MINUTES, context.physical() ? "PHYSICAL" : "GROUP", now(), 0, List.of(), blocks);
+        return new ScheduleAvailability(ZONE.getId(), BLOCK_MINUTES, early + turnaround,
+                early, turnaround, context.physical() ? "PHYSICAL" : "GROUP", now(), 0, List.of(), blocks);
     }
 
     public boolean contains(Long bookingId) { return reservations.existsById(bookingId); }
