@@ -21,7 +21,8 @@ public class BookingEventListener {
     private final ProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "booking.events", groupId = "notification-service-group")
+    @KafkaListener(topics = "booking.events", groupId = "notification-service-group",
+            containerFactory = "notificationEventsKafkaFactory")
     @Transactional
     public void handleBookingEvent(String payload) {
         try {
@@ -141,8 +142,10 @@ public class BookingEventListener {
                         .build());
             }
 
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid booking event JSON", e);
         } catch (Exception e) {
-            log.error("Failed to process booking event in notification-service: {}", e.getMessage(), e);
+            throw new IllegalStateException("Failed to persist booking notifications", e);
         }
     }
 }

@@ -21,7 +21,8 @@ public class PaymentEventListener {
     private final ProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "payment.events", groupId = "notification-service-group")
+    @KafkaListener(topics = "payment.events", groupId = "notification-service-group",
+            containerFactory = "notificationEventsKafkaFactory")
     @Transactional
     public void handlePaymentEvent(String payload) {
         try {
@@ -72,8 +73,10 @@ public class PaymentEventListener {
                         .build());
             }
 
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid payment event JSON", e);
         } catch (Exception e) {
-            log.error("Failed to process payment event in notification-service: {}", e.getMessage(), e);
+            throw new IllegalStateException("Failed to persist payment notifications", e);
         }
     }
 }

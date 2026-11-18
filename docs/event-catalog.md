@@ -23,7 +23,7 @@ Danh mục tất cả các Domain Event được xuất bản và tiêu thụ tr
 
 | Event Type | Mô tả | Schema Payload tóm tắt |
 | :--- | :--- | :--- |
-| `BOOKING_CREATED` (`BookingCreatedEvent`) | Được phát khi tài xế tạo yêu cầu đặt chỗ tạm thời | `{ eventId, eventType, bookingId, userId, parkingLotId, licensePlate, totalAmount }` |
+| `BOOKING_CREATED` (`BookingCreatedEvent`) | Được phát khi tài xế tạo yêu cầu đặt chỗ tạm thời | `{ eventId, eventType, bookingId, userId, merchantId, parkingLotId, licensePlate, totalAmount }` |
 | `BOOKING_CHECKED_IN` / `BOOKING_COMPLETED` (`BookingConfirmedEvent`) | Được phát khi xe check-in tại cổng hoặc hoàn tất lượt đỗ | `{ eventId, eventType, bookingId, userId, merchantId, parkingLotId, totalAmount, advanceDeposit }` |
 | `BOOKING_CANCELLED` (`BookingCancelledEvent`) | Phát khi hết hạn giữ chỗ/no-show hoặc tài xế hủy đơn kèm quyết định hoàn tiền | `{ eventId, eventType, bookingId, userId, merchantId, parkingLotId, reason, advanceDeposit, refundAmount, refundPercentage, refundRequested, refundStatus, refundPolicy, currency, cancelledAt, expectedCheckInTime }` |
 
@@ -41,6 +41,12 @@ Danh mục tất cả các Domain Event được xuất bản và tiêu thụ tr
 ## 3. Chiến lược Idempotent Consumer & Error Retry
 1. **Deduplication**: Consumer trong `payment-service`, `booking-service` và `notification-service` lưu `eventId` vào bảng `processed_events` (ngoài khóa nghiệp vụ `refund:booking:{bookingId}` hoặc `SETTLE:PAYMENT:{paymentId}`). Nếu `eventId` đã tồn tại, lập tức bỏ qua.
 2. **Dead Letter Queue (DLQ)**: Khi consumer gặp lỗi không thể khắc phục sau 3 lần retry với Exponential Backoff (1s, 2s, 4s), message được gửi vào topic DLQ để đội vận hành kiểm tra thủ công.
+
+### Notification delivery correction — 2026-11-17
+
+Owner: SPH; last_verified: 2026-11-17. Supersedes the earlier exclusion of legacy notification listeners from retry configuration above. Notification's booking/payment/user listeners now explicitly use `notificationEventsKafkaFactory`, an alias of the existing String JSON factory. This accepts both typed JsonSerializer headers and raw outbox JSON without converting a Java event object to a String method argument. Storage errors roll back and reach the handler; malformed JSON is non-retryable. This factory uses **three retries with a fixed one-second delay**, then publishes to the original topic plus `.DLT`, checking broker acceptance. Other services' retry policies are unchanged. Preserve event ID/key/payload for selective replay after correcting the cause.
+
+`BOOKING_CREATED.merchantId` is additive and comes from the persisted booking's owner snapshot. Missing historical values retain driver-only delivery; no recipient is guessed or looked up through another service's DB. See [verification report](implementation/notifications-persistence-20261117.md).
 
 ## Additive wallet fields — 2026-11-17
 

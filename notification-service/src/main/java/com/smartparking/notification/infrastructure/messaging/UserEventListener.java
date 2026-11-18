@@ -23,7 +23,8 @@ public class UserEventListener {
     private final ProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "user.events", groupId = "notification-service-group")
+    @KafkaListener(topics = "user.events", groupId = "notification-service-group",
+            containerFactory = "notificationEventsKafkaFactory")
     @Transactional
     public void handleUserEvent(String payload) {
         try {
@@ -72,8 +73,10 @@ public class UserEventListener {
                         .processedAt(LocalDateTime.now())
                         .build());
             }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid user event JSON", e);
         } catch (Exception e) {
-            log.error("Failed to process user event: payload={}", payload, e);
+            throw new IllegalStateException("Failed to persist user notifications", e);
         }
     }
 }
