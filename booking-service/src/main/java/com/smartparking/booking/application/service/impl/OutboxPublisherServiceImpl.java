@@ -39,6 +39,7 @@ public class OutboxPublisherServiceImpl implements OutboxPublisherService {
                 .timestamp(Instant.now())
                 .bookingId(booking.getId())
                 .userId(booking.getDriverId())
+                .merchantId(booking.getMerchantId())
                 .parkingLotId(booking.getParkingLotId())
                 .licensePlate(booking.getVehiclePlate())
                 .totalAmount(booking.getAdvanceDeposit())

@@ -19,6 +19,7 @@ public class BookingEvent {
     public static class BookingCreatedEvent extends DomainEvent {
         private Long bookingId;
         private Long userId;
+        private Long merchantId;
         private Long parkingLotId;
         private Long slotId;
         private String licensePlate;

@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -97,8 +97,8 @@ class PaymentEventListenerTest {
     }
 
     @Test
-    @DisplayName("Handles malformed json payload safely without throwing")
+    @DisplayName("Malformed JSON reaches the dead-letter handler")
     void testMalformedJsonPayload() {
-        assertDoesNotThrow(() -> listener.handlePaymentEvent("not-valid-json"));
+        assertThrows(IllegalArgumentException.class, () -> listener.handlePaymentEvent("not-valid-json"));
     }
 }

@@ -1,5 +1,7 @@
 # API và luồng Admin notifications — SP-S3-UI-16
 
+Update 2026-11-17 (owner: SPH): local live verification PASS for newly submitted lot #42 → three ACTIVE Admin inboxes; endpoint/ownership unchanged. Current Admin feed polls every 15 seconds; Merchant/Driver feeds now also refresh every 15 seconds while visible. CreatedAt ASC/DESC are supported with matching id tie-breaker. This supersedes the older fixed-sort/no-polling statements below. See [persistence verification](../implementation/notifications-persistence-20261117.md) for DB ownership, root cause of missing booking/payment notifications, exact tests and selective local replay evidence. No claim of VPS rollout or complete historical backfill.
+
 last_verified: 2026-11-12; owner: SPH. Code triển khai trong working tree, chờ build/test và nghiệm thu runtime. [ADR](../adr/0005-admin-operations-notification-delivery.md).
 
 | Tác vụ | Method/path | Dữ liệu trả về |
