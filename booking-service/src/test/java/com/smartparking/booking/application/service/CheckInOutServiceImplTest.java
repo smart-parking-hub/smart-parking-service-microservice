@@ -110,6 +110,25 @@ class CheckInOutServiceImplTest {
     }
 
     @Test
+    void rejectsHalfHourPolicyTwoTicketAtItsScheduledEndEvenIfTheStoredExpiryIsLater() {
+        var start = LocalDateTime.of(2026, 11, 18, 19, 0);
+        var end = start.plusMinutes(30);
+        var booking = Booking.builder().id(1L).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PENDING_CHECKIN).schedulePolicyVersion(2)
+                .expectedCheckInTime(start).expectedCheckOutTime(end).expiresAt(start.plusHours(1)).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(end);
+            var error = assertThrows(AppException.class,
+                    () -> checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId));
+
+            assertEquals(ErrorCode.BOOKING_HOLD_EXPIRED, error.getErrorCode());
+            verifyNoInteractions(parkingLotClient);
+        }
+    }
+
+    @Test
     void givesAClearRejectionWhenTheTicketHasNoExpectedArrival() {
         var booking = Booking.builder().id(1L).merchantId(merchantUserId).parkingLotId(parkingLotId)
                 .status(BookingStatusEnum.PENDING_CHECKIN).build();

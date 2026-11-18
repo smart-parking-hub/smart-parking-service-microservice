@@ -1,11 +1,13 @@
 package com.smartparking.booking.infrastructure.scheduler;
 
 import com.smartparking.booking.application.service.QueueService;
+import com.smartparking.booking.domain.BookingTimePolicy;
 import com.smartparking.booking.domain.model.Booking;
 import com.smartparking.booking.domain.repository.BookingRepository;
 import com.smartparking.booking.infrastructure.client.ParkingLotClient;
 import com.smartparking.booking.infrastructure.client.dto.SlotHoldRequest;
 import com.smartparking.common.enums.BookingStatusEnum;
+import com.smartparking.common.util.BookingSchedulePolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -86,8 +88,8 @@ public class BookingExpirationScheduler {
     @Transactional
     public void expireNoShowBookings() {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        List<Booking> noShowBookings = bookingRepository.findByStatusAndExpiresAtBefore(
-                BookingStatusEnum.PENDING_CHECKIN, now);
+        List<Booking> noShowBookings = bookingRepository.findNoShowCandidates(
+                BookingStatusEnum.PENDING_CHECKIN, now, BookingSchedulePolicy.ON_TIME_VERSION);
 
         if (noShowBookings.isEmpty()) {
             return;
@@ -98,7 +100,9 @@ public class BookingExpirationScheduler {
         for (Booking candidate : noShowBookings) {
             try {
                 Booking booking = bookingRepository.findByIdForUpdate(candidate.getId()).orElse(null);
-                if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_CHECKIN || !booking.getExpiresAt().isBefore(now)) continue;
+                if (booking == null || booking.getStatus() != BookingStatusEnum.PENDING_CHECKIN
+                        || !BookingTimePolicy.isCheckInExpired(booking, now)) continue;
+                booking.setExpiresAt(BookingTimePolicy.capCheckInDeadline(booking, booking.getExpiresAt()));
                 var noShowDecision = com.smartparking.booking.domain.BookingRefundPolicy.evaluateNoShow(now);
                 String noShowReason = "Tài xế không đến bãi đỗ (No-show)";
                 booking.setStatus(BookingStatusEnum.CANCELLED);

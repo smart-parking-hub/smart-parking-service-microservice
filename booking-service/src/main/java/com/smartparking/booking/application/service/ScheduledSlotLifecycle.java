@@ -1,5 +1,6 @@
 package com.smartparking.booking.application.service;
 
+import com.smartparking.booking.domain.BookingTimePolicy;
 import com.smartparking.booking.domain.model.Booking;
 import com.smartparking.booking.infrastructure.client.ParkingLotClient;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -54,7 +55,6 @@ public final class ScheduledSlotLifecycle {
     }
     public static java.time.LocalDateTime checkInDeadline(Booking booking) {
         var deadline = booking.getExpectedCheckInTime().plusMinutes(60);
-        return Integer.valueOf(1).equals(booking.getSchedulePolicyVersion()) && deadline.isAfter(booking.getExpectedCheckOutTime())
-                ? booking.getExpectedCheckOutTime() : deadline;
+        return BookingTimePolicy.capCheckInDeadline(booking, deadline);
     }
 }
