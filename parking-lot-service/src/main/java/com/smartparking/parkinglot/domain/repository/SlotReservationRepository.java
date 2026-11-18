@@ -26,6 +26,11 @@ public interface SlotReservationRepository extends JpaRepository<SlotReservation
             + "AND (r.protectedUntil > :from OR r.state = 'OCCUPIED') AND r.protectedStart < :until")
     List<SlotReservation> findBlocking(@Param("groupId") Long groupId, @Param("from") LocalDateTime from,
                                       @Param("until") LocalDateTime until);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM SlotReservation r WHERE r.slotGroupId = :groupId AND r.state IN ('OCCUPIED', 'COOLDOWN') "
+            + "AND (r.protectedUntil > :entry OR r.state = 'OCCUPIED') AND r.protectedStart <= :entry")
+    List<SlotReservation> findBlockingAtForUpdate(@Param("groupId") Long groupId, @Param("entry") LocalDateTime entry);
+
     List<SlotReservation> findBySlotGroupIdAndStateNot(Long groupId, String state);
     boolean existsByParkingLotIdAndStateNotAndProtectedUntilAfter(Long lotId, String state, LocalDateTime now);
 }

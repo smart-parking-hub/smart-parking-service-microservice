@@ -29,5 +29,6 @@ public class SlotHoldResponse {
     private String physicalSlotId;
     private String physicalSlotCode;
     private String layoutPublicationId;
+    private Integer schedulePolicyVersion;
     private String message;
 }

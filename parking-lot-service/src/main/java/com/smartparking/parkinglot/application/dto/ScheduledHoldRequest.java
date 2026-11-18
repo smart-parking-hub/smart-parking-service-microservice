@@ -6,4 +6,4 @@ import java.time.LocalDateTime;
 
 public record ScheduledHoldRequest(@NotNull Long bookingId, @NotNull VehicleTypeEnum vehicleType,
         String physicalSlotId, @NotNull LocalDateTime startTime, @NotNull LocalDateTime endTime,
-        @NotNull LocalDateTime holdExpiresAt) {}
+        @NotNull LocalDateTime holdExpiresAt, Integer schedulePolicyVersion) {}

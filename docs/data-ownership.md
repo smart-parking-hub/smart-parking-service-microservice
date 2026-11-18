@@ -160,6 +160,6 @@ Booking owns nullable final_payment_method/reference/amount on bookings, recordi
 ## Time-based reservations — 2026-11-17
 
 - Parking V9 owns `slot_reservations` (booking reference, group/physical slot reference, exact reservation and protection windows, hold deadline, lifecycle state, actual checkout, occupation attempt token, legacy import staging state and policy version). There is no cross-database FK. `current_slot_allocations` now represents actual scheduled occupancy; existing `slot_holds` remains the legacy idempotent ledger.
-- Booking V12 owns nullable `bookings.schedule_policy_version` and `schedule_queue_notified_at`. Null preserves the legacy path; 0 is an explicitly adopted legacy booking; 1 is a new half-hour-grid booking with a 30-minute gap and no early entry.
+- Booking V12 owns nullable `bookings.schedule_policy_version` and `schedule_queue_notified_at`. Null preserves the legacy path; 0 is an explicitly adopted legacy booking; 1 protects the original half-hour-grid booking with a 30-minute turnaround and no early entry. 2 protects 15 minutes before arrival and 15 minutes after departure while using the same grid.
 - No historical timestamp or monetary amount is backfilled by a SQL migration. Legacy adoption uses authenticated per-booking RPC and staged activation after the Booking commit.
 - See [ADR 0010](adr/0010-time-based-parking-reservations.md), [API](api-contracts/booking-schedule.md) and [rollout](deployment/booking-schedule-rollout.md).

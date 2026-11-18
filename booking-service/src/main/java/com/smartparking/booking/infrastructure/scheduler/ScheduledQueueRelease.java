@@ -21,12 +21,13 @@ public class ScheduledQueueRelease {
     @Transactional
     public void releaseAfterBuffer() {
         var now = LocalDateTime.now(ZONE);
-        var cutoff = now.minusMinutes(BUFFER_MINUTES);
-        var batch=bookings.findSchedulesReadyForQueue(cutoff,cursor,PageRequest.of(0,100));
+        var batch = bookings.findSchedulesReadyForQueue(VERSION, now.minusMinutes(BUFFER_MINUTES),
+                now.minusMinutes(LEGACY_BUFFER_MINUTES), cursor, PageRequest.of(0, 100));
         if (batch.isEmpty()) { cursor=0; return; }
         for (Long id : batch) {
             cursor=id;
             var booking = bookings.findByIdForUpdate(id).orElseThrow();
+            var cutoff = now.minusMinutes(bufferMinutes(booking.getSchedulePolicyVersion()));
             if (booking.getScheduleQueueNotifiedAt() != null || booking.getCheckOutTime() == null
                     || booking.getCheckOutTime().isAfter(cutoff) || booking.getExpectedCheckOutTime().isAfter(cutoff)) continue;
             if (!queues.tryPromoteNextInQueue(booking.getParkingLotId(), booking.getVehicleType())) continue;

@@ -19,6 +19,26 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class ScheduledQueueReleaseTest {
+    @Test void onlyTheNewPolicyCanNotifyAfterFifteenMinutes() {
+        var bookings = mock(BookingRepository.class);
+        var queues = mock(com.smartparking.booking.application.service.QueueService.class);
+        var now = LocalDateTime.now(ZONE);
+        var newBooking = Booking.builder().id(1L).parkingLotId(7L).vehicleType(VehicleTypeEnum.CONTAINER)
+                .schedulePolicyVersion(2).expectedCheckOutTime(now.minusHours(1)).checkOutTime(now.minusMinutes(16)).build();
+        var oldBooking = Booking.builder().id(2L).parkingLotId(7L).vehicleType(VehicleTypeEnum.CONTAINER)
+                .schedulePolicyVersion(1).expectedCheckOutTime(now.minusHours(1)).checkOutTime(now.minusMinutes(16)).build();
+        when(bookings.findSchedulesReadyForQueue(anyInt(), any(), any(), anyLong(), any())).thenReturn(List.of(1L, 2L));
+        when(bookings.findByIdForUpdate(1L)).thenReturn(Optional.of(newBooking));
+        when(bookings.findByIdForUpdate(2L)).thenReturn(Optional.of(oldBooking));
+        when(queues.tryPromoteNextInQueue(7L, VehicleTypeEnum.CONTAINER)).thenReturn(true);
+
+        new ScheduledQueueRelease(bookings, queues).releaseAfterBuffer();
+
+        assertNotNull(newBooking.getScheduleQueueNotifiedAt());
+        assertNull(oldBooking.getScheduleQueueNotifiedAt());
+        verify(queues).tryPromoteNextInQueue(7L, VehicleTypeEnum.CONTAINER);
+    }
+
     @Test void failedAvailabilityLookupDoesNotConsumeTheQueueRetry() {
         var bookings=mock(BookingRepository.class);
         var waiting=mock(QueueRepository.class);
@@ -26,7 +46,7 @@ class ScheduledQueueReleaseTest {
         var now=LocalDateTime.now(ZONE);
         var booking=Booking.builder().id(1L).parkingLotId(7L).vehicleType(VehicleTypeEnum.CONTAINER)
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
-        when(bookings.findSchedulesReadyForQueue(any(),anyLong(),any())).thenReturn(List.of(1L));
+        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any())).thenReturn(List.of(1L));
         when(bookings.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
         when(waiting.findByParkingLotIdAndVehicleTypeAndStatusOrderByJoinedAtAsc(anyLong(),any(),any()))
                 .thenReturn(List.of(Queue.builder().id(9L).build()));
@@ -41,7 +61,7 @@ class ScheduledQueueReleaseTest {
         var booking=Booking.builder().id(1L).parkingLotId(7L).vehicleType(VehicleTypeEnum.CONTAINER)
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
         var entry=Queue.builder().id(9L).status(QueueStatusEnum.WAITING).build();
-        when(bookings.findSchedulesReadyForQueue(any(),anyLong(),any())).thenReturn(List.of(1L),List.of(),List.of(1L));
+        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any())).thenReturn(List.of(1L),List.of(),List.of(1L));
         when(bookings.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
         when(waiting.findByParkingLotIdAndVehicleTypeAndStatusOrderByJoinedAtAsc(anyLong(),any(),any())).thenReturn(List.of(entry));
         when(lots.available(anyLong(),any(),anyString(),anyString())).thenThrow(new IllegalStateException("offline"))
@@ -53,7 +73,7 @@ class ScheduledQueueReleaseTest {
         assertEquals(QueueStatusEnum.NOTIFIED,entry.getStatus());
         verify(bookings,times(1)).save(booking);
         var cursor=org.mockito.ArgumentCaptor.forClass(Long.class);
-        verify(bookings,times(3)).findSchedulesReadyForQueue(any(),cursor.capture(),any());
+        verify(bookings,times(3)).findSchedulesReadyForQueue(anyInt(),any(),any(),cursor.capture(),any());
         assertEquals(List.of(0L,1L,0L),cursor.getAllValues());
     }
     @Test void anUnavailableLotDoesNotStarveLaterReadyLots() {
@@ -63,13 +83,13 @@ class ScheduledQueueReleaseTest {
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
         var ready=Booking.builder().id(2L).parkingLotId(8L).vehicleType(VehicleTypeEnum.CONTAINER)
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
-        when(bookings.findSchedulesReadyForQueue(any(),anyLong(),any())).thenReturn(List.of(1L),List.of(2L));
+        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any())).thenReturn(List.of(1L),List.of(2L));
         when(bookings.findByIdForUpdate(1L)).thenReturn(Optional.of(blocked));
         when(bookings.findByIdForUpdate(2L)).thenReturn(Optional.of(ready));
         when(queues.tryPromoteNextInQueue(8L,VehicleTypeEnum.CONTAINER)).thenReturn(true);
         var job=new ScheduledQueueRelease(bookings,queues);job.releaseAfterBuffer();job.releaseAfterBuffer();
         assertNull(blocked.getScheduleQueueNotifiedAt());assertNotNull(ready.getScheduleQueueNotifiedAt());
         verify(bookings,never()).save(blocked);verify(bookings).save(ready);
-        verify(bookings).findSchedulesReadyForQueue(any(),eq(1L),any());
+        verify(bookings).findSchedulesReadyForQueue(anyInt(),any(),any(),eq(1L),any());
     }
 }

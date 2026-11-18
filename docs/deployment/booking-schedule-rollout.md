@@ -32,6 +32,12 @@ The script stops on error. Repeating an adopted ID retries activation without a 
 
 Reconciliation defaults on, with batches every 30 seconds. `app.schedule.reconciliation.enabled=false` disables the new recovery jobs for isolated tests; do not use it to bypass lifecycle work during normal operation. Existing physical-selection feature flags and storage requirements still apply. The current rollout is service-wide for new creates; this release does not add a per-lot enablement toggle.
 
+## Early-arrival release (policy 2)
+
+Release Parking and Booking with policy 2 support together, Parking first, then the compatible frontend. No schema migration or historical rewrite is required. Older Booking callers omit the version and continue creating policy 1. If an older Parking responds without a version, Booking saves policy 1. Verify a new paid ticket permits entry at T−15, still respects an occupied slot or late cooldown, and retains its existing check-out and pricing rules.
+
+If an early-arrival release must be paused after issuing policy 2 tickets, retain policy 2 readers and gate/checkout behavior until all such reservations and cooldowns have ended. Rolling services back to pre-policy-2 builds during that window can change ticket display or turnaround behavior.
+
 ## Rollback
 
 Before any new schedules exist, restore compatible application artifacts while leaving additive tables/columns in place. After accepting schedules, pause new writes and keep the new schedule validation/lifecycle active for accepted bookings. An old one-hold-per-slot application cannot safely represent those commitments. Do not drop V9/V12 data or restore an old database backup over newer payments/bookings. Prefer a forward fix, or wait until every new reservation/cooldown has ended and reconcile before reverting completely.

@@ -55,7 +55,7 @@ public class LegacyScheduleImport {
         booking.setBookingId(source.bookingId()); booking.setParkingLotId(lotId); booking.setSlotGroupId(group.getId());
         booking.setPhysicalSlotId(hold.getPhysicalSlotId()); booking.setPublicationId(hold.getPublicationId());
         booking.setStartTime(source.startTime()); booking.setEndTime(source.endTime());
-        booking.setProtectedStart(from); booking.setProtectedUntil(until.plusMinutes(BUFFER_MINUTES));
+        booking.setProtectedStart(from); booking.setProtectedUntil(until.plusMinutes(LEGACY_BUFFER_MINUTES));
         booking.setHoldExpiresAt(source.expiresAt()); booking.setActualCheckout(source.checkoutTime());
         booking.setState("IMPORTING"); booking.setImportState(target); booking.setPolicyVersion(0);
         booking.setUpdatedAt(LocalDateTime.now(ZONE)); reservations.saveAndFlush(booking);
