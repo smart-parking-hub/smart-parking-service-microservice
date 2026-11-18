@@ -5,7 +5,7 @@ Ngày kiểm chứng: 2026-11-18. Phạm vi: booking-service, `POST /api/v1/book
 ## Hành vi
 
 - Một `vehicleId` không được có hai booking còn hiệu lực trùng khoảng thời gian, ở cùng bãi hoặc khác bãi. Kiểm tra không phụ thuộc `driverId` của booking cũ.
-- Khoảng đặt chỗ là `[expectedCheckInTime, expectedCheckOutTime)`: lượt mới bắt đầu đúng lúc lượt trước kết thúc được phép.
+- Booking policy 2 giữ khoảng có thể sử dụng xe `[expectedCheckInTime - 15 phút, expectedCheckOutTime)`. Booking cũ đang chờ vẫn dùng giờ vào đã lưu. Hai khoảng có thể chạm biên khi xe đã sẵn sàng cho lượt sau.
 - `PENDING_PAYMENT`, `PENDING_CHECKIN` chiếm khoảng thời gian dự kiến. Chính sách giới hạn vé chưa thanh toán hiện có vẫn áp dụng riêng.
 - `PARKING`, `OVERTIME`, `AWAITING_FINAL_PAYMENT` chiếm khoảng từ `checkInTime` thực tế (nếu có) đến giờ ra dự kiến. Nếu đã đến/quá giờ ra mà chưa hoàn tất lượt đỗ, xe tiếp tục bị chặn cho đến khi lượt cũ kết thúc. Điều này tránh cho phép đặt xe đang quá giờ chỉ vì lịch dự kiến đã hết.
 - `COMPLETED`, `REVIEWED`, `CANCELLED`, `EXPIRED` không chặn lịch mới.
@@ -33,7 +33,8 @@ Dữ liệu chỉ đọc từ database booking-service. Không đổi DTO, endpo
 | Xe đang đỗ và giờ mới giao khoảng đỗ | 409 |
 | Xe check-in sớm, giờ mới giao thời gian check-in thực tế | 409 |
 | Xe vẫn PARKING/OVERTIME/chờ quyết toán sau giờ ra dự kiến | 409 cho đến khi kết thúc lượt cũ |
-| Lượt trước kết thúc 12:00, lượt mới bắt đầu 12:00 | Cho phép |
+| Lượt trước kết thúc 12:00, lượt mới đặt 12:00 với quyền vào từ 11:45 | 409 |
+| Lượt trước kết thúc 12:00, lượt mới đặt 12:30 với quyền vào từ 12:15 | Cho phép |
 | Booking cũ đã hoàn tất/đánh giá/hủy/hết hạn | Cho phép |
 | Xe khác cùng khung giờ | Cho phép theo chỗ trống của bãi |
 | Xe đang đỗ chưa quá giờ, đặt lượt sau giờ ra dự kiến | Cho phép |

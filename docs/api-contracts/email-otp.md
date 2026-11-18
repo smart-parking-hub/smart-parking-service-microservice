@@ -63,7 +63,7 @@ token gửi mail. Không expose service nội bộ ra Internet.
 
 Nếu lab trả 200 nhưng Gmail không nhận OTP, kiểm tra SMTP có đang trỏ đến
 Mailpit hay không. Xem [hướng dẫn override SMTP local](../implementation/local-smtp-delivery.md)
-để nạp credentials và áp dụng `compose.smtp.local.yaml` sau cấu hình lab hiện tại.
+để nạp credentials và áp dụng `docker/compose/overlays/compose.smtp.local.yaml` sau cấu hình lab hiện tại.
 
 Không cần migration mới, thay RBAC/JWT hay chuyển dữ liệu giữa các service cho
 task này. Giữ migration lịch sử và dữ liệu hiện hữu.

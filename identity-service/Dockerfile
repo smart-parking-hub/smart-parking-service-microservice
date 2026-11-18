@@ -1,4 +1,5 @@
 FROM eclipse-temurin:21-jre-alpine
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-vie tesseract-ocr-data-eng
 WORKDIR /app
 ARG JAR_FILE=build/libs/*.jar
 COPY ${JAR_FILE} app.jar

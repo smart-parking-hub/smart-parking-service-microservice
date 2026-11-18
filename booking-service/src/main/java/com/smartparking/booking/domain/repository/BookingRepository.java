@@ -19,8 +19,11 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b.id FROM Booking b WHERE b.schedulePolicyVersion IS NOT NULL AND b.scheduleQueueNotifiedAt IS NULL "
-            + "AND b.id > :afterId AND b.checkOutTime <= :cutoff AND b.expectedCheckOutTime <= :cutoff ORDER BY b.id")
-    List<Long> findSchedulesReadyForQueue(@Param("cutoff") LocalDateTime cutoff, @Param("afterId") Long afterId, Pageable pageable);
+            + "AND b.id > :afterId AND ((b.schedulePolicyVersion = :version "
+            + "AND b.checkOutTime <= :cutoff AND b.expectedCheckOutTime <= :cutoff) OR (b.schedulePolicyVersion <> :version "
+            + "AND b.checkOutTime <= :legacyCutoff AND b.expectedCheckOutTime <= :legacyCutoff)) ORDER BY b.id")
+    List<Long> findSchedulesReadyForQueue(@Param("version") int version, @Param("cutoff") LocalDateTime cutoff,
+            @Param("legacyCutoff") LocalDateTime legacyCutoff, @Param("afterId") Long afterId, Pageable pageable);
 
     Optional<Booking> findByRequestKey(String requestKey);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -83,4 +86,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("parkingLotId") Long parkingLotId);
 
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
+
+    @Query("""
+            SELECT b FROM Booking b WHERE b.status = :status AND
+                (b.expiresAt < :now OR
+                    (b.schedulePolicyVersion >= :firstScheduledVersion AND b.expectedCheckOutTime <= :now))
+            """)
+    List<Booking> findNoShowCandidates(@Param("status") BookingStatusEnum status,
+            @Param("now") LocalDateTime now, @Param("firstScheduledVersion") int firstScheduledVersion);
 }

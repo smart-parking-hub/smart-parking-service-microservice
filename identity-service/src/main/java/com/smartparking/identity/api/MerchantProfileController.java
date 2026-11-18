@@ -43,7 +43,7 @@ public class MerchantProfileController {
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(required = false) String businessLicense,
             @RequestParam(required = false) MultipartFile file) {
-        return ResponseEntity.ok(ApiResponse.ok("Cập nhật giấy tờ thành công",
+        return ResponseEntity.ok(ApiResponse.ok("Đã lưu giấy tờ vào bản nháp hồ sơ xác minh",
                 merchantProfileService.uploadDocument(user.getId(), businessLicense, file)));
     }
 }

@@ -60,6 +60,21 @@ class BookingCancellationPolicyAndOutboxTest {
     private ProcessedEventRepository processedEventRepository;
 
     @Test
+    void createdEventPersistsMerchantRecipientInTheTransactionalOutbox() throws Exception {
+        var mapper = new ObjectMapper().findAndRegisterModules();
+        var publisher = new OutboxPublisherServiceImpl(outboxEventRepository, null, mapper);
+        var booking = Booking.builder().id(901L).driverId(101L).merchantId(202L)
+                .parkingLotId(303L).vehiclePlate("TEST-901").advanceDeposit(BigDecimal.TEN).build();
+        publisher.publishBookingCreated(booking);
+        var capture = org.mockito.ArgumentCaptor.forClass(com.smartparking.booking.domain.model.OutboxEvent.class);
+        verify(outboxEventRepository).saveAndFlush(capture.capture());
+        var payload = mapper.readTree(capture.getValue().getPayload());
+        assertEquals(202L, payload.get("merchantId").asLong());
+        assertEquals(101L, payload.get("userId").asLong());
+        assertEquals("PENDING", capture.getValue().getStatus());
+    }
+
+    @Test
     @DisplayName("BookingRefundPolicy enforces exact 2h/0h boundaries, HALF_UP VND rounding, PENDING_PAYMENT=0%, and No-Show=0%")
     void refundPolicyEnforcesExactTimeBoundariesAndRounding() {
         LocalDateTime checkIn = LocalDateTime.of(2026, 11, 10, 14, 0, 0);

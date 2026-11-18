@@ -2,6 +2,7 @@ package com.smartparking.notification.infrastructure.messaging;
 
 import com.smartparking.common.event.AdminOperationEvent;
 import com.smartparking.common.event.AdminRecipientSnapshot;
+import com.smartparking.common.event.MerchantVerificationEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -27,7 +28,8 @@ public class AdminOperationsKafkaConfiguration {
         return new AdminDeadLetterTransport(properties);
     }
 
-    @Bean public ConcurrentKafkaListenerContainerFactory<String, String> adminOperationsKafkaFactory(
+    @Bean(name = {"adminOperationsKafkaFactory", "notificationEventsKafkaFactory"})
+    public ConcurrentKafkaListenerContainerFactory<String, String> adminOperationsKafkaFactory(
             KafkaProperties properties, AdminDeadLetterTransport transport) {
         var config = new HashMap<>(properties.buildConsumerProperties(null));
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
@@ -48,6 +50,11 @@ public class AdminOperationsKafkaConfiguration {
             @Value("${app.admin-operations.partitions:3}") int partitions,
             @Value("${app.admin-operations.replicas:1}") int replicas) {
         return new KafkaAdmin.NewTopics(
+                TopicBuilder.name("booking.events.DLT").partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name("payment.events.DLT").partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name("user.events.DLT").partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name(MerchantVerificationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name(MerchantVerificationEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminOperationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),

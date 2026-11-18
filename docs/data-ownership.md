@@ -1,5 +1,15 @@
 # Data Ownership & Ranh giới Dữ liệu (Database per Service)
 
+## Merchant verification — SP-MERCHANT-KYC-01 (2026-11-18)
+
+- Identity V8 owns `merchant_verification_dossiers`, `merchant_verification_documents`, `merchant_verification_document_bytes`, `merchant_verification_submissions`, `merchant_verification_submission_documents`, `merchant_verification_assessment_checks`, `merchant_verification_requested_items`, and `merchant_verification_history`.
+- PDFs and older images use `merchant_verification_document_bytes`. When Cloudinary writes are enabled, new KYC images use authenticated Cloudinary storage and `merchant_verification_documents.cloudinary_public_id` identifies the original.
+- `merchants.verification_status` reflects actual verification state (`NOT_SUBMITTED`, `DRAFT`, `PENDING_REVIEW`, `CHANGES_REQUESTED`, `VERIFIED`).
+- Identity V9 extends `merchant_verification_submissions` with OCR attempt and lease fields. A pending submission is the durable work item. Worker writes remain scoped to the corresponding submission.
+- Identity V10 adds OCR document selection and reading method to `merchant_verification_submissions`. It also adds `merchant_verification_cloudinary_cleanup`, which tracks Cloudinary uploads that have yet to commit or need cleanup after rollback.
+- Domain events are dispatched via `admin_event_outbox` to topic `merchant-verification.events`.
+- See [API contract](api-contracts/merchant-verification.md) and [Deployment guide](deployment/merchant-verification.md).
+
 ## Driver wallet — SP-PAY-01 (2026-11-17)
 
 - Payment V19 owns driver_wallets and driver_wallet_entries; journals/postings add nullable driver_id, payments add wallet_refund, and refund_requests add refund_channel default BANK_MANUAL for historical requests. Driver wallet accounts extend the original six-account chart with DRIVER_WALLET_PAYABLE and DRIVER_WALLET_HOLD. No historical balance is minted.
@@ -24,7 +34,7 @@ Nguyên tắc cốt lõi: **Tuyệt đối không truy cập chéo database**. M
 
 | Microservice | Tên Database | Danh sách Bảng sở hữu | Dữ liệu chia sẻ ra ngoài (qua API/Event) |
 | :--- | :--- | :--- | :--- |
-| **identity-service** | `smart_parking_identity_db` | `users`, `driver_profiles`, `merchant_profiles`, `refresh_tokens`, `email_otp_challenges` | `userId`, `role`, `fullName`, `phoneNumber`, `email` |
+| **identity-service** | `smart_parking_identity_db` | `users`, `driver_profiles`, `merchant_profiles`, `refresh_tokens`, `email_otp_challenges`, `merchant_verification_*` | `userId`, `role`, `fullName`, `phoneNumber`, `email` |
 | **parking-lot-service** | `smart_parking_lot_db`, private layout filesystem volume (ADR 0006) | `parking_lots`, `parking_lot_images`, `slots`, `slot_holds`, `pricing_rules`, `parking_layouts`, `parking_layout_assets`, `parking_layout_publications`, `physical_parking_slots`, `current_slot_allocations` | `parkingLotId`, `slotId`, `physicalSlotId`, `slotCode`, `status`, `hourlyRate`, `publicationId`, `availability` |
 | **booking-service** | `smart_parking_booking_db` | `bookings`, `queue_entries`, `outbox_events`, `processed_events`, `booking_hold_policy_locks`, `booking_hold_rate_windows`, `booking_unpaid_hold_releases` | `bookingId`, `status`, `startTime`, `endTime`, `vehiclePlate`, `refundAmount`, `refundPercentage`, `refundStatus`, `refundPolicy` |
 | **payment-service** | `smart_parking_payment_db` | `payments`, `wallets`, `wallet_ledger_entries`, `ledger_journals`, `ledger_postings`, `settlement_batches`, `refund_requests`, `withdrawal_requests`, `disputes`, `outbox_events`, `processed_events` | `paymentId`, `transactionRef`, `status`, `amount`, `refundRequestId`, `refundStatus` |
@@ -160,6 +170,6 @@ Booking owns nullable final_payment_method/reference/amount on bookings, recordi
 ## Time-based reservations — 2026-11-17
 
 - Parking V9 owns `slot_reservations` (booking reference, group/physical slot reference, exact reservation and protection windows, hold deadline, lifecycle state, actual checkout, occupation attempt token, legacy import staging state and policy version). There is no cross-database FK. `current_slot_allocations` now represents actual scheduled occupancy; existing `slot_holds` remains the legacy idempotent ledger.
-- Booking V12 owns nullable `bookings.schedule_policy_version` and `schedule_queue_notified_at`. Null preserves the legacy path; 0 is an explicitly adopted legacy booking; 1 is a new half-hour-grid booking with a 30-minute gap and no early entry.
+- Booking V12 owns nullable `bookings.schedule_policy_version` and `schedule_queue_notified_at`. Null preserves the legacy path; 0 is an explicitly adopted legacy booking; 1 protects the original half-hour-grid booking with a 30-minute turnaround and no early entry. 2 protects 15 minutes before arrival and 15 minutes after departure while using the same grid.
 - No historical timestamp or monetary amount is backfilled by a SQL migration. Legacy adoption uses authenticated per-booking RPC and staged activation after the Booking commit.
 - See [ADR 0010](adr/0010-time-based-parking-reservations.md), [API](api-contracts/booking-schedule.md) and [rollout](deployment/booking-schedule-rollout.md).

@@ -2,6 +2,7 @@ package com.smartparking.parkinglot;
 
 import com.smartparking.common.enums.*;
 import com.smartparking.common.exception.AppException;
+import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.parkinglot.application.dto.ScheduledHoldRequest;
 import com.smartparking.parkinglot.application.service.ScheduledSlotService;
 import com.smartparking.parkinglot.domain.model.*;
@@ -11,17 +12,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import static com.smartparking.common.util.BookingSchedulePolicy.VERSION;
 import static com.smartparking.common.util.BookingSchedulePolicy.ZONE;
 import static org.junit.jupiter.api.Assertions.*;
 
 @org.springframework.test.context.ActiveProfiles("test")
 @org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-@SpringBootTest(properties = {"app.schedule.reconciliation.enabled=false", "spring.kafka.listener.auto-startup=false", "app.parking-layout.physical-booking-enabled=true", "app.parking-layout.storage-provider=mock"})
+@SpringBootTest(properties = {"app.schedule.reconciliation.enabled=false", "spring.kafka.listener.auto-startup=false", "app.parking-layout.physical-booking-enabled=true", "app.parking-layout.storage-provider=mock", "app.schedule.early.enabled=true"})
 class ScheduledReservationIntegrationTest {
     @Autowired ScheduledSlotService service;
     @Autowired ParkingLotRepository lots;
@@ -75,7 +78,7 @@ class ScheduledReservationIntegrationTest {
     }
     private Long hold(Yard yard, String id, LocalDateTime from, LocalDateTime until) {
         long booking = IDS.incrementAndGet();
-        service.hold(yard.id(), new ScheduledHoldRequest(booking, VehicleTypeEnum.CONTAINER, id, from, until, LocalDateTime.now(ZONE).plusMinutes(15)));
+        service.hold(yard.id(), new ScheduledHoldRequest(booking, VehicleTypeEnum.CONTAINER, id, from, until, LocalDateTime.now(ZONE).plusMinutes(15), VERSION));
         return booking;
     }
     private int available(Yard yard, int fromHour, int fromMinute, int toHour, int toMinute) {
@@ -94,6 +97,87 @@ class ScheduledReservationIntegrationTest {
         assertEquals(2,reservations.findBySlotGroupIdAndStateNot(yard.group().getId(),"RELEASED").size());
         assertEquals(1,groups.findById(yard.group().getId()).orElseThrow().getAvailableCapacity());
     }
+    @Test void rolloutKeepsReadAndWriteOnTheSamePolicyAndPreservesExistingHolds() {
+        var yard = yard(1, true);
+        var slot = yard.physicalIds().getFirst();
+        var start = time(13, 0);
+        var end = time(15, 0);
+        var expires = LocalDateTime.now(ZONE).plusMinutes(15);
+        var legacy = new ScheduledHoldRequest(IDS.incrementAndGet(), VehicleTypeEnum.CONTAINER, slot, start, end, expires, null);
+        var adjacent = new ScheduledHoldRequest(IDS.incrementAndGet(), VehicleTypeEnum.CONTAINER, slot,
+                time(15, 30), time(16, 0), expires, VERSION);
+
+        ReflectionTestUtils.setField(service, "earlyArrivalEnabled", false);
+        try {
+            assertEquals(1, service.hold(yard.id(), legacy).getSchedulePolicyVersion());
+            var availability = service.available(yard.id(), VehicleTypeEnum.CONTAINER, adjacent.startTime(), adjacent.endTime(), slot);
+            assertEquals(1, availability.remainingCapacity());
+            assertEquals(0, availability.checkInEarlyMinutes());
+            assertEquals(30, availability.turnaroundMinutes());
+            var timeline = service.timeline(yard.id(), VehicleTypeEnum.CONTAINER, adjacent.startTime().toLocalDate(), slot);
+            assertEquals(0, timeline.checkInEarlyMinutes());
+            assertTrue(timeline.blocks().stream().anyMatch(block -> block.start().equals(adjacent.startTime())
+                    && block.remainingCapacity() == 1 && block.status().equals("AVAILABLE")));
+            assertEquals(1, service.hold(yard.id(), adjacent).getSchedulePolicyVersion());
+            service.release(yard.id(), adjacent.bookingId());
+        } finally {
+            ReflectionTestUtils.setField(service, "earlyArrivalEnabled", true);
+        }
+
+        var stored = reservations.findById(legacy.bookingId()).orElseThrow();
+        assertEquals(start, stored.getProtectedStart());
+        assertEquals(end.plusMinutes(30), stored.getProtectedUntil());
+        assertEquals(1, service.hold(yard.id(), legacy).getSchedulePolicyVersion());
+        assertEquals(0, available(yard, 15, 30, 16, 0));
+        assertThrows(AppException.class, () -> hold(yard, slot, time(15, 30), time(16, 0)));
+
+        var afterBuffer = new ScheduledHoldRequest(IDS.incrementAndGet(), VehicleTypeEnum.CONTAINER, slot,
+                time(16, 0), time(16, 30), expires, null);
+        assertEquals(1, available(yard, 16, 0, 16, 30));
+        var error = assertThrows(AppException.class, () -> service.hold(yard.id(), afterBuffer));
+        assertEquals(ErrorCode.CONFLICT, error.getErrorCode());
+        assertNotNull(hold(yard, slot, time(16, 0), time(16, 30)));
+    }
+
+    @Test void earlyArrivalWaitsForTheLateVehiclesActualCooldown() {
+        var yard = yard(1, true);
+        String slot = yard.physicalIds().getFirst();
+        long previousId = hold(yard, slot, time(13, 0), time(15, 0));
+        long nextId = hold(yard, slot, time(15, 30), time(16, 30));
+        var now = LocalDateTime.now(ZONE).withNano(0);
+
+        var previous = reservations.findById(previousId).orElseThrow();
+        previous.setStartTime(now.minusHours(2));
+        previous.setProtectedStart(previous.getStartTime().minusMinutes(15));
+        previous.setEndTime(now.minusMinutes(20));
+        previous.setProtectedUntil(previous.getEndTime().plusMinutes(15));
+        previous.setState("OCCUPIED");
+        reservations.saveAndFlush(previous);
+        var group = groups.findById(yard.group().getId()).orElseThrow();
+        group.setAvailableCapacity(0);
+        groups.saveAndFlush(group);
+
+        var next = reservations.findById(nextId).orElseThrow();
+        next.setStartTime(now.plusMinutes(10));
+        next.setProtectedStart(next.getStartTime().minusMinutes(15));
+        next.setEndTime(now.plusHours(1));
+        next.setProtectedUntil(next.getEndTime().plusMinutes(15));
+        reservations.saveAndFlush(next);
+        service.confirm(yard.id(), nextId);
+        assertThrows(AppException.class, () -> service.occupy(yard.id(), nextId, "while-occupied"));
+
+        var actualCheckout = now.minusMinutes(2);
+        service.complete(yard.id(), previousId, actualCheckout);
+        var cooldown = reservations.findById(previousId).orElseThrow();
+        assertEquals(actualCheckout.plusMinutes(15), cooldown.getProtectedUntil());
+        assertThrows(AppException.class, () -> service.occupy(yard.id(), nextId, "during-cooldown"));
+
+        cooldown.setProtectedUntil(now.minusSeconds(1));
+        reservations.saveAndFlush(cooldown);
+        service.occupy(yard.id(), nextId, "early-after-cooldown");
+        assertEquals("OCCUPIED", reservations.findById(nextId).orElseThrow().getState());
+    }
+
     @Test void capacityUsesPeakConcurrencyRatherThanCountOfAllIntersectingBookings() {
         var yard=yard(2,false); hold(yard,null,time(8,0),time(9,0)); hold(yard,null,time(10,0),time(11,0));
         assertEquals(1,available(yard,8,0,11,0)); hold(yard,null,time(8,0),time(11,0));
@@ -106,9 +190,9 @@ class ScheduledReservationIntegrationTest {
     }
     @Test void retryAndCancellationAreIdempotentAndCannotReviveReleasedReservation() {
         var yard=yard(1,false); long id=hold(yard,null,time(13,0),time(15,0));
-        var request=new ScheduledHoldRequest(id,VehicleTypeEnum.CONTAINER,null,time(13,0),time(15,0),LocalDateTime.now(ZONE).plusMinutes(15));
+        var request=new ScheduledHoldRequest(id,VehicleTypeEnum.CONTAINER,null,time(13,0),time(15,0),LocalDateTime.now(ZONE).plusMinutes(15),VERSION);
         assertTrue(service.hold(yard.id(),request).isSuccess());
-        assertThrows(AppException.class,()->service.hold(yard.id(),new ScheduledHoldRequest(id,VehicleTypeEnum.CONTAINER,null,time(14,0),time(15,0),request.holdExpiresAt())));
+        assertThrows(AppException.class,()->service.hold(yard.id(),new ScheduledHoldRequest(id,VehicleTypeEnum.CONTAINER,null,time(14,0),time(15,0),request.holdExpiresAt(),VERSION)));
         service.release(yard.id(),id); service.release(yard.id(),id);
         assertEquals(1,available(yard,13,0,15,0));
         assertThrows(AppException.class,()->service.hold(yard.id(),request));
@@ -138,6 +222,9 @@ class ScheduledReservationIntegrationTest {
     @Test void bufferAndTimelineCrossMidnightWithoutLosingThePreviousDayBooking() {
         var yard=yard(1,true); var from=time(23,30); hold(yard,null,from,from.plusHours(1));
         var next=service.timeline(yard.id(),VehicleTypeEnum.CONTAINER,from.toLocalDate().plusDays(1),null);
+        assertEquals(30, next.bufferMinutes());
+        assertEquals(15, next.checkInEarlyMinutes());
+        assertEquals(15, next.turnaroundMinutes());
         assertEquals("FULL",next.blocks().getFirst().status());
         assertEquals("BUFFER",next.blocks().get(1).status());
         assertEquals("AVAILABLE",next.blocks().get(2).status());
@@ -165,8 +252,8 @@ class ScheduledReservationIntegrationTest {
         var current=LocalDateTime.now(ZONE).withSecond(0).withNano(0);
         var start=current.minusMinutes(current.getMinute()%30);
         var booking=reservations.findById(id).orElseThrow();
-        booking.setStartTime(start); booking.setEndTime(start.plusMinutes(30)); booking.setProtectedStart(start);
-        booking.setProtectedUntil(start.plusHours(1)); reservations.saveAndFlush(booking);
+        booking.setStartTime(start); booking.setEndTime(start.plusMinutes(30)); booking.setProtectedStart(start.minusMinutes(15));
+        booking.setProtectedUntil(start.plusMinutes(45)); reservations.saveAndFlush(booking);
         service.occupy(yard.id(),id,"attempt-1"); service.occupy(yard.id(),id,"attempt-2");
         service.abortOccupation(yard.id(),id,"attempt-1");
         assertEquals("OCCUPIED",reservations.findById(id).orElseThrow().getState());
@@ -201,8 +288,12 @@ class ScheduledReservationIntegrationTest {
         assertEquals(1,available(yard,8,0,12,0));
         assertEquals(0,available(yard,12,30,13,0));
         assertEquals(0,available(yard,15,30,16,0));
-        assertEquals(1,available(yard,16,0,17,0));
-        assertEquals(time(13,10),reservations.findById(id).orElseThrow().getStartTime());
+        assertEquals(0,available(yard,16,0,17,0));
+        assertEquals(1,available(yard,16,30,17,0));
+        var adopted = reservations.findById(id).orElseThrow();
+        assertEquals(time(13,10),adopted.getStartTime());
+        assertEquals(time(12,40),adopted.getProtectedStart());
+        assertEquals(time(15,50),adopted.getProtectedUntil());
     }
 
     @Test void publicAvailabilityIsAnonymousAndPrivateMutationsRequireTheServiceToken() throws Exception {
@@ -211,7 +302,10 @@ class ScheduledReservationIntegrationTest {
                 .param("vehicleType","CONTAINER").param("start",time(8,0).toString()).param("end",time(12,0).toString()))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.remainingCapacity").value(1))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.bufferMinutes").value(30)).andReturn();
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.bufferMinutes").value(30))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.checkInEarlyMinutes").value(15))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.turnaroundMinutes").value(15))
+                .andReturn();
         assertFalse(result.getResponse().getContentAsString().contains("bookingId"));
         http.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/internal/parking-lots/{id}/slots/reservations/123/confirm",yard.id()))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());

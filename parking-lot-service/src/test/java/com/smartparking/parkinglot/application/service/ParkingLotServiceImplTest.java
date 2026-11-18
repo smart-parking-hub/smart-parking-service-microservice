@@ -92,6 +92,7 @@ class ParkingLotServiceImplTest {
                 .address("123 Lê Duẩn, Q1")
                 .latitude(new BigDecimal("10.780"))
                 .longitude(new BigDecimal("106.700"))
+                .description("Hồ sơ tiếp vận container và sạc Reefer")
                 .status(ParkingLotStatusEnum.PENDING_APPROVAL)
                 .build();
         when(parkingLotRepository.save(any(ParkingLot.class))).thenReturn(savedLot);
@@ -103,6 +104,7 @@ class ParkingLotServiceImplTest {
 
         assertNotNull(dto);
         assertEquals("Bãi Đỗ Trung Tâm", dto.getName());
+        assertEquals("Hồ sơ tiếp vận container và sạc Reefer", dto.getDescription());
         assertEquals(ParkingLotStatusEnum.PENDING_APPROVAL, dto.getStatus());
         verify(adminEventOutbox).enqueue(eq(com.smartparking.common.event.AdminOperationEvent.TOPIC), eq("parking-lot:10"),
                 argThat(event -> event instanceof com.smartparking.common.event.AdminOperationEvent operation

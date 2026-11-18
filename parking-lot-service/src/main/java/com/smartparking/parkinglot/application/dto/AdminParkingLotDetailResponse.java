@@ -25,6 +25,7 @@ public class AdminParkingLotDetailResponse {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private ParkingLotStatusEnum status;
+    private String description;
     private List<SlotDto> slots;
     private List<PricingRuleDto> pricingRules;
     private List<ParkingLotImageResponse> images;
@@ -44,6 +45,7 @@ public class AdminParkingLotDetailResponse {
                 .latitude(lot.getLatitude())
                 .longitude(lot.getLongitude())
                 .status(lot.getStatus())
+                .description(lot.getDescription())
                 .slots(slots)
                 .pricingRules(prices)
                 .images(images)

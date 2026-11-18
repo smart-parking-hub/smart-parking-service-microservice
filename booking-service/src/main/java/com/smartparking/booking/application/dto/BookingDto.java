@@ -2,7 +2,9 @@ package com.smartparking.booking.application.dto;
 
 import com.smartparking.common.enums.BookingStatusEnum;
 import com.smartparking.common.enums.VehicleTypeEnum;
+import com.smartparking.booking.domain.BookingTimePolicy;
 import com.smartparking.booking.domain.model.Booking;
+import com.smartparking.common.util.BookingSchedulePolicy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -65,9 +67,10 @@ public class BookingDto {
         return BookingDto.builder()
                 .id(entity.getId())
                 .schedulePolicyVersion(entity.getSchedulePolicyVersion())
-                .checkInEarlyMinutes(Integer.valueOf(1).equals(entity.getSchedulePolicyVersion()) ? 0 : 30)
+                .checkInEarlyMinutes(BookingSchedulePolicy.checkInEarlyMinutes(entity.getSchedulePolicyVersion(), 30))
                 .bookingBlockMinutes(entity.getSchedulePolicyVersion() == null ? null : 30)
-                .turnaroundMinutes(entity.getSchedulePolicyVersion() == null ? null : 30)
+                .turnaroundMinutes(entity.getSchedulePolicyVersion() == null ? null
+                        : BookingSchedulePolicy.bufferMinutes(entity.getSchedulePolicyVersion()))
                 .bookingCode(entity.getBookingCode())
                 .driverId(entity.getDriverId())
                 .vehicleId(entity.getVehicleId())
@@ -90,7 +93,8 @@ public class BookingDto {
                 .overtimePenaltyMultiplier(entity.getOvertimePenaltyMultiplier())
                 .expectedCheckInTime(entity.getExpectedCheckInTime())
                 .expectedCheckOutTime(entity.getExpectedCheckOutTime())
-                .expiresAt(entity.getExpiresAt())
+                .expiresAt(entity.getStatus() == BookingStatusEnum.PENDING_CHECKIN
+                        ? BookingTimePolicy.capCheckInDeadline(entity, entity.getExpiresAt()) : entity.getExpiresAt())
                 .checkInTime(entity.getCheckInTime())
                 .checkOutTime(entity.getCheckOutTime())
                 .cancelledAt(entity.getCancelledAt())

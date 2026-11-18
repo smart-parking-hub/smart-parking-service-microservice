@@ -33,12 +33,12 @@ thông thường. Không commit file này hoặc ghi credentials vào log.
 
 Giữ nguyên các file Compose, tên project và env file của lab đang chạy, thêm
 `--env-file .env.email.local` sau các env file hiện tại và thêm
-`-f compose.smtp.local.yaml` sau tất cả các Compose file hiện tại. Ví dụ với lab
+`-f docker/compose/overlays/compose.smtp.local.yaml` sau tất cả các Compose file hiện tại. Ví dụ với lab
 P0 khôi phục (hạ tầng đã chạy):
 
 ```powershell
-docker compose --project-name docker --env-file .env --env-file .env.email.local -f docker/compose/local/compose.yaml -f compose.restore-p0.local.yaml -f compose.smtp.local.yaml config --quiet
-docker compose --project-name docker --env-file .env --env-file .env.email.local -f docker/compose/local/compose.yaml -f compose.restore-p0.local.yaml -f compose.smtp.local.yaml up -d --no-deps --pull never notification-service
+docker compose --project-name docker --env-file .env --env-file .env.email.local -f docker/compose/local/compose.yaml -f docker/compose/overlays/compose.restore-p0.local.yaml -f docker/compose/overlays/compose.smtp.local.yaml config --quiet
+docker compose --project-name docker --env-file .env --env-file .env.email.local -f docker/compose/local/compose.yaml -f docker/compose/overlays/compose.restore-p0.local.yaml -f docker/compose/overlays/compose.smtp.local.yaml up -d --no-deps --pull never notification-service
 ```
 
 Với lab có file Compose sinh riêng, thay hai file Compose đầu bằng **đúng file

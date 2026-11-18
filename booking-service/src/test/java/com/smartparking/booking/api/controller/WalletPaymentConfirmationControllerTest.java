@@ -43,6 +43,17 @@ class WalletPaymentConfirmationControllerTest {
         verify(repository, times(1)).save(any());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM wallet_payment_receipts", Integer.class));
     }
+    @Test void paidHalfHourPolicyTwoTicketExpiresAtTheReservedEnd() {
+        var scheduledEnd = booking.getExpectedCheckInTime().plusMinutes(30);
+        booking.setSchedulePolicyVersion(2);
+        booking.setExpectedCheckOutTime(scheduledEnd);
+
+        assertTrue(controller.confirm(41L, "internal-test", request()).getData());
+        assertEquals(BookingStatusEnum.PENDING_CHECKIN, booking.getStatus());
+        assertEquals(scheduledEnd, booking.getExpiresAt());
+        assertEquals(scheduledEnd, com.smartparking.booking.application.dto.BookingDto.fromEntity(booking).getExpiresAt());
+    }
+
     @Test void expiredDecisionRemainsRejectedOnRetry() {
         booking.setExpiresAt(LocalDateTime.now(BUSINESS_ZONE).minusSeconds(1));
         assertFalse(controller.confirm(41L, "internal-test", request()).getData());
