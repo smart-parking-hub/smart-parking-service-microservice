@@ -1,0 +1,29 @@
+name: docker
+
+# Reusable local capability; see ../README.md for the supported combinations.
+services:
+  discovery-server:
+    build:
+      context: ./discovery-server
+      dockerfile: Dockerfile
+    container_name: smart-parking-discovery
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - smart-parking-net
+
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: smart-parking-config
+    restart: always
+    ports:
+      - "8888:8888"
+    networks:
+      - smart-parking-net
+
+networks:
+  smart-parking-net:
+    external: true

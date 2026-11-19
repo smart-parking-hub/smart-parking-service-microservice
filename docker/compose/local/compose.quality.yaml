@@ -1,0 +1,28 @@
+name: docker
+
+# Reusable local capability; see ../README.md for the supported combinations.
+services:
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: smart-parking-sonarqube
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - smart-parking-net
+
+networks:
+  smart-parking-net:
+    name: smart-parking-net
+    driver: bridge
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:

@@ -113,7 +113,7 @@ class BatchTest(unittest.TestCase):
                     self.assertEqual(expected, args["source"])
 
     def test_new_menu_items_route_to_the_expected_tools(self):
-        for option, target in (("1.7", "scripts/deploy/deploy-vps.bat"), ("1.9", "scripts/deploy/verify-vps-release.bat")):
+        for option, target in (("1.7", "scripts/deploy/deploy-vps.bat"), ("1.8", "scripts/dev/start-local-integration.bat"), ("1.9", "scripts/deploy/verify-vps-release.bat"), ("2.5", "scripts/build-test/check-compose.bat")):
             with self.subTest(option=option), tempfile.TemporaryDirectory(prefix="sph-menu-test-") as folder:
                 root = Path(folder)
                 shutil.copyfile(ROOT / "menu.bat", root / "menu.bat")

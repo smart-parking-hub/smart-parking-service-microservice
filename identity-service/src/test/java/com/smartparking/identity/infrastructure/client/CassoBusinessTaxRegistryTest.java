@@ -7,8 +7,10 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.boot.convert.DurationStyle;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -44,6 +46,27 @@ class CassoBusinessTaxRegistryTest {
     @AfterEach
     void stopServer() {
         server.stop(0);
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "CASSO_LIVE_TEST", matches = "true")
+    void liveProviderLookupUsesConfiguredCredentials() {
+        String appId = System.getenv("CASSO_APP_ID");
+        String appSecret = System.getenv("CASSO_APP_SECRET");
+        assertThat(appId).as("Live lookup requires CASSO_APP_ID").isNotBlank();
+        assertThat(appSecret).as("Live lookup requires CASSO_APP_SECRET").isNotBlank();
+        assertThat(Boolean.parseBoolean(System.getenv("CASSO_TAX_LOOKUP_ENABLED"))).isTrue();
+        Duration timeout = DurationStyle.detectAndParse(System.getenv().getOrDefault("CASSO_TAX_LOOKUP_TIMEOUT", "5s"));
+        var registry = new CassoBusinessTaxRegistry(new ObjectMapper(), true, appId, appSecret, timeout);
+
+        // Provider's public example business, never a real merchant dossier.
+        var result = registry.lookup("0316794479");
+
+        assertThat(result.outcome()).as("Live Casso outcome; UNAVAILABLE may indicate quota or network failure")
+                .isEqualTo(Outcome.FOUND);
+        assertThat(result.business().taxCode()).isEqualTo("0316794479");
+        assertThat(result.business().name()).isNotBlank();
+        assertThat(result.business().trial()).isEqualTo(appId.startsWith("trial-app_"));
     }
 
     @Test
