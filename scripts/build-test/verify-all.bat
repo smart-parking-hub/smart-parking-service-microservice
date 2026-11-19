@@ -21,21 +21,14 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo [3/3] Checking Docker Compose configuration validity...
-cd /d "%~dp0..\..\docker"
-docker compose -f docker-compose.infra.yml config > nul
+python "%~dp0check-compose.py"
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] docker-compose.infra.yml syntax error!
-    pause
-    exit /b %ERRORLEVEL%
-)
-docker compose -f docker-compose.apps.yml config > nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] docker-compose.apps.yml syntax error!
+    echo [ERROR] Compose scenario validation failed. Python 3 and Docker Compose are required.
     pause
     exit /b %ERRORLEVEL%
 )
 
 echo ==========================================================
-echo  [SUCCESS] All verification loops passed! Microservices are stable.
+echo  [SUCCESS] Compilation, automated tests and Compose configuration checks passed.
 echo ==========================================================
 pause

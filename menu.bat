@@ -11,20 +11,22 @@ echo  [★] DONG BO NHANH SAU KHI PULL CODE (KHUYEN DUNG CHO THANH VIEN)
 echo      1.0 - [ALL-IN-ONE] Pull code xong chay cai nay: Build JAR + Docker + Sync DB
 echo.
 echo  [1] MOI TRUONG VA CONTAINER - scripts/dev
-echo      1.1 - Khoi dong Ha tang rieng: MySQL, Redis, Kafka, Prometheus
+echo      1.1 - Khoi dong Ha tang local: MySQL/Redis/Kafka, monitoring, SonarQube
 echo      1.2 - Khoi dong Local Dev Profile (Tu dong build JAR + Sync DB)
-echo      1.3 - Khoi dong Full Local Lab (Tu dong build JAR + Sync DB + Kafka/Grafana)
+echo      1.3 - Preset Local Full cu: Apps + MySQL/Redis/Kafka (tool quan sat tuy chon)
 echo      1.4 - Giai phong port bi chiem dung (Kill Busy Ports)
 echo      1.5 - Cap nhat (Build JAR ^& Reload) toan bo Microservices len Docker Local
 echo      1.6 - Reset sach Database (Xoa Volume DB cu + Tai tao va chay lai toan bo Migration)
 echo      1.7 - [VPS UPDATE] Chon LOCAL build / GITHUB CI, kiem tra commit + digest + health
+echo      1.8 - [LOCAL UPDATE] Chay Apps + MySQL/Redis/Kafka de test tich hop
 echo      1.9 - [READ ONLY] Kiem tra release dang chay tren ca 3 VPS
 echo.
 echo  [2] BIEN DICH VA KIEM THU - scripts/build-test
 echo      2.1 - Build toan bo Microservices
 echo      2.2 - Chay toan bo Unit va Integration Tests
 echo      2.3 - Kiem tra toan dien: Compile, Test va Check
-echo      2.4 - Kiem tra cu phap SQL Flyway Migrations
+echo      2.4 - Kiem tra file migration doc duoc (khong migrate DB)
+echo      2.5 - [READ ONLY] Kiem tra cac to hop Compose
 echo.
 echo  [3] CHAT LUONG MA NGUON - scripts/quality
 echo      3.1 - Khoi dong SonarQube Container
@@ -56,11 +58,13 @@ if "%opt%"=="1.4" goto DEV_KILL
 if "%opt%"=="1.5" goto DEV_UPDATE
 if "%opt%"=="1.6" goto DEV_RESET_DB
 if "%opt%"=="1.7" goto DEV_DEPLOY_VPS
+if "%opt%"=="1.8" goto DEV_INTEGRATION
 if "%opt%"=="1.9" goto VPS_VERIFY
 if "%opt%"=="2.1" goto BT_BUILD
 if "%opt%"=="2.2" goto BT_TEST
 if "%opt%"=="2.3" goto BT_VERIFY
 if "%opt%"=="2.4" goto BT_FLYWAY
+if "%opt%"=="2.5" goto BT_COMPOSE
 if "%opt%"=="3.1" goto QL_START_SONAR
 if "%opt%"=="3.2" goto QL_SCAN
 if "%opt%"=="4.1" goto TR_DASHBOARD
@@ -120,12 +124,22 @@ call :ACTION_STATUS "2.1" "Build microservices"
 call "%~dp0scripts\build-test\build-all.bat"
 goto MENU
 
+:DEV_INTEGRATION
+call :ACTION_STATUS "1.8" "Khoi dong local integration"
+call "%~dp0scripts\dev\start-local-integration.bat"
+goto MENU
 
 :VPS_VERIFY
 call :ACTION_STATUS "1.9" "Kiem tra phien ban VPS"
 call "%~dp0scripts\deploy\verify-vps-release.bat"
 goto MENU
 
+:BT_COMPOSE
+call :ACTION_STATUS "2.5" "Kiem tra Compose"
+call "%~dp0scripts\build-test\check-compose.bat"
+echo Compose check exit code: %ERRORLEVEL%
+pause
+goto MENU
 
 :BT_TEST
 call :ACTION_STATUS "2.2" "Chay tests"

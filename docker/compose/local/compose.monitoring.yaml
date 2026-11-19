@@ -1,0 +1,29 @@
+name: docker
+
+# Reusable local capability; see ../README.md for the supported combinations.
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: smart-parking-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - smart-parking-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: smart-parking-grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - smart-parking-net
+
+networks:
+  smart-parking-net:
+    external: true

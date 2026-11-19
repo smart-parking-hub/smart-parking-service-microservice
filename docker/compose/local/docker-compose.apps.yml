@@ -3,7 +3,7 @@ name: docker
 services:
   api-gateway:
     build:
-      context: ../api-gateway
+      context: ../../../api-gateway
       dockerfile: Dockerfile
     container_name: smart-parking-gateway
     restart: always
@@ -23,7 +23,7 @@ services:
 
   identity-service:
     build:
-      context: ../identity-service
+      context: ../../../identity-service
       dockerfile: Dockerfile
     container_name: smart-parking-identity
     restart: always
@@ -43,7 +43,7 @@ services:
 
   parking-lot-service:
     build:
-      context: ../parking-lot-service
+      context: ../../../parking-lot-service
       dockerfile: Dockerfile
     container_name: smart-parking-parkinglot
     restart: always
@@ -64,7 +64,7 @@ services:
 
   booking-service:
     build:
-      context: ../booking-service
+      context: ../../../booking-service
       dockerfile: Dockerfile
     container_name: smart-parking-booking
     restart: always
@@ -88,7 +88,7 @@ services:
 
   payment-service:
     build:
-      context: ../payment-service
+      context: ../../../payment-service
       dockerfile: Dockerfile
     container_name: smart-parking-payment
     restart: always
@@ -115,7 +115,7 @@ services:
 
   notification-service:
     build:
-      context: ../notification-service
+      context: ../../../notification-service
       dockerfile: Dockerfile
     container_name: smart-parking-notification
     restart: always
@@ -141,7 +141,7 @@ services:
 
   ai-service:
     build:
-      context: ../ai-service
+      context: ../../../ai-service
       dockerfile: Dockerfile
     container_name: smart-parking-ai
     restart: always

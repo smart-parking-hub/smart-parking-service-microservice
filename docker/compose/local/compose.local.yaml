@@ -3,38 +3,15 @@ name: docker
 # Local Development Overlay: exposes ports to localhost and adds local databases
 services:
   mysql:
-    image: mysql:8.4
-    container_name: smart-parking-mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
-    ports:
-      - "3307:3306"
+    extends:
+      file: docker/compose/local/compose.infra.yaml
+      service: mysql
     volumes:
-      - mysql_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - smart-parking-net
   redis:
-    image: redis:7.2-alpine
-    container_name: smart-parking-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - smart-parking-net
+    extends:
+      file: docker/compose/local/compose.infra.yaml
+      service: redis
 
   api-gateway:
     ports:

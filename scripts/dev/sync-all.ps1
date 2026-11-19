@@ -5,7 +5,8 @@
 # ==============================================================================
 
 param (
-    [string]$Mode = "local-dev",      # "local-dev" hoặc "local-full"
+    [ValidateSet("local-dev", "local-full", "local-integration")]
+    [string]$Mode = "local-dev",      # Existing presets plus opt-in Kafka integration
     [switch]$CleanDb = $false,        # Xóa sạch volume DB cũ để migrate lại từ đầu
     [switch]$SkipBuild = $false,      # Bỏ qua bước compile JAR nếu vừa compile xong
     [string]$Service = ""             # Cập nhật riêng 1 service nếu có chỉ định
@@ -134,6 +135,10 @@ if (-not $networkExists) {
 $infraComposeCmd = "docker compose -p $ProjectName --project-directory . -f docker\compose\local\compose.yaml -f docker\compose\local\compose.local.yaml"
 if ($Mode -eq "local-full") {
     $infraComposeCmd += " -f docker\compose\local\compose.local-full.yaml"
+} elseif ($Mode -eq "local-integration") {
+    $infraComposeCmd += " -f docker\compose\local\compose.kafka.yaml"
+}
+if ($Mode -in @("local-full", "local-integration")) {
     cmd /c "$infraComposeCmd up -d mysql redis kafka"
 } else {
     cmd /c "$infraComposeCmd up -d mysql redis"
@@ -143,11 +148,11 @@ if ($Mode -eq "local-full") {
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[CANH BAO] Phat hien xung dot container ha tang cu. Dang tu dong don dep va thu lai..." -ForegroundColor Yellow
     $infraContainers = @("smart-parking-mysql", "smart-parking-redis")
-    if ($Mode -eq "local-full") { $infraContainers += "smart-parking-kafka" }
+    if ($Mode -in @("local-full", "local-integration")) { $infraContainers += "smart-parking-kafka" }
     foreach ($c in $infraContainers) {
         $null = docker rm -f $c 2>&1
     }
-    if ($Mode -eq "local-full") {
+    if ($Mode -in @("local-full", "local-integration")) {
         cmd /c "$infraComposeCmd up -d mysql redis kafka"
     } else {
         cmd /c "$infraComposeCmd up -d mysql redis"
@@ -227,6 +232,8 @@ Write-Host "`n[4/5] Build Docker Images va Recreate Containers..." -ForegroundCo
 $composeCmd = "docker compose -p $ProjectName --project-directory . -f docker\compose\local\compose.yaml -f docker\compose\local\compose.local.yaml"
 if ($Mode -eq "local-full") {
     $composeCmd += " -f docker\compose\local\compose.local-full.yaml"
+} elseif ($Mode -eq "local-integration") {
+    $composeCmd += " -f docker\compose\local\compose.kafka.yaml"
 }
 
 $allMicroservices = "api-gateway identity-service parking-lot-service booking-service payment-service notification-service ai-service"
