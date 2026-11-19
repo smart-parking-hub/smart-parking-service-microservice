@@ -12,20 +12,13 @@ public final class BookingTimePolicy {
     }
 
     public static LocalDateTime capCheckInDeadline(Booking booking, LocalDateTime deadline) {
-        LocalDateTime effective = deadline;
-        LocalDateTime expectedStart = booking.getExpectedCheckInTime();
-        if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && expectedStart != null) {
-            LocalDateTime maxGrace = expectedStart.plusMinutes(BookingSchedulePolicy.BLOCK_MINUTES);
-            if (effective == null || maxGrace.isBefore(effective)) {
-                effective = maxGrace;
-            }
-        }
+        // The paid ticket's saved deadline preserves the grace issued at confirmation.
         LocalDateTime scheduledEnd = booking.getExpectedCheckOutTime();
         if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && scheduledEnd != null
-                && (effective == null || scheduledEnd.isBefore(effective))) {
+                && (deadline == null || scheduledEnd.isBefore(deadline))) {
             return scheduledEnd;
         }
-        return effective;
+        return deadline;
     }
 
     public static boolean isCheckInExpired(Booking booking, LocalDateTime now) {

@@ -1,6 +1,6 @@
 # Booking schedule rollout and rollback
 
-- Owner: SmartParkingHub maintainers; date: 2026-11-17.
+- Owner: SmartParkingHub maintainers; updated: 2026-11-20.
 - Local p0 deployment completed on 2026-11-17 at 18:16 UTC+7: Parking V9, Booking V12. Production/VPS deployment is not recorded here. Evidence: `D:/DuAnOjt/audit-reports/booking-schedule-local-rollout-20261117/REPORT.md`.
 
 ## Retained local p0 startup
@@ -18,7 +18,7 @@ The deployment first proved V8→V9 and V11→V12 against private copies, preser
 1. Back up each service-owned database and record its migration history/application artifact. Verify existing holds and actual occupancy; list any missing hold ledgers for manual resolution.
 2. Verify database defaults match the historical Parking migration collation, `utf8mb4_unicode_ci`. A fresh MySQL 8.4 schema created with its default `utf8mb4_0900_ai_ci` can fail the historical V8 foreign key when altering the older hold table. Do not edit applied migration checksums to work around this.
 3. Release Parking with additive V9 first. It accepts the existing hold/release API and the new reservation API. Release Booking with additive V12, then the FE. The new Booking writer requires the new Parking endpoint; avoid routing it to an old Parking instance.
-4. New creates use policy 1. Existing null-policy bookings remain conservative all-day holds until completed/cancelled or explicitly adopted. Current availability counters still reflect actual occupation and legacy holds; exact future availability comes from the new API.
+4. For a mixed-version rollout, explicitly set `APP_SCHEDULE_EARLY_ENABLED=false` to keep new creates on policy 1. Current Java/local Compose defaults enable policy 2; follow the early-arrival sequence below before accepting new traffic. Existing null-policy bookings remain conservative all-day holds until completed/cancelled or explicitly adopted. Current availability counters still reflect actual occupation and legacy holds; exact future availability comes from the new API.
 5. For legacy adoption, inspect an explicit set of booking IDs first. Set `SPH_INTERNAL_SERVICE_TOKEN` privately and run the supplied PowerShell tool without `-Apply` for read-only status output. After checking IDs, rerun with `-Apply`. Use the intended Booking service URL; default is local port 8083. No service queries another database.
 
 ```powershell
@@ -34,11 +34,12 @@ Reconciliation defaults on, with batches every 30 seconds. `app.schedule.reconci
 
 ## Early-arrival release (policy 2)
 
-1. Deploy Parking with `APP_SCHEDULE_EARLY_ENABLED=false` (the default). Availability, timeline and new holds use policy 1 during the mixed-version window. Deploy Booking and the compatible frontend. Verify that an old caller and a policy 2-capable caller both create policy 1 tickets.
+1. Deploy Parking with an explicit `APP_SCHEDULE_EARLY_ENABLED=false` override. The default is now `true` in Java and local Compose, so leaving the variable unset enables policy 2. Availability, timeline and new holds use policy 1 during the mixed-version window. Deploy Booking and the compatible frontend. Verify that an old caller and a policy 2-capable caller both create policy 1 tickets.
 2. After all Booking instances support policy 2, switch all Parking instances to `APP_SCHEDULE_EARLY_ENABLED=true`. Pause traffic to schedule reads and new creates during the switch, or switch the Parking fleet as one unit and drain the old fleet before resuming traffic. New holds from older Booking callers receive 409 once policy 2 is active.
-3. Verify that availability and timeline report 15 minutes early and 15 minutes of turnaround, a new paid 30-minute ticket expires at its scheduled end, and existing policy 1 tickets and late-vehicle cooldowns keep their stored rules. A 60-minute or longer booking still has its original limit of 60 minutes after the scheduled start.
+3. Verify that availability and timeline report 15 minutes early and 15 minutes of turnaround. Deposits confirmed by the updated Booking service receive `min(start + 30 minutes, end)` for policy 1/2, including bookings created before the update that were still unpaid. New paid 30-minute tickets expire at their scheduled end; longer tickets expire 30 minutes after the scheduled start. All Booking instances must use the updated confirmation code before traffic resumes to issue this grace consistently.
+4. Already paid policy 1/2 tickets keep their saved expiry, capped at the scheduled end. For example, a 10:00-12:00 ticket already issued with an 11:00 expiry still permits entry at 10:45; a newly confirmed ticket expires at 10:30. Do not recompute old tickets from their policy version or rewrite their deadlines. DTO, gate and no-show must agree; the no-show job selects by the saved expiry or scheduled end, cancels under lock and releases after commit. Verify both old and new tickets at 10:29, 10:30 and 10:31, plus the old 11:00 deadline. The deadline is inclusive until the scheduled end, which is exclusive. Unpaid deposit deadlines, policy 0/null, already occupied tickets and existing cooldowns retain their rules.
 
-No schema migration or bulk rewrite is required. If an older Parking responds without a version, Booking uses policy 1 and checks the vehicle against the accepted arrival window.
+No schema migration or bulk rewrite is required; the saved paid-ticket expiry is the grace snapshot. If an older Parking responds without a version, Booking uses policy 1 and checks the vehicle against the accepted arrival window. Reverting the Booking grace change affects future deposit confirmations; it must not extend or shorten deadlines already saved. Retain readers that honor saved expiries and the scheduled-end cap throughout rollback.
 
 If an early-arrival release must be paused after issuing policy 2 tickets, switch new holds and schedule reads back to policy 1 with the same coordinated traffic switch. Keep policy 2 readers and gate/checkout behavior until all such reservations and cooldowns have ended. Rolling services back to pre-policy-2 builds during that window can change ticket display or turnaround behavior.
 
@@ -51,3 +52,5 @@ Before any new schedules exist, restore compatible application artifacts while l
 `ScheduledReservationIntegrationTest` supports `SCHEDULE_TEST_JDBC_URL`, `SCHEDULE_TEST_DB_USER`, `SCHEDULE_TEST_DB_PASSWORD`. It only accepts a schema named `sph_schedule_test_*`, runs Flyway and validates the entity schema. Use a fresh schema with the collation above.
 
 `ScheduleMigrationMySqlTest` accepts `SCHEDULE_BOOKING_UPGRADE_JDBC_URL` with the same credential variables and schema-name restriction. It refuses a nonempty schema, upgrades to Booking V11 then V12 and compares every existing booking's times, money and status. Neither test cleans an existing database.
+
+`VehicleBookingConflictIntegrationTest` runs against H2 by default. Set `SCHEDULE_VEHICLE_TEST_JDBC_URL` to a fresh local MySQL schema named `sph_schedule_test_vehicle_*`, with `SCHEDULE_TEST_DB_USER` and `SCHEDULE_TEST_DB_PASSWORD`, to verify the repository, DTO and no-show transaction regression on MySQL. This suite creates/drops its test entity tables and deletes fixtures between tests; never point it at a retained dataset. Its JDBC session uses UTC to check business wall-clock timestamps. CI runs it on a dedicated disposable schema as well as the normal H2 build.
