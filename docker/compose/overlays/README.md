@@ -54,11 +54,11 @@ docker compose --project-directory . -f <file-base> -f <file-overlay-1> -f <file
 
 ---
 
-### 2.3. `compose.no-request-rate.local.yaml` (Tắt Rate-Limit để Stress Test)
-* **Mục đích:** Chạy kiểm thử tải (Load Testing / Stress Testing / Benchmark) luồng đặt chỗ giữ xe.
+### 2.3. `compose.no-request-rate.local.yaml` (Ghim artifact Booking cho P0)
+* **Mục đích:** Giữ artifact Booking đã kiểm chứng cho dữ liệu P0. Đây không phải công tắc stress test tổng quát.
 * **Cơ chế:**
   - File này chỉ vỏn vẹn 4 dòng.
-  - Thay đổi duy nhất image của `booking-service` sang tag `smart-parking/booking-service:no-request-rate-local-20261117` đã tắt middleware chặn tần suất request (HTTP 429).
+  - Chỉ đổi image của `booking-service` sang tag `smart-parking/booking-service:no-request-rate-local-20261117`. Artifact bỏ giới hạn tần suất request cũ; quota/cooldown vẫn có hợp đồng riêng.
 * **Lệnh áp dụng:**
   Thường được ghép sau `compose.schedule.local.yaml` khi chạy kịch bản P0.
 
@@ -106,7 +106,7 @@ docker compose --project-directory . -f <file-base> -f <file-overlay-1> -f <file
 | :--- | :--- | :--- | :--- |
 | `compose.email.local.yaml` | `identity`, `notification`, `mailpit` | Hòm thư ảo Mailpit (Port 8025) | Cần test nhận OTP qua web UI |
 | `compose.smtp.local.yaml` | `notification-service` | Gửi mail thật (Gmail, v.v.) | Cần gửi thư thật đến hòm thư người dùng |
-| `compose.no-request-rate.local.yaml` | `booking-service` | Bỏ chặn tần suất gọi API booking | Chạy test tải, JMeter, k6 benchmark |
+| `compose.no-request-rate.local.yaml` | `booking-service` | Ghim artifact Booking P0 | Dùng trong chuỗi restore/schedule đã kiểm chứng |
 | `compose.schedule.local.yaml` | `parking-lot`, `booking` | Cập nhật bản build tính năng Schedule | Chạy tính năng đặt chỗ theo khung giờ |
 | `compose.p0.local.yaml` | Tất cả microservices | Tích hợp chuẩn P0 (Demo payment) | Chạy môi trường test tích hợp đầy đủ |
 | `compose.restore-p0.local.yaml` | Tất cả microservices | Khôi phục & ghim dữ liệu P0 gốc | Khởi động hệ thống giữ nguyên data test |

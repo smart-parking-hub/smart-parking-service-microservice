@@ -192,3 +192,14 @@ __pycache__/
 scripts/trello
 docs/pr-reviews
 .taste-skill/
+
+# Local deployment metadata and dated scratch reports; summaries live in runbooks.
+.deploy-history/
+/.local/
+/docs/implementation/vps-release-audit-*.json
+/docs/implementation/vps-release-audit-*.md
+/docs/implementation/casso-env-validation-20261119.md
+/docs/implementation/compose-maintenance-plan-20261119.md
+/docs/implementation/dual-source-deploy-plan-20261119.md
+/docs/implementation/menu-deploy-fix-plan-20261119.md
+/docs/implementation/menu-progress-plan-20261119.md

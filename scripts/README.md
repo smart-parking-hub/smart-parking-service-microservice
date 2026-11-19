@@ -11,7 +11,7 @@ smart-parking-microservice/scripts/
 │
 ├── 📂 dev/                         # [1] Môi Trường & Điều Phối Container Docker
 │   ├── start-infra.bat             # Khởi động MySQL, Redis, Kafka, Prometheus, Grafana
-│   ├── start-local-dev.bat         # Khởi động hồ sơ Local Dev (hot-reload)
+│   ├── start-local-dev.bat         # Build/recreate hồ sơ Local Dev
 │   ├── start-local-full.bat        # Khởi động Full Local Lab (toàn bộ services + infra)
 │   ├── start-services.bat          # Build JAR và chạy container microservices
 │   ├── start-vps-r4.bat            # Khởi động cấu hình giới hạn RAM 512MB VPS
@@ -23,7 +23,7 @@ smart-parking-microservice/scripts/
 │   ├── test-all.bat                # Chạy trọn bộ Unit Test & Integration Test
 │   ├── verify-all.bat              # Vòng lặp kiểm tra: Compile + Test + Syntax Check
 │   ├── lint-check.bat              # Kiểm tra coding convention & vi phạm syntax
-│   └── db-migrate-dry-run.bat      # Xác thực cú pháp SQL của tất cả Flyway migrations
+│   └── db-migrate-dry-run.bat      # Kiểm tra file đọc được; không xác thực SQL/Flyway
 │
 ├── 📂 quality/                     # [3] Chất Lượng Mã Nguồn & Báo Cáo SonarQube
 │   ├── start-sonarqube.bat         # Khởi động SonarQube container (Port 9000)
@@ -61,6 +61,8 @@ smart-parking-microservice/scripts/
 ### 1. Bảng Điều Khiển Trung Tâm (Launcher Duy Nhất):
 File [`smart-parking-microservice/menu.bat`](file:///d:/Documents/JAVA%20WEB%20SERVICE/SmartParkingHub/smart-parking-microservice/menu.bat) được đặt ngay tại thư mục gốc của project để bạn nhấp đúp chạy bất kỳ chức năng nào từ 5 thư mục trên.
 
+Menu hiện thông báo ngay khi nhận lựa chọn; Enter trống không chạy lại tác vụ cũ. Deploy 1.7 nhắc trạng thái mỗi 5 giây. Kiểm tra VPS 1.9 hiển thị ba bước cố định, ký hiệu quay và đồng hồ `mm:ss` cập nhật tại chỗ; chạy xong xóa phần tiến trình, giữ kết quả và mã thoát. Chỉ gõ thêm khi công cụ hiện câu hỏi; xem [hướng dẫn trạng thái deploy](deploy/README.md).
+
 ### 2. Chạy Trực Tiếp Từ Terminal:
 ```bash
 # Checkout chuyển nhánh thông minh:
@@ -91,3 +93,7 @@ node scripts/trello/check-risks-improvements.mjs  # Quét rủi ro & cải tiế
 node scripts/trello/create-defect-cards.mjs       # Tạo các thẻ defect/UX lên Trello
 node scripts/trello/migrate-to-sprint4.mjs        # Chuyển task sang Sprint 04
 ```
+
+## Compose configuration checks
+
+Run `python scripts/build-test/check-compose.py` (or `scripts/build-test/check-compose.bat`) with Python 3.10+ and Docker Compose. This renders synthetic scenarios without starting containers or reading repository secrets. `start-local-integration.bat` adds the existing Kafka capability to local-dev; other launcher names remain available. See [supported combinations](../docker/compose/README.md).

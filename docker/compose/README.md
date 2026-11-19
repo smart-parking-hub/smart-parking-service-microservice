@@ -1,58 +1,74 @@
-# 🐳 SMARTPARKINGHUB - HỆ THỐNG DOCKER COMPOSE PROFILES
+# SmartParkingHub — các cách chạy Compose
 
-Toàn bộ các file cấu hình Docker Compose (`.yaml` / `.yml`) của dự án đã được quy hoạch gọn gàng vào 3 nhóm môi trường chuyên biệt:
+Các lệnh trong trang này chạy từ **repo backend root**, trừ khi ghi khác. Tên file và launcher cũ được giữ. Đợt bảo trì ngày 2026-11-19 sửa đường dẫn legacy và tách định nghĩa dùng lại. Project, container, network, volume và môi trường app của các preset cũ được đối chiếu trước/sau.
 
----
+## Kiểm tra trước khi chạy
 
-## 🗂️ Cấu Trúc Phân Chia Thư Mục
-
-```
-smart-parking-microservice/docker/compose/
-│
-├── 📂 local/                         # [1] Môi Trường Phát Triển Cục Bộ (Local Dev)
-│   ├── compose.yaml                  # Cấu hình gốc chuẩn 6 microservices
-│   ├── compose.local.yaml            # Overlay: Mở port debug và cấu hình local DB
-│   ├── compose.local-full.yaml       # Overlay: Đầy đủ Kafka KRaft, Redis, Prometheus, Grafana
-│   ├── docker-compose.infra.yml      # Standalone Stack: Chỉ bật tầng Hạ tầng (MySQL, Redis, Kafka)
-│   ├── docker-compose.apps.yml       # Standalone Stack: Chỉ bật tầng 6 Microservices
-│   └── docker-compose.yml            # Standalone Stack: Tổng hợp cả Apps & Infra
-│
-├── 📂 vps-single/                    # [2] Môi Trường Máy Chủ Đơn (Single-Node VPS)
-│   ├── compose.vps-r4.yaml           # Hồ sơ tối ưu VPS giới hạn RAM (512MB/service, Nginx reverse proxy)
-│   └── compose.vps-large.yaml        # Hồ sơ VPS cấu hình cao (Tăng JVM Heap, scale replicas)
-│
-└── 📂 vps-cluster/                   # [3] Môi Trường Cụm Phân Tán Đa Máy Chủ (Multi-VPS 3 Nodes)
-    ├── compose.vps1-edge.yml         # Node 1 (Edge): Nginx Reverse Proxy, SSL Certbot, API Gateway
-    ├── compose.vps2-data.yml         # Node 2 (Data): MySQL Cluster, Redis Cache & Kafka Broker
-    └── compose.vps3-core.yml         # Node 3 (Core): Toàn bộ Microservices nghiệp vụ
+```powershell
+python scripts/build-test/check-compose.py
+python -m unittest discover -s scripts/build-test/tests -v
+# Wrapper Windows chạy được từ thư mục bất kỳ:
+.\scripts\build-test\check-compose.bat --scenario integration
 ```
 
----
+Cần Python 3.10+ và Docker Compose plugin hỗ trợ `config --format json`, `extends` và `include`. Checker dùng biến giả, bỏ qua `.env` của repo và chỉ render cấu hình. PASS với `expected rejection` chứng minh tổ hợp không hỗ trợ bị từ chối. Các bind path trên VPS cần kiểm tra trên host riêng.
 
-## 🚀 Hướng Dẫn Khởi Chạy Từng Môi Trường
+## Chọn cách chạy
 
-### 1. Khởi Chạy Local Dev (Máy Cá Nhân):
-```bash
-# Khởi động Local Dev tiêu chuẩn:
-docker compose --project-directory . -f docker/compose/local/compose.yaml -f docker/compose/local/compose.local.yaml up -d --build
+Các path trong bảng nằm dưới `docker/compose/`.
 
-# Khởi động Full Local Lab (kèm Kafka, Prometheus, Grafana):
-docker compose --project-directory . -f docker/compose/local/compose.yaml -f docker/compose/local/compose.local.yaml -f docker/compose/local/compose.local-full.yaml up -d --build
+| Mục đích | File sau `local/compose.yaml` | Ghi chú |
+| --- | --- | --- |
+| Local dev như trước | `local/compose.local.yaml` | MySQL/Redis và bảy app. Luồng event cần broker đang chạy hoặc chọn integration. |
+| Integration vừa đủ | `local/compose.local.yaml`, `local/compose.kafka.yaml` | Thêm Kafka, không cần monitoring hoặc discovery/config. |
+| Full lab | `local/compose.local.yaml`, `local/compose.local-full.yaml` | Model có Kafka, Prometheus/Grafana và Eureka/Config. |
+| Quan sát | `local/compose.local.yaml`, `local/compose.monitoring.yaml` | Thêm Prometheus/Grafana vào local. |
+| Lab discovery/config | `local/compose.local.yaml`, `local/compose.discovery.yaml` | Chạy server; cấu hình client mặc định giữ nguyên. |
+| Layout filesystem | `local/compose.local.yaml`, `local/compose.layout-filesystem.yaml` | External volume và flags theo [runbook](../../docs/deployment/parking-layout-filesystem.md). |
 
-# Hoặc chỉ khởi động riêng tầng hạ tầng:
-cd docker && docker compose -f compose/local/docker-compose.infra.yml up -d
+`compose.local-full.yaml` tham chiếu các capability Kafka, monitoring và discovery. MySQL/Redis lấy từ `compose.infra.yaml`. SonarQube nằm riêng ở `compose.quality.yaml`. Các capability có build/bind path được dùng cùng `--project-directory .` từ backend root. Các preset `extends` có override path cần thiết do cơ chế rebase của Compose; giữ các override này khi bảo trì.
+
+## Launcher Windows
+
+- `scripts/dev/start-local-dev.bat`: giữ hành vi local-dev trước đây.
+- `scripts/dev/start-local-integration.bat`: opt-in MySQL/Redis/Kafka và bảy app; nhận `-SkipBuild`, `-Service payment` qua runner hiện có.
+- `scripts/dev/start-local-full.bat`: giữ hành vi runner trước đây: mở MySQL/Redis/Kafka rồi bảy app. Dùng lệnh full bên dưới nếu muốn mở cả monitoring và discovery/config.
+- `scripts/dev/start-infra.bat`: vẫn dùng preset infra cũ, có cả monitoring và SonarQube.
+- `scripts/quality/start-sonarqube.bat`: tiếp tục mở riêng SonarQube qua entry cũ.
+
+Các launcher build JAR và recreate container. Chế độ integration dùng cùng project/network/port của lab mặc định. Nhánh cleanup/reset/readiness của runner giữ hành vi cũ trong lần tách cấu hình này.
+
+## Lệnh Compose trực tiếp
+
+```powershell
+# Integration: cùng app, DB và mount như local-dev, bổ sung Kafka.
+docker compose -p docker --project-directory . -f docker/compose/local/compose.yaml -f docker/compose/local/compose.local.yaml -f docker/compose/local/compose.kafka.yaml up -d --build
+
+# Full: mở tất cả service trong model, gồm monitoring và discovery/config.
+docker compose -p docker --project-directory . -f docker/compose/local/compose.yaml -f docker/compose/local/compose.local.yaml -f docker/compose/local/compose.local-full.yaml up -d --build
+
+# SonarQube độc lập; launcher cũ vẫn dùng được.
+docker compose -p docker --project-directory . -f docker/compose/local/compose.quality.yaml up -d sonarqube
 ```
 
-### 2. Triển Khai Single-Node VPS:
-```bash
-# Triển khai hồ sơ VPS R4 (giới hạn RAM 512MB, Nginx):
-docker compose --project-directory . -f docker/compose/local/compose.yaml -f docker/compose/vps-single/compose.vps-r4.yaml up -d --build
-```
+Trước khi chạy, xác nhận môi trường và `.env` mong muốn. Hai họ app cũ/mới giữ mặc định DEMO khác nhau. Một biến trong `.env` chỉ được truyền vào app nếu Compose có cấu hình tương ứng.
 
-### 3. Triển Khai Cụm Phân Tán (3 VPS):
-* **Trên VPS 1 (Edge):** `docker compose -f docker/compose/vps-cluster/compose.vps1-edge.yml up -d`
-* **Trên VPS 2 (Data):** `docker compose -f docker/compose/vps-cluster/compose.vps2-data.yml up -d`
-* **Trên VPS 3 (Core):** `docker compose -f docker/compose/vps-cluster/compose.vps3-core.yml up -d`
+## Tương thích file cũ
 
-> [!TIP]
-> Bạn có thể chạy nhanh tất cả các profile trên bằng file launcher [`menu.bat`](file:///d:/Documents/JAVA%20WEB%20SERVICE/SmartParkingHub/smart-parking-microservice/menu.bat) tại thư mục gốc!
+`local/docker-compose.infra.yml` dùng lại capability, giữ override Kafka, mount Grafana và volume Sonar của riêng preset. Bind paths đã sửa để trỏ đúng asset trong repo. `local/docker-compose.apps.yml` sửa build context và bổ sung năm biến Casso chỉ cho Identity, mặc định tắt/để trống; env/mount khác giữ nguyên. `local/docker-compose.yml` còn include cả hai. Tên project mặc định của file include là `local` trên CLI đã kiểm, còn các file standalone và launcher thường dùng `docker`. Giữ project hiện hành khi tiếp tục dữ liệu đã có.
+
+## P0, migration và dữ liệu giữ lại
+
+`start-p0-local.bat`, thứ tự restore/schedule/no-request-rate và các tag pin được giữ nguyên. Đây là đường dùng lại artifact/hạ tầng có sẵn. `compose.payos-local-v6-v7.yaml` chỉ dành cho DB Payment mang lineage tương ứng. Xem [rollout lịch](../../docs/deployment/booking-schedule-rollout.md) và [lineage PayOS](../../docs/api-contracts/payos-local-lineage.md) trước khi nâng artifact hoặc kiểm migration.
+
+Ảnh bãi local-dev dùng `docker_parking_lot_images`, overlay lịch P0 chọn `docker_parking_images`. Dispute evidence dùng `docker_payment_uploads`. Kafka giữ nguyên log-dir và mount như trước; lần này chưa di chuyển dữ liệu broker.
+
+## VPS và tổ hợp chưa hỗ trợ hoàn chỉnh
+
+Edge/Data/Core, deploy launcher và CD được giữ nguyên. Kiểm tra bind path tại host thực. Layout cluster dùng key service khác local nên có file riêng. R4 còn hạn chế trong [audit](../../docs/BACKEND-COMPOSE-AUDIT.md). Large hiện xung đột replicas/container_name khi ghép base; checker giữ bài kiểm tra từ chối này. Lần bảo trì local chưa thay đổi triển khai VPS.
+
+## Test nhiều trường hợp
+
+Dùng integration để test event/outbox. Thêm Mailpit cho OTP hoặc bật SMTP thật có chủ đích bằng overlay mail áp dụng cuối. Kiểm PayOS fresh/retained trên schema riêng. Kiểm layout với volume có/thiếu và quyền filesystem. Lab song song phải tách cả tên container, port, network, schema và volume: chỉ đổi `-p` chưa đủ.
+
+Xem [audit và ma trận test](../../docs/BACKEND-COMPOSE-AUDIT.md), [kế hoạch và kết quả](../../docs/implementation/backend-publish-selection-20261119.md).
