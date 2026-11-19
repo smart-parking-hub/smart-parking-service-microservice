@@ -1,5 +1,7 @@
 # SmartParkingHub - Enterprise Microservices Architecture
 
+Backend mới bắt đầu: [đọc nhanh và chọn điểm vào](docs/BACKEND-START-HERE.md).
+
 Dự án Microservices chuẩn doanh nghiệp ứng dụng Java 21, Spring Boot 3.3.x, Gradle Multi-Project, Docker, Kafka, Redis và MySQL theo nguyên lý Domain-Driven Design (DDD), Event-Driven Architecture và Database-per-Service.
 
 ## 1. Cấu trúc Tổng thể Thư mục (Project Directory Tree)
@@ -23,9 +25,9 @@ smart-parking-microservice/
 │   ├── failure-scenarios.md              # Xử lý timeout, outbox, duplicate event, lock
 │   └── adr/                              # Architecture Decision Records (ADR 0001 - 0003)
 ├── docker/                               # Toàn bộ cấu hình container & hạ tầng
-│   ├── docker-compose.yml                # File tổng hợp
-│   ├── docker-compose.infra.yml          # MySQL 8.4, Redis 7.2, Kafka KRaft, Prometheus, Grafana
-│   ├── docker-compose.apps.yml           # 6 microservices container
+│   ├── compose/local/                    # Preset local, compatibility entries và capability files
+│   ├── compose/overlays/                 # P0, SMTP và PayOS lineage
+│   ├── compose/vps-cluster/              # Ba node VPS: Edge, Data và Core
 │   ├── nginx/                            # Nginx reverse proxy, static SPA & SSL
 │   ├── prometheus/                       # Scrape configs /actuator/prometheus
 │   ├── grafana/                          # Dashboards & Datasources
@@ -35,7 +37,7 @@ smart-parking-microservice/
 │   ├── start-infra.bat
 │   └── start-services.bat
 ├── common-library/                       # Shared Library: ApiResponse, Events, Exceptions, Security
-├── api-gateway/                          # Edge Layer (:8080): Spring Cloud Gateway, JWT filter, Tracing
+├── api-gateway/                          # Edge Layer (:8088): Spring Cloud Gateway, JWT filter, Tracing
 ├── identity-service/                     # Business Service (:8081): Auth, Users, Drivers, Merchants
 ├── parking-lot-service/                  # Business Service (:8082): Bãi đỗ xe, Slot, Giá, Cache Redis
 ├── booking-service/                      # Business Service (:8083): Đặt chỗ, Giữ chỗ (Hold), Check-in/out, Outbox
@@ -50,7 +52,7 @@ smart-parking-microservice/
 
 | Service | Port | Database Schema | Công nghệ bổ sung |
 | :--- | :--- | :--- | :--- |
-| **api-gateway** | 8080 | Không | Spring Cloud Gateway, Reactive Redis |
+| **api-gateway** | 8088 | Không | Spring Cloud Gateway, Reactive Redis |
 | **identity-service** | 8081 | `smart_parking_identity_db` | Spring Security, JWT, Flyway |
 | **parking-lot-service** | 8082 | `smart_parking_lot_db` | Spring Data Redis, Flyway |
 | **booking-service** | 8083 | `smart_parking_booking_db` | Spring Kafka, OpenFeign, Outbox, Flyway |
@@ -59,16 +61,12 @@ smart-parking-microservice/
 
 ## 3. Khởi chạy Nhanh trên Máy Local / VPS
 
-```bash
-# Bước 1: Khởi động Hạ tầng
-cd docker
-docker compose -f docker-compose.infra.yml up -d
+Từ backend root, Windows có thể dùng launcher tích hợp mới:
 
-# Bước 2: Build toàn bộ mã nguồn
-cd ..
-./gradlew build -x test
-
-# Bước 3: Khởi động các Microservices
-cd docker
-docker compose -f docker-compose.apps.yml up -d --build
+```powershell
+.\scripts\dev\start-local-integration.bat
 ```
+
+Chế độ này chạy MySQL/Redis/Kafka và bảy app, dùng cùng dữ liệu/volume của local-dev. Các launcher cũ vẫn còn. Xem [các cách chạy Compose](docker/compose/README.md) để chọn dev/full, monitoring, SonarQube, OTP hoặc P0 giữ dữ liệu. Kiểm tra cấu hình bằng `python scripts/build-test/check-compose.py` với Python 3.10+ và Docker Compose, dùng biến giả và không khởi động container.
+
+VPS dùng [deploy launcher](scripts/deploy/README.md) và các file cluster hiện hành; bản đồ vận hành nằm trong [deployment runbook](docs/deployment-runbook.md).

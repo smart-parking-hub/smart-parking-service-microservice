@@ -59,5 +59,21 @@ image availability must be established before promising rollback.
 
 ## Publication and final verification
 
-Pending release branch CI, merge, new main CD run and independent post-deploy
-verification. Recovery is complete; durable GitHub rollout is still in progress.
+Completed: release PR 74 merged as main `2f56c82189653d5a636def0b36cca57ea29f63f6`.
+CD `44564988649` built the release and deployed all three nodes successfully.
+Independent verification at 2026-11-19 23:26 UTC+7 returned all seven services
+CURRENT, pending=0, exit 0. Full Java/MySQL PR CI `44563470612` and main CI
+`44564988948` succeeded. Windows release contracts: 45 executed/pass, 2 Linux-only
+skipped; Linux: 34 executed/pass, 13 Windows-only skipped, including real flock
+contention and fail-fast workflow shells.
+
+All-node infra container IDs, image IDs, start times and mount contents remained
+identical; env hashes were unchanged. MySQL mount order differed in one inspect
+response but sorting by destination confirmed identical contents. No infra was
+added/removed, and Git origin no longer stores a workflow token.
+
+Manual CI-mode SSH dry-run connected to all nodes without Docker Desktop. Existing
+persistent VPS GHCR credentials are denied; manual deploy needs valid read:packages
+auth through menu 1.7 -> 7. Automatic CD uses fresh temporary auth and succeeded.
+Do not Re-run the historical unsafe 61b8d7f workflow. No real financial transaction
+was executed as smoke. No app source, migrations, volumes or env changed in that repair.
