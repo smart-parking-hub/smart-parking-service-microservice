@@ -33,6 +33,11 @@ services:
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-}
       NOTIFICATION_SERVICE_URL: http://notification-service:8085
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CASSO_TAX_LOOKUP_ENABLED: "${CASSO_TAX_LOOKUP_ENABLED:-false}"
+      CASSO_APP_ID: "${CASSO_APP_ID:-}"
+      CASSO_APP_SECRET: "${CASSO_APP_SECRET:-}"
+      CASSO_TAX_LOOKUP_TIMEOUT: "${CASSO_TAX_LOOKUP_TIMEOUT:-5s}"
+      CASSO_TAX_LOOKUP_MINIMUM_INTERVAL: "${CASSO_TAX_LOOKUP_MINIMUM_INTERVAL:-3s}"
       PORT: 8081
       EUREKA_CLIENT_ENABLED: "false"
       DB_URL: jdbc:mysql://mysql:3306/smart_parking_identity_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true

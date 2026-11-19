@@ -14,6 +14,32 @@ sys.modules[SPEC.name] = compose
 SPEC.loader.exec_module(compose)
 
 
+class CassoComposeTest(unittest.TestCase):
+    scenarios = ("base", "dev", "integration", "apps", "include", "edge")
+
+    def check_casso(self, model, expected):
+        identity = "smart-parking-identity" if "smart-parking-identity" in model["services"] else "identity-service"
+        env = model["services"][identity]["environment"]
+        self.assertEqual(expected, {key: env.get(key) for key in expected})
+        for name, service in model["services"].items():
+            if name != identity:
+                self.assertFalse(set(expected) & service.get("environment", {}).keys(), name)
+
+    def test_casso_defaults_are_disabled_empty_and_identity_scoped(self):
+        expected = {"CASSO_TAX_LOOKUP_ENABLED": "false", "CASSO_APP_ID": "", "CASSO_APP_SECRET": "",
+                    "CASSO_TAX_LOOKUP_TIMEOUT": "5s", "CASSO_TAX_LOOKUP_MINIMUM_INTERVAL": "3s"}
+        for name in self.scenarios:
+            with self.subTest(scenario=name):
+                self.check_casso(compose.render(compose.SCENARIOS[name]), expected)
+
+    def test_casso_explicit_values_reach_only_identity(self):
+        expected = {"CASSO_TAX_LOOKUP_ENABLED": "true", "CASSO_APP_ID": "contract-app", "CASSO_APP_SECRET": "contract-secret",
+                    "CASSO_TAX_LOOKUP_TIMEOUT": "7s", "CASSO_TAX_LOOKUP_MINIMUM_INTERVAL": "4s"}
+        for name in self.scenarios:
+            with self.subTest(scenario=name):
+                self.check_casso(compose.render(compose.SCENARIOS[name], overrides=expected), expected)
+
+
 class ComposeScenariosTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
