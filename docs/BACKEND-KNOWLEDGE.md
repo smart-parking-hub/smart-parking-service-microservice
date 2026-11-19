@@ -1,6 +1,6 @@
 # SmartParkingHub Backend — bản đồ source và sổ vấn đề
 
-Đối chiếu ngày 2026-11-19 trên `main` tại `61b8d7fbcfe45b4c33456ad669f0701ba348f035`. Mở [trang đọc nhanh](BACKEND-START-HERE.md) để chọn phần theo triệu chứng.
+Đối chiếu ban đầu ngày 2026-11-19 tại `61b8d7f`; ghi chú hold-policy được cập nhật ngày 2026-11-20 theo `main a9008c9` sau PR #75. Các mốc lịch sử khác vẫn cần đối chiếu HEAD hiện hành. Mở [trang đọc nhanh](BACKEND-START-HERE.md) để chọn phần theo triệu chứng.
 
 Các nhận định về code dựa trên source, cấu hình, migration và test có trong checkout. Bằng chứng rollout hoặc test từ phiên trước được ghi riêng ở mục môi trường. Trạng thái của một hệ thống đang chạy cần đối chiếu với image, cấu hình và schema hiện hành.
 
@@ -51,7 +51,7 @@ Trong nguồn hiện tại, phần lớn service đi theo controller → applica
 1. `POST /api/v1/bookings` → `BookingController` → `BookingServiceImpl.createBooking`. Replay cùng request ID của cùng driver và intent hợp lệ trả vé cũ. Thay đổi ý định trả 409. Với request mới, validate giờ và xác minh xe sở hữu qua Identity.
 2. `BookingCreationTransaction` dùng READ_COMMITTED. `HoldPolicyStore` lấy khóa theo xe để chặn đặt trùng giữa bãi hoặc giữa tài khoản, kể cả lúc tắt quota hold. Quota theo tài khoản/xe và kiểm tra overlap là hai quyết định riêng. Khi Parking trả cửa sổ vào sớm dài hơn kiểm tra ban đầu, Booking kiểm tra overlap lại dưới cùng khóa.
 3. Booking ghi vé đang chờ thanh toán và gọi `ParkingLotClient` đến Parking để lấy lịch hold, slot được cấp và snapshot giá. Booking tính cọc bằng 20% số tiền ước tính qua `ParkingCharge.deposit`, làm tròn đến đơn vị VND. Kiểm tra đường bù trừ nếu Parking đã tạo hold nhưng transaction Booking không hoàn tất. Booking V12 sở hữu fields phiên bản lịch. Parking V9 sở hữu reservation.
-4. `UnpaidHoldPolicy` và `HoldAbuseRecheckScheduler` quyết định 409 quota, 429 cooldown hoặc 503 khi bằng chứng thanh toán chưa rõ. Mặc định tối đa 3 lượt chưa trả mỗi tài khoản, ngưỡng 2 lượt bỏ tại cùng bãi trong 60 phút, cooldown 30 phút. Cấu hình limiter cũ có thể còn hiện diện nhưng luồng create hiện không gọi limiter đó. Protected/unknown từ Payment có ý nghĩa khác với đã chứng minh chưa trả.
+4. `UnpaidHoldPolicy` và `HoldAbuseRecheckScheduler` quyết định 409 quota, 429 cooldown hoặc 503 khi bằng chứng thanh toán chưa rõ. Tại `main a9008c9`, mặc định tối đa 3 lượt chưa trả mỗi tài khoản, ngưỡng 2 lượt bỏ tại cùng bãi trong cửa sổ 5 phút, cooldown 5 phút. Kiểm tra override env khi xác minh một instance đang chạy. Cấu hình limiter cũ có thể còn hiện diện nhưng luồng create hiện không gọi limiter đó. Protected/unknown từ Payment có ý nghĩa khác với đã chứng minh chưa trả.
 
 [Luồng lịch và API](api-contracts/booking-schedule.md) · [Xung đột lịch cùng xe](api-contracts/vehicle-booking-schedule.md) · [Unpaid hold](api-contracts/unpaid-hold-policy.md)
 
