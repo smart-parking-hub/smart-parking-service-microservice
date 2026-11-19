@@ -5,14 +5,21 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: smartparking-production-release
+  cancel-in-progress: false
+
 permissions:
   contents: read
   packages: write
 
 jobs:
   build-and-push:
+    if: github.ref == 'refs/heads/main'
     name: Build JARs & Push Docker Images
     runs-on: ubuntu-latest
+    outputs:
+      manifest: ${{ steps.images.outputs.manifest }}
 
     steps:
       - name: Checkout repository
@@ -31,6 +38,9 @@ jobs:
       - name: Build All Spring Boot JARs
         run: ./gradlew bootJar -x test --no-daemon
 
+      - name: Test release activation contracts
+        run: python3 -m unittest discover -s scripts/deploy/tests -v
+
       - name: Log in to GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
@@ -43,20 +53,30 @@ jobs:
           echo "IMAGE_PREFIX=ghcr.io/$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and Push Docker Images
+        id: images
         run: |
+          set -euo pipefail
+          RELEASE_TAG="sha-$GITHUB_SHA-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"
           services=("api-gateway" "identity-service" "parking-lot-service" "booking-service" "payment-service" "notification-service" "ai-service")
           for svc in "${services[@]}"; do
             echo "=================================================="
             echo "Building and pushing $svc..."
             echo "=================================================="
-            docker build -t "$IMAGE_PREFIX/$svc:latest" "./$svc"
+            docker build --platform linux/amd64 --label "org.opencontainers.image.revision=$GITHUB_SHA" -t "$IMAGE_PREFIX/$svc:$RELEASE_TAG" -t "$IMAGE_PREFIX/$svc:sha-$GITHUB_SHA" -t "$IMAGE_PREFIX/$svc:latest" "./$svc"
+            docker push "$IMAGE_PREFIX/$svc:$RELEASE_TAG"
+            docker push "$IMAGE_PREFIX/$svc:sha-$GITHUB_SHA"
             docker push "$IMAGE_PREFIX/$svc:latest"
           done
+          python3 scripts/deploy/release-runtime.py --registry-manifest "$GITHUB_SHA" --image-tag "$RELEASE_TAG" --output tmp/release.json
+          echo "manifest=$(cat tmp/release.json)" >> "$GITHUB_OUTPUT"
 
   deploy-vps1:
     name: Deploy to VPS 1 (Edge & Gateway)
     needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      SPH_RELEASE_JSON: ${{ needs.build-and-push.outputs.manifest }}
+      SPH_SOURCE_SHA: ${{ github.sha }}
     steps:
       - name: Deploy to VPS 1 via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -67,27 +87,40 @@ jobs:
           password: ${{ secrets.VPS1_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          command_timeout: 20m
+          envs: SPH_RELEASE_JSON,SPH_SOURCE_SHA
           script: |
+            bash -euo pipefail <<'SPH_DEPLOY'
+            set -euo pipefail
+            exec 9>"$HOME/.smartparking-deploy.lock"
+            flock -n 9 || { echo "Another deployment holds the VPS lock"; exit 75; }
             TARGET_DIR=~/smartparking
-            mkdir -p $TARGET_DIR
-            cd $TARGET_DIR
+            mkdir -p "$TARGET_DIR"
+            cd "$TARGET_DIR"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            GIT_AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}' | base64 -w0)"
             if [ ! -d ".git" ]; then
-              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+              git -c http.extraheader="$GIT_AUTH_HEADER" clone "$REPO_URL" .
             else
-              git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-              git fetch origin main
-              git reset --hard origin/main
+              git remote set-url origin "$REPO_URL"
             fi
+            git -c http.extraheader="$GIT_AUTH_HEADER" fetch origin main
+            unset GIT_AUTH_HEADER
+            test "$(git rev-parse origin/main)" = "$SPH_SOURCE_SHA"
+            git checkout "$SPH_SOURCE_SHA" -- docker/compose scripts/deploy/release-runtime.py
+            export DOCKER_CONFIG="$(mktemp -d)"
+            trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            export IMAGE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            docker compose -p docker --env-file .env -f docker/compose/vps-cluster/compose.vps1-edge.yml pull
-            docker compose -p docker --env-file .env -f docker/compose/vps-cluster/compose.vps1-edge.yml up -d --remove-orphans
-            docker image prune -f
+            python3 scripts/deploy/release-runtime.py --node vps1 --compose-file docker/compose/vps-cluster/compose.vps1-edge.yml --lock-fd 9
+            SPH_DEPLOY
 
   deploy-vps2:
     name: Deploy to VPS 2 (Data & Async Services)
     needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      SPH_RELEASE_JSON: ${{ needs.build-and-push.outputs.manifest }}
+      SPH_SOURCE_SHA: ${{ github.sha }}
     steps:
       - name: Deploy to VPS 2 via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -98,27 +131,40 @@ jobs:
           password: ${{ secrets.VPS2_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          command_timeout: 20m
+          envs: SPH_RELEASE_JSON,SPH_SOURCE_SHA
           script: |
+            bash -euo pipefail <<'SPH_DEPLOY'
+            set -euo pipefail
+            exec 9>"$HOME/.smartparking-deploy.lock"
+            flock -n 9 || { echo "Another deployment holds the VPS lock"; exit 75; }
             TARGET_DIR=~/smartparking
-            mkdir -p $TARGET_DIR
-            cd $TARGET_DIR
+            mkdir -p "$TARGET_DIR"
+            cd "$TARGET_DIR"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            GIT_AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}' | base64 -w0)"
             if [ ! -d ".git" ]; then
-              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+              git -c http.extraheader="$GIT_AUTH_HEADER" clone "$REPO_URL" .
             else
-              git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-              git fetch origin main
-              git reset --hard origin/main
+              git remote set-url origin "$REPO_URL"
             fi
+            git -c http.extraheader="$GIT_AUTH_HEADER" fetch origin main
+            unset GIT_AUTH_HEADER
+            test "$(git rev-parse origin/main)" = "$SPH_SOURCE_SHA"
+            git checkout "$SPH_SOURCE_SHA" -- docker/compose scripts/deploy/release-runtime.py
+            export DOCKER_CONFIG="$(mktemp -d)"
+            trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            export IMAGE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            docker compose -p docker --env-file .env -f docker/compose/vps-cluster/compose.vps2-data.yml pull
-            docker compose -p docker --env-file .env -f docker/compose/vps-cluster/compose.vps2-data.yml up -d --remove-orphans
-            docker image prune -f
+            python3 scripts/deploy/release-runtime.py --node vps2 --compose-file docker/compose/vps-cluster/compose.vps2-data.yml --lock-fd 9
+            SPH_DEPLOY
 
   deploy-vps3:
     name: Deploy to VPS 3 (Core Business Services)
     needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      SPH_RELEASE_JSON: ${{ needs.build-and-push.outputs.manifest }}
+      SPH_SOURCE_SHA: ${{ github.sha }}
     steps:
       - name: Deploy to VPS 3 via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -129,19 +175,29 @@ jobs:
           password: ${{ secrets.VPS3_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          command_timeout: 20m
+          envs: SPH_RELEASE_JSON,SPH_SOURCE_SHA
           script: |
+            bash -euo pipefail <<'SPH_DEPLOY'
+            set -euo pipefail
+            exec 9>"$HOME/.smartparking-deploy.lock"
+            flock -n 9 || { echo "Another deployment holds the VPS lock"; exit 75; }
             TARGET_DIR=~/smartparking
-            mkdir -p $TARGET_DIR
-            cd $TARGET_DIR
+            mkdir -p "$TARGET_DIR"
+            cd "$TARGET_DIR"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            GIT_AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}' | base64 -w0)"
             if [ ! -d ".git" ]; then
-              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+              git -c http.extraheader="$GIT_AUTH_HEADER" clone "$REPO_URL" .
             else
-              git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-              git fetch origin main
-              git reset --hard origin/main
+              git remote set-url origin "$REPO_URL"
             fi
+            git -c http.extraheader="$GIT_AUTH_HEADER" fetch origin main
+            unset GIT_AUTH_HEADER
+            test "$(git rev-parse origin/main)" = "$SPH_SOURCE_SHA"
+            git checkout "$SPH_SOURCE_SHA" -- docker/compose scripts/deploy/release-runtime.py
+            export DOCKER_CONFIG="$(mktemp -d)"
+            trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            export IMAGE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            docker compose -p docker --env-file .env -f docker/compose/vps-cluster/compose.vps3-core.yml pull
-            docker compose -p docker --env-file .env -f docker/compose/vps-cluster/compose.vps3-core.yml up -d --remove-orphans
-            docker image prune -f
+            python3 scripts/deploy/release-runtime.py --node vps3 --compose-file docker/compose/vps-cluster/compose.vps3-core.yml --lock-fd 9
+            SPH_DEPLOY

@@ -7,6 +7,18 @@ on:
     branches: [ main ]
 
 jobs:
+  release-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify release activation and failure contracts
+        run: python -m unittest discover -s scripts/deploy/tests -v
+
   build:
     runs-on: ubuntu-latest
 
