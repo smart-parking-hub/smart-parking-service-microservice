@@ -105,10 +105,7 @@ public class AuthServiceImpl implements AuthService {
     public SendOtpResponse sendRegisterOtp(SendOtpRequest request) {
         String email = normalizeEmail(request.getEmail());
         String phone = PhoneNumberUtil.normalizePhone(request.getPhone());
-        if (phone == null || phone.trim().isEmpty()) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Số điện thoại không được để trống!");
-        }
-        if (userRepository.existsByPhone(phone)) {
+        if (phone != null && !phone.isBlank() && userRepository.existsByPhone(phone)) {
             throw new AppException(ErrorCode.CONFLICT, "Số điện thoại đã liên kết với tài khoản khác. Vui lòng đăng nhập hoặc dùng số khác.");
         }
         if (userRepository.existsByEmailIgnoreCase(email)) {
@@ -238,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
                     .bankAccountNum(request.getBankAccountNum().trim())
                     .walletBalance(BigDecimal.ZERO)
                     .build();
-            merchantRepository.save(merchant);
+            merchantRepository.saveAndFlush(merchant);
         }
 
         log.info("User registered successfully: phone={}, role={}", savedUser.getPhone(), savedUser.getRole());

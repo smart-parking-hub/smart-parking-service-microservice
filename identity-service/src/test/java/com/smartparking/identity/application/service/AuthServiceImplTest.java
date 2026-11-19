@@ -294,7 +294,7 @@ class AuthServiceImplTest {
 
         authService.register(req);
 
-        verify(merchantRepository, times(1)).save(any(Merchant.class));
+        verify(merchantRepository, times(1)).saveAndFlush(any(Merchant.class));
     }
 
     @Test
@@ -403,5 +403,22 @@ class AuthServiceImplTest {
         AppException ex = assertThrows(AppException.class, () -> authService.sendRegisterOtp(req));
         assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
         verify(userRepository, times(1)).existsByPhone("0988776655");
+    }
+
+    @Test
+    @DisplayName("Allows legacy register OTP requests without a phone")
+    void testSendRegisterOtpAllowsMissingPhoneForLegacyClients() {
+        SendOtpRequest req = new SendOtpRequest();
+        req.setEmail("legacy@example.com");
+        when(userRepository.existsByEmailIgnoreCase("legacy@example.com")).thenReturn(false);
+        when(otpChallengeRepository.findByRecipientAndPurpose("legacy@example.com", OtpPurposeEnum.REGISTER))
+                .thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+
+        SendOtpResponse response = authService.sendRegisterOtp(req);
+
+        assertEquals(300, response.getExpiresInSeconds());
+        verify(userRepository, never()).existsByPhone(anyString());
+        verify(otpMailSender).send(eq("legacy@example.com"), anyString(), eq(OtpPurposeEnum.REGISTER));
     }
 }
