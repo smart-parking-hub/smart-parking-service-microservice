@@ -47,7 +47,7 @@ public class BookingEventListener {
                         notificationService.createNotification(
                                 userId,
                                 "Yêu cầu giữ chỗ đã được tạo",
-                                "Yêu cầu giữ chỗ mã #" + bookingId + vehicleInfo + " đã được tạo. Vui lòng thanh toán cọc trong 10 phút để nhận mã QR.",
+                                "Yêu cầu giữ chỗ mã #" + bookingId + vehicleInfo + " đã được tạo. Vui lòng thanh toán cọc để nhận mã QR.",
                                 NotificationTypeEnum.BOOKING,
                                 "IN_APP",
                                 "BOOKING",
