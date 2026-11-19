@@ -15,9 +15,10 @@ echo      1.1 - Khoi dong Ha tang rieng: MySQL, Redis, Kafka, Prometheus
 echo      1.2 - Khoi dong Local Dev Profile (Tu dong build JAR + Sync DB)
 echo      1.3 - Khoi dong Full Local Lab (Tu dong build JAR + Sync DB + Kafka/Grafana)
 echo      1.4 - Giai phong port bi chiem dung (Kill Busy Ports)
-echo      1.5 - Cap nhat (Build JAR & Reload) toan bo Microservices len Docker Local
+echo      1.5 - Cap nhat (Build JAR ^& Reload) toan bo Microservices len Docker Local
 echo      1.6 - Reset sach Database (Xoa Volume DB cu + Tai tao va chay lai toan bo Migration)
-echo      1.7 - Trien khai (Build, Push & Reload) Microservices len VPS Cluster
+echo      1.7 - [VPS UPDATE] Chon LOCAL build / GITHUB CI, kiem tra commit + digest + health
+echo      1.9 - [READ ONLY] Kiem tra release dang chay tren ca 3 VPS
 echo.
 echo  [2] BIEN DICH VA KIEM THU - scripts/build-test
 echo      2.1 - Build toan bo Microservices
@@ -43,7 +44,9 @@ echo.
 echo  [0] Thoat
 echo.
 echo ================================================================
+set "opt="
 set /p opt=" Nhap lua chon: "
+if not defined opt goto MENU
 
 if "%opt%"=="1.0" goto DEV_SYNC_ALL
 if "%opt%"=="1.1" goto DEV_INFRA
@@ -53,6 +56,7 @@ if "%opt%"=="1.4" goto DEV_KILL
 if "%opt%"=="1.5" goto DEV_UPDATE
 if "%opt%"=="1.6" goto DEV_RESET_DB
 if "%opt%"=="1.7" goto DEV_DEPLOY_VPS
+if "%opt%"=="1.9" goto VPS_VERIFY
 if "%opt%"=="2.1" goto BT_BUILD
 if "%opt%"=="2.2" goto BT_TEST
 if "%opt%"=="2.3" goto BT_VERIFY
@@ -73,94 +77,128 @@ pause
 goto MENU
 
 :DEV_SYNC_ALL
+call :ACTION_STATUS "1.0" "Dong bo local"
 call "%~dp0scripts\dev\sync-all.bat"
 goto MENU
 
 :DEV_INFRA
+call :ACTION_STATUS "1.1" "Khoi dong ha tang local"
 call "%~dp0scripts\dev\start-infra.bat"
 goto MENU
 
 :DEV_LOCAL
+call :ACTION_STATUS "1.2" "Khoi dong Local Dev"
 call "%~dp0scripts\dev\start-local-dev.bat"
 goto MENU
 
 :DEV_FULL
+call :ACTION_STATUS "1.3" "Khoi dong Local Full"
 call "%~dp0scripts\dev\start-local-full.bat"
 goto MENU
 
 :DEV_KILL
+call :ACTION_STATUS "1.4" "Kiem tra port"
 call "%~dp0scripts\dev\kill-ports.bat"
 goto MENU
 
 :DEV_UPDATE
+call :ACTION_STATUS "1.5" "Cap nhat app local"
 call "%~dp0scripts\dev\update-microservices-docker.bat"
 goto MENU
 
 :DEV_RESET_DB
+call :ACTION_STATUS "1.6" "Mo cong cu reset database"
 call "%~dp0scripts\dev\reset-db.bat"
 goto MENU
 
 :DEV_DEPLOY_VPS
-call "%~dp0scripts\deploy\deploy-vps.bat"
-goto MENU
+call :ACTION_STATUS "1.7" "Mo lua chon deploy VPS"
+call "%~dp0scripts\deploy\deploy-vps.bat" & goto MENU
 
 :BT_BUILD
+call :ACTION_STATUS "2.1" "Build microservices"
 call "%~dp0scripts\build-test\build-all.bat"
 goto MENU
 
+
+:VPS_VERIFY
+call :ACTION_STATUS "1.9" "Kiem tra phien ban VPS"
+call "%~dp0scripts\deploy\verify-vps-release.bat"
+goto MENU
+
+
 :BT_TEST
+call :ACTION_STATUS "2.2" "Chay tests"
 call "%~dp0scripts\build-test\test-all.bat"
 goto MENU
 
 :BT_VERIFY
+call :ACTION_STATUS "2.3" "Kiem tra toan dien"
 call "%~dp0scripts\build-test\verify-all.bat"
 goto MENU
 
 :BT_FLYWAY
+call :ACTION_STATUS "2.4" "Kiem tra file migration"
 call "%~dp0scripts\build-test\db-migrate-dry-run.bat"
 goto MENU
 
 :QL_START_SONAR
+call :ACTION_STATUS "3.1" "Khoi dong SonarQube"
 call "%~dp0scripts\quality\start-sonarqube.bat"
 goto MENU
 
 :QL_SCAN
+call :ACTION_STATUS "3.2" "Phan tich chat luong code"
 call "%~dp0scripts\quality\sonar-scan.bat"
 goto MENU
 
 :TR_DASHBOARD
+call :ACTION_STATUS "4.1" "Mo dashboard"
 start "" "%~dp0docs\trello-team-dashboard.html"
 goto MENU
 
 :TR_MEMBERS
+call :ACTION_STATUS "4.2" "Doc phan bo task"
 call "%~dp0scripts\trello\trello.bat" members
 pause
 goto MENU
 
 :TR_STATUS
+call :ACTION_STATUS "4.3" "Doc trang thai task"
 call "%~dp0scripts\trello\trello.bat" status
 pause
 goto MENU
 
 :TR_BLOCKED
+call :ACTION_STATUS "4.4" "Doc task bi chan"
 call "%~dp0scripts\trello\trello.bat" blocked
 pause
 goto MENU
 
 :GIT_SYNC
+call :ACTION_STATUS "5.1" "Kiem tra dong bo nhanh"
 node "%~dp0scripts\git\branch-sync-audit.js"
 pause
 goto MENU
 
 :GIT_COMMIT
+call :ACTION_STATUS "5.2" "Kiem tra commit"
 node "%~dp0scripts\git\commit-deep-audit.js"
 pause
 goto MENU
 
 :GIT_CHECKOUT
+call :ACTION_STATUS "5.3" "Mo cong cu chuyen nhanh"
 node "%~dp0scripts\git\checkout-helper.js"
 pause
 goto MENU
 
 :EXIT_PROG
+exit /b 0
+
+:ACTION_STATUS
+echo.
+echo [DANG XU LY] %~1 - %~2
+echo Vui long cho; chi nhap phim khi chuong trinh hien yeu cau.
+echo.
 exit /b 0
