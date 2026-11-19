@@ -29,7 +29,7 @@ public class ScheduledSlotService {
     private final CurrentSlotAllocationRepository allocations;
     private final PricingRuleRepository prices;
     private final com.smartparking.parkinglot.infrastructure.config.ParkingLayoutProperties layoutProperties;
-    @Value("${app.schedule.early.enabled:false}")
+    @Value("${app.schedule.early.enabled:true}")
     private boolean earlyArrivalEnabled;
 
     private int newReservationPolicy() {

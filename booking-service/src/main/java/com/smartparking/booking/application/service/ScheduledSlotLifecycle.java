@@ -54,7 +54,9 @@ public final class ScheduledSlotLifecycle {
         } else deliver.run();
     }
     public static java.time.LocalDateTime checkInDeadline(Booking booking) {
-        var deadline = booking.getExpectedCheckInTime().plusMinutes(60);
+        int graceMinutes = com.smartparking.common.util.BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion())
+                ? com.smartparking.common.util.BookingSchedulePolicy.BLOCK_MINUTES : 60;
+        var deadline = booking.getExpectedCheckInTime().plusMinutes(graceMinutes);
         return BookingTimePolicy.capCheckInDeadline(booking, deadline);
     }
 }
