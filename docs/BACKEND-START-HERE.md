@@ -9,7 +9,7 @@ không đổi nghiệp vụ. Lần xác minh VPS ngày 2026-11-19: CD `445649886
 pending=0, exit 0; xem [sự cố và khôi phục VPS 2](implementation/vps2-recovery-20261119.md).
 Đây là bằng chứng tại thời điểm kiểm tra, không thay thế mục 1.9 cho trạng thái mới.
 
-Nhánh `chore/infra-local-compose-handoff` chọn lọc phần Compose/Casso/tài liệu còn lại;
+Nhánh `docs/repo-backend-handoff-ignore` chọn lọc phần Compose/Casso/tài liệu còn lại;
 xem [phạm vi push, file local và kết quả kiểm tra](implementation/backend-publish-selection-20261119.md).
 Push nhánh không phải merge main hoặc triển khai VPS. Env/credential thật và báo cáo
 chạy thử chỉ giữ local; các runbook dưới đây đủ dùng trong checkout mới.

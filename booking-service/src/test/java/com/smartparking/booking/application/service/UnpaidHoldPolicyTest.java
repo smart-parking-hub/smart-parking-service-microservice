@@ -33,38 +33,38 @@ class UnpaidHoldPolicyTest {
         assertNull(error.getDetails().existingBookingId()); verifyNoInteractions(verifier);
     }
     @Test void twoConfirmedReleasesCauseCooldownAtOriginalSecondReleaseTime() {
-        releases(now.minusMinutes(40),now.minusMinutes(5),"UNPAID","UNPAID");
+        releases(now.minusMinutes(4),now.minusMinutes(1),"UNPAID","UNPAID");
         var error=assertThrows(HoldRestrictionException.class,()->policy.check(7L,11L,5L,now));
         assertEquals(HoldRestrictionException.Reason.COOLDOWN,error.getDetails().reason());
-        assertEquals(now.plusMinutes(25),error.getDetails().retryAt());
+        assertEquals(now.plusMinutes(4),error.getDetails().retryAt());
         assertEquals(error.getDetails().retryAt(),assertThrows(HoldRestrictionException.class,
                 ()->policy.check(7L,11L,5L,now)).getDetails().retryAt());
     }
     @Test void sixtyMinuteWindowIncludesExactBoundary() {
-        releases(now.minusMinutes(61),now.minusMinutes(1),"UNPAID","UNPAID");
+        releases(now.minusMinutes(6),now.minusMinutes(1),"UNPAID","UNPAID");
         assertEquals(HoldRestrictionException.Reason.COOLDOWN,assertThrows(HoldRestrictionException.class,
                 ()->policy.check(7L,11L,5L,now)).getDetails().reason());
     }
     @Test void releasesOutsideWindowDoNotCombine() {
-        releases(now.minusMinutes(62),now.minusMinutes(1),"UNPAID","UNPAID");
+        releases(now.minusMinutes(7),now.minusMinutes(1),"UNPAID","UNPAID");
         assertDoesNotThrow(()->policy.check(7L,11L,5L,now));
     }
     @Test void cooldownEndsAtExactBoundaryAndDoesNotRestartOnRetry() {
-        releases(now.minusMinutes(40),now.minusMinutes(30),"UNPAID","UNPAID");
+        releases(now.minusMinutes(8),now.minusMinutes(5),"UNPAID","UNPAID");
         assertDoesNotThrow(()->policy.check(7L,11L,5L,now));
     }
     @Test void paidOrReconciliationReleaseIsNotAnOffense() {
-        releases(now.minusMinutes(15),now.minusMinutes(1),"UNPAID","PROTECTED");
+        releases(now.minusMinutes(4),now.minusMinutes(1),"UNPAID","PROTECTED");
         assertDoesNotThrow(()->policy.check(7L,11L,5L,now));
     }
     @Test void unknownMoneyGivesTemporaryVerificationErrorNotThirtyMinutePenalty() {
-        releases(now.minusMinutes(15),now.minusMinutes(1),"UNKNOWN","UNKNOWN");
+        releases(now.minusMinutes(4),now.minusMinutes(1),"UNKNOWN","UNKNOWN");
         var error=assertThrows(HoldRestrictionException.class,()->policy.check(7L,11L,5L,now));
         assertEquals(HoldRestrictionException.Reason.PAYMENT_CHECK_PENDING,error.getDetails().reason());
         assertEquals(now.plusMinutes(1),error.getDetails().retryAt());
     }
     @Test void oldUnknownReleasesCannotKeepSomeoneBlockedAfterPossibleCooldownEnded() {
-        releases(now.minusMinutes(50),now.minusMinutes(31),"UNKNOWN","UNPAID");
+        releases(now.minusMinutes(9),now.minusMinutes(6),"UNKNOWN","UNPAID");
         assertDoesNotThrow(()->policy.check(7L,11L,5L,now));
     }
     @Test void disabledPolicyDoesNotLockOrInspectOrPenalize() {

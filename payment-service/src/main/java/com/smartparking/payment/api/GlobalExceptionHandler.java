@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
@@ -30,7 +31,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         log.warn("Application exception: [{}] {}", ex.getErrorCode().getCode(), ex.getMessage());
         HttpStatus status = switch (ex.getErrorCode()) {
-            case BAD_REQUEST, PAYMENT_FAILED, WALLET_INSUFFICIENT_BALANCE -> HttpStatus.BAD_REQUEST;
+            case BAD_REQUEST, PAYMENT_FAILED, WALLET_INSUFFICIENT_BALANCE,
+                    BOOKING_STATUS_INVALID, BOOKING_HOLD_EXPIRED -> HttpStatus.BAD_REQUEST;
             case UNAUTHORIZED, INVALID_CREDENTIALS, TOKEN_EXPIRED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND, USER_NOT_FOUND, PARKING_LOT_NOT_FOUND, BOOKING_NOT_FOUND -> HttpStatus.NOT_FOUND;
@@ -118,6 +120,13 @@ public class GlobalExceptionHandler {
         log.warn("Access denied: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ErrorCode.FORBIDDEN.getCode(), "Bạn không có quyền thực hiện hành động này"));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUpstreamUnavailable(ResponseStatusException ex) {
+        log.warn("Request could not complete: HTTP {}", ex.getStatusCode().value());
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(ApiResponse.error("ERR_" + ex.getStatusCode().value(), ex.getReason()));
     }
 
     @ExceptionHandler(Exception.class)

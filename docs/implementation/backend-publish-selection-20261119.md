@@ -1,5 +1,47 @@
 # Backend selective publication - 2026-11-19
 
+## Latest split publication - 2026-11-20
+
+The user requested separating the selected aggregate into reviewable branches.
+The original `chore/infra-local-compose-handoff` at `f7ac07f` remains unchanged
+as a comparison/backup; use one publication path rather than merging both versions.
+
+| Order | Branch | Base / own scope | Commit |
+| --- | --- | --- | --- |
+| 1 | `refactor/infra-local-compose-capabilities` | main `2f56c82`; 21 infra/tool/test files, Casso-specific hunks excluded | `b170d69` |
+| 2 | `fix/identity-casso-env-wiring` | branch 1; 6 files for mappings, blank template, opt-in Java/Compose contracts and API instructions | `72fb363` |
+| 3 | `docs/repo-backend-handoff-ignore` | branch 2; 13 documentation/ignore files, including the shared API-doc link | current branch; verify remote head after push |
+
+These are stacked branches. Review each relative to its predecessor and merge in
+order 1 -> 2 -> 3 only after the required checks. Relative to main the complete
+stack still changes the same 37 selected paths. This task publishes branches only;
+no PR, merge, production deploy or provisioned env upload is performed.
+
+Fresh verification on 2026-11-20:
+
+- Infra-only layer: 16 synthetic Compose/local-launcher cases passed.
+- Casso cumulative layer: 18 Compose cases passed, including disabled defaults,
+  explicit overrides and Identity-only scope. Its complete 24-file functional tree
+  is byte-identical (normalizing Git line endings) to the reviewed aggregate.
+- Windows release/menu regression: 47 discovered, 45 passed, 2 Linux-only skipped.
+- Fresh Java adapter/service/API runs on the identical aggregate sources: 27 cases,
+  26 passed, 1 intentionally skipped live-provider case, no failures/errors.
+  XML confirmed the real classes CassoBusinessTaxRegistryTest,
+  MerchantTaxLookupServiceTest and MerchantVerificationIntegrationTest ran.
+- The previous full Java result below is historical evidence, not a new full-suite
+  pass: 946 passed, 12 skipped and 2 MySQL-availability failures. Production Java
+  and migration bytes are unchanged by the split; full MySQL CI is still needed
+  before merge. No real provider request or local stack startup was performed.
+- CD/P0/retained-layout protections, existing release/Java CI jobs, YAML/Bash/
+  PowerShell syntax, secrets, links and ignore allow/deny checks are verified
+  before publication. Raw results remain ignored build artifacts.
+
+The old original checkout remains dirty at `61b8d7f`, so its git status is not a
+list of unpublished features. Reusable source is covered by the stack; the invalid
+layout backtick and superseded/machine-local notes remain preserved locally.
+The older two-commit publication record below describes 2026-11-19 only.
+
+
 ## Objective and authorization
 
 The user explicitly requested reviewing remaining backend changes, choosing reusable

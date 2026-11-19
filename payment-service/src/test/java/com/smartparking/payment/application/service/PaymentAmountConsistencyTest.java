@@ -75,6 +75,18 @@ class PaymentAmountConsistencyTest {
     }
 
     @Test
+    void bookingVerificationFailureNeverCreatesAProviderLinkOrPayment() {
+        when(bookingPaymentVerifier.require(BOOKING_ID, DRIVER_ID))
+                .thenThrow(new AppException(ErrorCode.FORBIDDEN, "Không xác minh được quyền thanh toán"));
+        assertEquals(ErrorCode.FORBIDDEN, assertThrows(AppException.class,
+                () -> service.createPaymentLink(DRIVER_ID, request())).getErrorCode());
+        verifyNoInteractions(payOS);
+        verify(paymentRepository, never()).saveAndFlush(any(Payment.class));
+        verify(paymentRepository, never()).save(any(Payment.class));
+        verify(attemptGuard, never()).nextOrderCode();
+    }
+
+    @Test
     void neverReturnsProviderCheckoutForFiftyThousandWhenBookingOwesFourThousand() {
         givenCreateResponse(50000L, ORDER_CODE);
         AppException error = assertThrows(AppException.class,
