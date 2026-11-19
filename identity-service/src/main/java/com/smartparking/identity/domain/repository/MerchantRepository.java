@@ -22,4 +22,5 @@ public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     Optional<Merchant> findByIdForUpdate(@Param("id") Long id);
 
     Optional<Merchant> findByCitizenId(String citizenId);
+    boolean existsByCitizenId(String citizenId);
 }

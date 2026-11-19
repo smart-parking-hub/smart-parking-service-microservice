@@ -6,6 +6,7 @@ import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.identity.application.service.verification.VerificationUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -75,6 +76,22 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getCode(), errorMessage));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Data integrity conflict during identity operation");
+        String details = ex.toString().toLowerCase();
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            details += " " + cause;
+            cause = cause.getCause();
+        }
+        String message = details.contains("citizen_id") || details.contains("citizenid")
+                ? "CCCD/CMND đã tồn tại trong hệ thống!"
+                : "Dữ liệu đã tồn tại trong hệ thống!";
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ErrorCode.CONFLICT.getCode(), message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

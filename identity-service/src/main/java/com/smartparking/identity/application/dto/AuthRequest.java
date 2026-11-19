@@ -1,5 +1,6 @@
 package com.smartparking.identity.application.dto;
 
+import com.smartparking.identity.application.util.PhoneNumberUtil;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -16,10 +17,6 @@ public class AuthRequest {
     private String password;
 
     public void setPhone(String phone) {
-        if (phone != null && phone.startsWith("+84")) {
-            this.phone = "0" + phone.substring(3);
-        } else {
-            this.phone = phone;
-        }
+        this.phone = PhoneNumberUtil.normalizePhone(phone);
     }
 }

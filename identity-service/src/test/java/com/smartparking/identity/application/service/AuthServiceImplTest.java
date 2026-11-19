@@ -272,6 +272,7 @@ class AuthServiceImplTest {
 
         when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
         when(userRepository.existsByEmailIgnoreCase(req.getEmail())).thenReturn(false);
+        when(merchantRepository.existsByCitizenId("079200001234")).thenReturn(false);
 
         OtpChallenge challenge = OtpChallenge.builder()
                 .recipient(req.getPhone())
@@ -293,7 +294,7 @@ class AuthServiceImplTest {
 
         authService.register(req);
 
-        verify(merchantRepository, times(1)).save(any(Merchant.class));
+        verify(merchantRepository, times(1)).saveAndFlush(any(Merchant.class));
     }
 
     @Test
@@ -344,22 +345,80 @@ class AuthServiceImplTest {
         when(userRepository.existsByPhone(req.getPhone())).thenReturn(false);
         when(userRepository.existsByEmailIgnoreCase(req.getEmail())).thenReturn(false);
 
-        OtpChallenge challenge = OtpChallenge.builder()
-                .recipient(req.getPhone())
-                .purpose(OtpPurposeEnum.REGISTER)
-                .codeHash("hashedOtp")
-                .expiresAt(LocalDateTime.now().plusMinutes(5))
-                .attemptCount(0)
-                .build();
-        when(otpChallengeRepository.findByRecipientAndPurpose(req.getEmail(), OtpPurposeEnum.REGISTER))
-                .thenReturn(Optional.of(challenge));
-        when(passwordEncoder.matches("112233", "hashedOtp")).thenReturn(true);
-
-        User savedUser = User.builder().id(2L).role(RoleEnum.MERCHANT).build();
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
-
         AppException ex = assertThrows(AppException.class, () -> authService.register(req));
         assertEquals(ErrorCode.BAD_REQUEST, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("CCCD/CMND là bắt buộc"));
+    }
+
+    @Test
+    @DisplayName("SP-AUTH-03: Register merchant fails with CONFLICT 409 when citizenId already exists")
+    void testRegisterMerchantDuplicateCitizenIdThrowsConflict() {
+        RegisterRequest req = new RegisterRequest();
+        req.setPhone("0987654321");
+        req.setEmail("merchant_dup@example.com");
+        req.setPassword("Pass1234");
+        req.setRole(RoleEnum.MERCHANT);
+        req.setFullName("Nguyen Van Dup");
+        req.setCitizenId("079200009999");
+        req.setBankName("Techcombank");
+        req.setBankAccountNum("1903456789");
+        req.setOtpCode("112233");
+
+        when(userRepository.existsByPhone("0987654321")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("merchant_dup@example.com")).thenReturn(false);
+        when(merchantRepository.existsByCitizenId("079200009999")).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.register(req));
+        assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("CCCD/CMND đã tồn tại"));
+        verify(merchantRepository, never()).save(any(Merchant.class));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("SP-AUTH-04: sendRegisterOtp fails with CONFLICT when phone number already exists")
+    void testSendRegisterOtpDuplicatePhoneThrowsConflict() {
+        SendOtpRequest req = new SendOtpRequest();
+        req.setEmail("newuser@example.com");
+        req.setPhone("0988776655");
+
+        when(userRepository.existsByPhone("0988776655")).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.sendRegisterOtp(req));
+        assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Số điện thoại đã liên kết với tài khoản khác"));
+        verify(otpMailSender, never()).send(anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("SP-AUTH-01 & SP-AUTH-04: sendRegisterOtp normalizes formatted phone (+84, spaces, dashes) and checks DB")
+    void testSendRegisterOtpNormalizesFormattedPhone() {
+        SendOtpRequest req = new SendOtpRequest();
+        req.setEmail("formatuser@example.com");
+        req.setPhone("+84 988-776-655");
+
+        assertEquals("0988776655", req.getPhone());
+        when(userRepository.existsByPhone("0988776655")).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.sendRegisterOtp(req));
+        assertEquals(ErrorCode.CONFLICT, ex.getErrorCode());
+        verify(userRepository, times(1)).existsByPhone("0988776655");
+    }
+
+    @Test
+    @DisplayName("Allows legacy register OTP requests without a phone")
+    void testSendRegisterOtpAllowsMissingPhoneForLegacyClients() {
+        SendOtpRequest req = new SendOtpRequest();
+        req.setEmail("legacy@example.com");
+        when(userRepository.existsByEmailIgnoreCase("legacy@example.com")).thenReturn(false);
+        when(otpChallengeRepository.findByRecipientAndPurpose("legacy@example.com", OtpPurposeEnum.REGISTER))
+                .thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+
+        SendOtpResponse response = authService.sendRegisterOtp(req);
+
+        assertEquals(300, response.getExpiresInSeconds());
+        verify(userRepository, never()).existsByPhone(anyString());
+        verify(otpMailSender).send(eq("legacy@example.com"), anyString(), eq(OtpPurposeEnum.REGISTER));
     }
 }
