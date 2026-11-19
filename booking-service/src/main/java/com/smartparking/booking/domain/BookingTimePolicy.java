@@ -12,12 +12,20 @@ public final class BookingTimePolicy {
     }
 
     public static LocalDateTime capCheckInDeadline(Booking booking, LocalDateTime deadline) {
+        LocalDateTime effective = deadline;
+        LocalDateTime expectedStart = booking.getExpectedCheckInTime();
+        if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && expectedStart != null) {
+            LocalDateTime maxGrace = expectedStart.plusMinutes(BookingSchedulePolicy.BLOCK_MINUTES);
+            if (effective == null || maxGrace.isBefore(effective)) {
+                effective = maxGrace;
+            }
+        }
         LocalDateTime scheduledEnd = booking.getExpectedCheckOutTime();
         if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && scheduledEnd != null
-                && (deadline == null || scheduledEnd.isBefore(deadline))) {
+                && (effective == null || scheduledEnd.isBefore(effective))) {
             return scheduledEnd;
         }
-        return deadline;
+        return effective;
     }
 
     public static boolean isCheckInExpired(Booking booking, LocalDateTime now) {
