@@ -64,6 +64,7 @@ services:
     ports:
       - "8082:8082"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       BOOKING_SERVICE_URL: http://booking-service:8083
@@ -90,6 +91,9 @@ services:
     ports:
       - "8083:8083"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
+      BOOKING_HOLD_WINDOW_MINUTES: ${BOOKING_HOLD_WINDOW_MINUTES:-5}
+      BOOKING_HOLD_COOLDOWN_MINUTES: ${BOOKING_HOLD_COOLDOWN_MINUTES:-5}
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       IDENTITY_SERVICE_URL: http://identity-service:8081
@@ -114,6 +118,7 @@ services:
     ports:
       - "8084:8084"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       BOOKING_SERVICE_URL: http://booking-service:8083
@@ -144,6 +149,7 @@ services:
     ports:
       - "8085:8085"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
