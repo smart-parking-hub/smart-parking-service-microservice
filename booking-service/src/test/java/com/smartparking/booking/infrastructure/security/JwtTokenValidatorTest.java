@@ -51,4 +51,20 @@ class JwtTokenValidatorTest {
         assertFalse(validator.validate("invalid.token.string"));
         assertFalse(validator.validate(""));
     }
+
+    @Test
+    void acceptsHs512OnlyWhenConfiguredWithTheIssuersSecret() {
+        String issuerSecret = "test-only-identity-secret-for-hs512-validation-".repeat(2);
+        SecretKey key = Keys.hmacShaKeyFor(issuerSecret.getBytes(StandardCharsets.UTF_8));
+        String token = Jwts.builder().subject("14").claim("role", "ROLE_DRIVER")
+                .expiration(new Date(System.currentTimeMillis() + 60000))
+                .signWith(key, Jwts.SIG.HS512).compact();
+
+        assertFalse(validator.validate(token));
+        ReflectionTestUtils.setField(validator, "jwtSecret", issuerSecret);
+        assertTrue(validator.validate(token));
+        assertEquals("14", validator.getClaims(token).getSubject());
+        ReflectionTestUtils.setField(validator, "jwtSecret", "different-test-only-hs512-secret-".repeat(3));
+        assertFalse(validator.validate(token));
+    }
 }

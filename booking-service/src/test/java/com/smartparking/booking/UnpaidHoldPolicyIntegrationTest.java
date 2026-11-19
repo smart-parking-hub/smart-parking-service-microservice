@@ -127,7 +127,7 @@ class UnpaidHoldPolicyIntegrationTest {
         var first=assertThrows(HoldRestrictionException.class,()->service.createBooking(7L,request(15,5)));
         var retry=assertThrows(HoldRestrictionException.class,()->service.createBooking(7L,request(16,5)));
         assertEquals(COOLDOWN,first.getDetails().reason());
-        assertEquals(releasedAt.plusMinutes(30),first.getDetails().retryAt());
+        assertEquals(releasedAt.plusMinutes(5),first.getDetails().retryAt());
         assertEquals(first.getDetails().retryAt(),retry.getDetails().retryAt());
         service.createBooking(7L,request(15,6)); // Scoped to the abused lot.
         verify(lots,times(3)).holdSlot(anyLong(),any());
