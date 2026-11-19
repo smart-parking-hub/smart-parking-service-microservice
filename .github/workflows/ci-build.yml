@@ -7,6 +7,20 @@ on:
     branches: [ main ]
 
 jobs:
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python for configuration checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Compose plugin
+        run: docker compose version
+      - name: Verify Compose scenarios and local launcher contracts
+        run: python -m unittest discover -s scripts/build-test/tests -v
+
   release-contracts:
     runs-on: ubuntu-latest
     steps:

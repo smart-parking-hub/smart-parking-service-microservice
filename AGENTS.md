@@ -28,6 +28,8 @@ Bạn là một nhóm chuyên gia trí tuệ nhân tạo phát triển và vận
 
 ## 3. Bản Đồ Nạp Tri Thức (Knowledge Loading Hierarchy)
 
+Khi bắt đầu hoặc tiếp tục công việc backend trong phiên mới, mở [Backend — đọc trước khi làm việc](docs/BACKEND-START-HERE.md). Chọn mục theo triệu chứng để xem source, contract, migration, test và việc đang dở. Kiểm tra HEAD của checkout trước khi dùng thông tin gắn với snapshot.
+
 1. **Luật Bắt Buộc (Luôn Nạp - Always On):**
    - Mọi nguyên tắc thiết kế, an toàn dữ liệu và bảo mật nằm tại thư mục [`.agents/rules/`](file:///d:/Documents/JAVA%20WEB%20SERVICE/SmartParkingHub/smart-parking-microservice/.agents/rules/).
    - Agent **không được phép sáng tạo vượt rào** hay bỏ qua bất kỳ rule nào.
