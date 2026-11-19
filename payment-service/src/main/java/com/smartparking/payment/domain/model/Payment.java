@@ -64,4 +64,15 @@ public class Payment extends BaseEntity {
     private String reviewReason;
     @Column(name = "wallet_refund", nullable = false)
     private boolean walletRefund;
+
+    @Builder.Default
+    @Column(name = "payment_channel", nullable = false, length = 30)
+    private String paymentChannel = "UNKNOWN";
+
+    @PrePersist
+    protected void ensurePaymentChannel() {
+        if (paymentChannel == null || paymentChannel.isBlank()) {
+            paymentChannel = "UNKNOWN";
+        }
+    }
 }

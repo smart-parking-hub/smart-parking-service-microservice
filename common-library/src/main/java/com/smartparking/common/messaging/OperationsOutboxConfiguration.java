@@ -3,6 +3,7 @@ package com.smartparking.common.messaging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.common.event.AdminOperationEvent;
 import com.smartparking.common.event.AdminRecipientSnapshot;
+import com.smartparking.common.event.MerchantVerificationEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,8 @@ public class OperationsOutboxConfiguration {
             @Value("${app.admin-operations.partitions:3}") int partitions,
             @Value("${app.admin-operations.replicas:1}") int replicas) {
         return new KafkaAdmin.NewTopics(
+                TopicBuilder.name(MerchantVerificationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
+                TopicBuilder.name(MerchantVerificationEvent.TOPIC + ".DLT").partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(com.smartparking.common.event.WithdrawalDecisionEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminOperationEvent.TOPIC).partitions(partitions).replicas(replicas).build(),
                 TopicBuilder.name(AdminRecipientSnapshot.TOPIC).partitions(1).replicas(replicas).build());

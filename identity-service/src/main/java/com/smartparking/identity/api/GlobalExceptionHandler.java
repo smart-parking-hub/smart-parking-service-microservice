@@ -3,16 +3,23 @@ package com.smartparking.identity.api;
 import com.smartparking.common.dto.ApiResponse;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
+import com.smartparking.identity.application.service.verification.VerificationUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.stream.Collectors;
 
@@ -34,6 +41,30 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status)
                 .body(ApiResponse.error(ex.getErrorCode().getCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUploadLimit(MaxUploadSizeExceededException ex) {
+        return handleVerificationUpload(VerificationUploadException.tooLarge(
+                "Dung lượng tải lên vượt giới hạn 5 MiB mỗi tệp hoặc giới hạn của yêu cầu!"));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnsupportedMedia(HttpMediaTypeNotSupportedException ex) {
+        return handleVerificationUpload(VerificationUploadException.unsupportedType("Định dạng yêu cầu không được hỗ trợ!"));
+    }
+
+    @ExceptionHandler(VerificationUploadException.class)
+    public ResponseEntity<ApiResponse<Void>> handleVerificationUpload(VerificationUploadException ex) {
+        return ResponseEntity.status(ex.getStatus())
+                .body(ApiResponse.error("ERR_" + ex.getStatus().value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler({ServletRequestBindingException.class, MissingServletRequestPartException.class,
+            MethodArgumentTypeMismatchException.class, HttpMessageNotReadableException.class})
+    public ResponseEntity<ApiResponse<Void>> handleBadInput(Exception ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getCode(), ErrorCode.BAD_REQUEST.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -4,6 +4,7 @@ import com.smartparking.booking.application.dto.BookingDto;
 import com.smartparking.booking.application.dto.CheckInRequest;
 import com.smartparking.booking.application.dto.CheckOutResponse;
 import com.smartparking.booking.application.dto.ConfirmCashRequest;
+import com.smartparking.booking.application.dto.MerchantBookingSummaryResponse;
 import com.smartparking.booking.application.service.BookingService;
 import com.smartparking.booking.application.service.CheckInOutService;
 import com.smartparking.booking.infrastructure.security.AuthenticatedUser;
@@ -62,6 +63,15 @@ public class MerchantCheckInOutController {
             @PageableDefault(size = 20) Pageable pageable) {
         PageResponse<BookingDto> page = bookingService.getMerchantBookings(user.getId(), parkingLotId, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Lấy danh sách đặt chỗ thành công"));
+    }
+
+    @GetMapping("/bookings/summary")
+    @PreAuthorize("hasRole('MERCHANT')")
+    public ResponseEntity<ApiResponse<MerchantBookingSummaryResponse>> getMerchantBookingSummary(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(required = false) Long parkingLotId) {
+        MerchantBookingSummaryResponse summary = bookingService.getMerchantBookingSummary(user.getId(), parkingLotId);
+        return ResponseEntity.ok(ApiResponse.success(summary, "Lấy tổng hợp trạng thái đặt chỗ thành công"));
     }
 
     @GetMapping("/bookings/{id}")

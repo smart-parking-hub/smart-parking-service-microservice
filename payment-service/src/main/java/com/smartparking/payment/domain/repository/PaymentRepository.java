@@ -98,4 +98,35 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     LocalDateTime findLatestPaymentCreatedAtByMerchantIdAndParkingLotId(
             @Param("merchantId") Long merchantId,
             @Param("parkingLotId") Long parkingLotId);
+
+    interface ChannelAggregation {
+        Long getParkingLotId();
+        String getPaymentChannel();
+        BigDecimal getTotalAmount();
+        Long getPaymentCount();
+    }
+
+    List<Payment> findByMerchantIdAndStatusOrderByCreatedAtAsc(
+            Long merchantId,
+            PaymentStatusEnum status);
+
+    @Query("SELECT p FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS' " +
+           "AND NOT EXISTS (SELECT 1 FROM WalletLedgerEntry w WHERE w.payment = p AND w.entryType = com.smartparking.common.enums.WalletLedgerEntryTypeEnum.SETTLEMENT_CREDIT)")
+    List<Payment> findUnsettledSuccessPaymentsByMerchantId(@Param("merchantId") Long merchantId);
+
+    @Query("SELECT p.parkingLotId AS parkingLotId, COALESCE(p.paymentChannel, 'UNKNOWN') AS paymentChannel, " +
+           "COALESCE(SUM(p.amount), 0) AS totalAmount, COUNT(p.id) AS paymentCount " +
+           "FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS' " +
+           "GROUP BY p.parkingLotId, COALESCE(p.paymentChannel, 'UNKNOWN')")
+    List<ChannelAggregation> aggregateSuccessByMerchantGroupedByLotAndChannel(@Param("merchantId") Long merchantId);
+
+    @Query("SELECT p.parkingLotId AS parkingLotId, COALESCE(p.paymentChannel, 'UNKNOWN') AS paymentChannel, " +
+           "COALESCE(SUM(p.amount), 0) AS totalAmount, COUNT(p.id) AS paymentCount " +
+           "FROM Payment p WHERE p.merchantId = :merchantId AND p.status = 'SUCCESS' " +
+           "AND p.createdAt >= :startDate AND p.createdAt <= :endDate " +
+           "GROUP BY p.parkingLotId, COALESCE(p.paymentChannel, 'UNKNOWN')")
+    List<ChannelAggregation> aggregateSuccessByMerchantAndDateRangeGroupedByLotAndChannel(
+            @Param("merchantId") Long merchantId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 }

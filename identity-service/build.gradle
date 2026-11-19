@@ -22,4 +22,7 @@ dependencies {
 
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    implementation 'org.apache.pdfbox:pdfbox:3.0.2'
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.11.0'
 }

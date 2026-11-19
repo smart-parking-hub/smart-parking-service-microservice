@@ -1,5 +1,24 @@
 # Event Catalog - Danh mục Sự kiện Phân tán (Kafka Topics)
 
+## Bổ sung SP-MERCHANT-KYC-01 — Merchant Verification Events (2026-11-18)
+
+- **Topic**: `merchant-verification.events`
+- **Partitions**: 3 | **Key**: `merchantUserId` (hoặc `dossierId`) | **Retention**: 7 ngày
+- **Producer**: `identity-service` (thông qua `admin_event_outbox`)
+- **Broker topics**: `merchant-verification.events` and `merchant-verification.events.DLT` are declared with equal partition counts. The consumer group is `notification-merchant-verification`.
+- **Consumer**: `notification-service` (`merchant-verification-group`)
+- **Envelope / Payload**:
+  - `eventId`: UUID
+  - `schemaVersion`: 1
+  - `type`: `APPROVED` | `CHANGES_REQUESTED`
+  - `merchantUserId`: Long (ID tài khoản user của chủ bãi)
+  - `dossierId`: Long (ID hồ sơ xác minh)
+  - `submissionVersion`: Integer (Phiên bản nộp hồ sơ được duyệt/yêu cầu sửa)
+  - `occurredAt`: Instant (Thời điểm phát sinh sự kiện)
+- **Hành vi**:
+  - Notification Service lắng nghe sự kiện, tạo thông báo in-app cho Merchant với `targetType = MERCHANT_VERIFICATION`, `targetId = dossierId`, đường dẫn điều hướng đến `/merchant/profile#giay-to`.
+  - Idempotency & Replay: Lưu `source_event_id` vào bảng `processed_events` và `notifications`, ngăn trùng lặp thông báo khi replay.
+
 ## Bổ sung SP-S3-UI-16 — Admin operations (2026-11-12)
 
 Status: implemented in working tree, runtime verification pending. Owner: SPH. [ADR-0005](./adr/0005-admin-operations-notification-delivery.md), [runbook/replay](./deployment/admin-notifications-runbook.md).

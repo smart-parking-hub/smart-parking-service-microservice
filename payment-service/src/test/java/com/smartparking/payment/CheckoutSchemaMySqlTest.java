@@ -22,10 +22,11 @@ class CheckoutSchemaMySqlTest {
         }
         var upgraded = Flyway.configure().dataSource(base, "root", "").schemas(schema).defaultSchema(schema)
                 .locations("classpath:db/migration").cleanDisabled(true).load().migrate();
-        assertEquals(1, upgraded.migrationsExecuted);
+        assertEquals(2, upgraded.migrationsExecuted);
         try (var c = DriverManager.getConnection(base, "root", ""); var sql = c.createStatement()) {
             c.setCatalog(schema);
             try (var rows = sql.executeQuery("SELECT COUNT(*) FROM " + schema + ".payments")) { rows.next(); assertEquals(count, rows.getLong(1)); }
+            try (var rows = sql.executeQuery("SELECT COUNT(*) FROM " + schema + ".payments WHERE payment_channel = 'ONLINE_TRANSFER'")) { rows.next(); assertEquals(count, rows.getLong(1)); }
             try (var rows = sql.executeQuery("SELECT COUNT(*) FROM " + schema + ".cash_checkout_receipts")) { rows.next(); assertEquals(0, rows.getLong(1)); }
         }
     }

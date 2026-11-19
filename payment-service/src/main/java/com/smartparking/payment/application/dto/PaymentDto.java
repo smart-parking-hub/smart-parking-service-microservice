@@ -27,6 +27,7 @@ public class PaymentDto {
     private Long orderCode;
     private BigDecimal amount;
     private PaymentTypeEnum type;
+    private String paymentChannel;
     private PaymentStatusEnum status;
     private LocalDateTime createdAt;
     private BigDecimal refundAmount;
@@ -49,6 +50,7 @@ public class PaymentDto {
                 .orderCode(entity.getOrderCode())
                 .amount(entity.getAmount())
                 .type(entity.getPaymentType())
+                .paymentChannel(entity.getPaymentChannel())
                 .status(entity.getStatus())
                 .createdAt(entity.getCreatedAt())
                 .build();
