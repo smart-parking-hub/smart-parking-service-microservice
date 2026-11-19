@@ -35,6 +35,16 @@ class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
+    void expiredOrUnpayableBookingReturns400WithItsBusinessCode() {
+        for (ErrorCode code : new ErrorCode[] {ErrorCode.BOOKING_STATUS_INVALID, ErrorCode.BOOKING_HOLD_EXPIRED}) {
+            var response = handler.handleAppException(new AppException(code, "Đặt chỗ đã hết thời gian thanh toán"));
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(code.getCode(), response.getBody().getCode());
+        }
+    }
+
+    @Test
     @DisplayName("Handle AppException maps error codes to correct HTTP statuses")
     void testHandleAppException() {
         ResponseEntity<ApiResponse<Void>> res1 = handler.handleAppException(new AppException(ErrorCode.BAD_REQUEST, "Bad"));
