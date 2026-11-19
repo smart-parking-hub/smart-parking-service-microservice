@@ -8,6 +8,10 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import java.math.BigDecimal;
@@ -40,10 +44,8 @@ public class BookingPaymentVerifier {
         var attributes = RequestContextHolder.getRequestAttributes();
         String token = attributes instanceof ServletRequestAttributes context ? context.getRequest().getHeader("Authorization") : null;
         if (token == null || !token.startsWith("Bearer ")) throw new AppException(ErrorCode.FORBIDDEN, "Thiếu phiên xác thực booking");
-        var result = client.get().uri("/api/v1/bookings/{id}", bookingId).header("Authorization", token)
-                .retrieve().body(new ParameterizedTypeReference<ApiResponse<Quote>>() {});
-        Quote quote = result == null ? null : result.getData();
-        if (quote == null || !userId.equals(quote.driverId()) || quote.merchantId() == null)
+        Quote quote = fetchQuote("/api/v1/bookings/{id}", bookingId, token);
+        if (quote == null || !bookingId.equals(quote.id()) || !userId.equals(quote.driverId()) || quote.merchantId() == null)
             throw new AppException(ErrorCode.FORBIDDEN, "Không xác minh được quyền thanh toán booking");
         return quote;
     }
@@ -51,20 +53,38 @@ public class BookingPaymentVerifier {
         var attributes = RequestContextHolder.getRequestAttributes();
         String token = attributes instanceof ServletRequestAttributes context ? context.getRequest().getHeader("Authorization") : null;
         if (token == null || !token.startsWith("Bearer ")) throw new AppException(ErrorCode.FORBIDDEN, "Thiếu phiên xác thực booking");
+        Quote quote = fetchQuote("/api/v1/merchant/bookings/{id}", bookingId, token);
+        if (quote == null || !bookingId.equals(quote.id()) || !merchantId.equals(quote.merchantId()))
+            throw new AppException(ErrorCode.FORBIDDEN, "Lượt đỗ không thuộc bãi của bạn");
+        return quote;
+    }
+
+    private Quote fetchQuote(String path, Long bookingId, String token) {
         try {
-            var result = client.get().uri("/api/v1/merchant/bookings/{id}", bookingId).header("Authorization", token)
+            var response = client.get().uri(path, bookingId).header("Authorization", token)
                     .retrieve().body(new ParameterizedTypeReference<ApiResponse<Quote>>() {});
-            Quote quote = result == null ? null : result.getData();
-            if (quote == null || !merchantId.equals(quote.merchantId()))
-                throw new AppException(ErrorCode.FORBIDDEN, "Lượt đỗ không thuộc bãi của bạn");
-            return quote;
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to query merchant booking {}: {}", bookingId, e.getMessage());
-            throw new AppException(ErrorCode.BAD_REQUEST, "Không lấy được thông tin lượt đỗ từ máy chủ quản lý: " + e.getMessage());
+            if (response == null || response.getData() == null) {
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "Chưa xác minh được thông tin đặt chỗ. Vui lòng thử lại sau.");
+            }
+            return response.getData();
+        } catch (RestClientResponseException failure) {
+            int status = failure.getStatusCode().value();
+            log.warn("Booking verification failed for booking {} with HTTP {}", bookingId, status);
+            switch (status) {
+                case 401 -> throw new AppException(ErrorCode.UNAUTHORIZED, "Phiên xác thực đặt chỗ không hợp lệ. Vui lòng đăng nhập lại.");
+                case 403 -> throw new AppException(ErrorCode.FORBIDDEN, "Không xác minh được quyền thanh toán đặt chỗ.");
+                case 404 -> throw new AppException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy lượt đặt chỗ.");
+                default -> throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "Chưa xác minh được thông tin đặt chỗ. Vui lòng thử lại sau.");
+            }
+        } catch (RestClientException failure) {
+            log.warn("Booking verification unavailable for booking {}", bookingId);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Chưa kết nối được dịch vụ đặt chỗ. Vui lòng thử lại sau.");
         }
     }
+
     public boolean confirm(com.smartparking.payment.domain.model.Payment payment) {
         if (serviceToken == null || serviceToken.isBlank()) throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Chưa cấu hình xác nhận thanh toán nội bộ");
         var result = client.post().uri("/api/v1/internal/bookings/{id}/confirm-payment", payment.getBookingId())
