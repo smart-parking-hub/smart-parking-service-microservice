@@ -11,4 +11,6 @@ public interface NotificationService {
     void markAsRead(Long userId, Long notificationId);
     void markAllAsRead(Long userId);
     NotificationDto createNotification(Long userId, String title, String content, NotificationTypeEnum type, String channel, String targetType, Long targetId);
+    NotificationDto createNotification(Long userId, String title, String content, NotificationTypeEnum type, String channel, String targetType, Long targetId, String sourceEventId);
+    boolean notificationExists(Long userId, String sourceEventId);
 }

@@ -17,6 +17,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     int countByUserIdAndReadAtIsNull(Long userId);
 
+    boolean existsByUserIdAndSourceEventId(Long userId, String sourceEventId);
+
     @Modifying
     @Query("UPDATE Notification n SET n.readAt = CURRENT_TIMESTAMP WHERE n.id = :id AND n.userId = :userId AND n.readAt IS NULL")
     int markAsRead(@Param("userId") Long userId, @Param("id") Long id);

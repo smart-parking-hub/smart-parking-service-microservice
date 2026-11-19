@@ -45,6 +45,12 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean notificationExists(Long userId, String sourceEventId) {
+        return sourceEventId != null && notificationRepository.existsByUserIdAndSourceEventId(userId, sourceEventId);
+    }
+
+    @Override
     @Transactional
     public void markAsRead(Long userId, Long notificationId) {
         int updated = notificationRepository.markAsRead(userId, notificationId);
@@ -63,6 +69,14 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationDto createNotification(Long userId, String title, String content,
                                              NotificationTypeEnum type, String channel,
                                              String targetType, Long targetId) {
+        return createNotification(userId, title, content, type, channel, targetType, targetId, null);
+    }
+
+    @Override
+    @Transactional
+    public NotificationDto createNotification(Long userId, String title, String content,
+                                             NotificationTypeEnum type, String channel,
+                                             String targetType, Long targetId, String sourceEventId) {
         Notification notification = Notification.builder()
                 .userId(userId)
                 .title(title)
@@ -71,6 +85,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .channel(channel != null ? channel : "IN_APP")
                 .targetType(targetType)
                 .targetId(targetId)
+                .sourceEventId(sourceEventId)
                 .status("SENT")
                 .build();
 

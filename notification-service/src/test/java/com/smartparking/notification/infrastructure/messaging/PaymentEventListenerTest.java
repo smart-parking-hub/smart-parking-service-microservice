@@ -45,7 +45,7 @@ class PaymentEventListenerTest {
     }
 
     @Test
-    @DisplayName("Handles PAYMENT_COMPLETED event")
+    @DisplayName("Handles PAYMENT_COMPLETED event for generic payment")
     void testPaymentCompleted() {
         when(processedEventRepository.existsByEventId("pay-evt-2")).thenReturn(false);
 
@@ -56,6 +56,35 @@ class PaymentEventListenerTest {
                 eq(10L), eq("Thanh toán thành công"), contains("50000"), eq(NotificationTypeEnum.PAYMENT), eq("IN_APP"), eq("PAYMENT"), eq(50L)
         );
         verify(processedEventRepository, times(1)).save(any(ProcessedEvent.class));
+    }
+
+    @Test
+    @DisplayName("Handles PAYMENT_COMPLETED event for DEPOSIT with booking confirmation and QR ready notification")
+    void testPaymentCompletedDeposit() {
+        when(processedEventRepository.existsByEventId("pay-evt-dep-1")).thenReturn(false);
+        when(notificationService.notificationExists(10L, "pay-evt-dep-1")).thenReturn(false);
+
+        String payload = "{\"eventId\":\"pay-evt-dep-1\",\"eventType\":\"PAYMENT_COMPLETED\",\"paymentType\":\"DEPOSIT\",\"userId\":10,\"bookingId\":50,\"amount\":\"20000\"}";
+        listener.handlePaymentEvent(payload);
+
+        verify(notificationService, times(1)).createNotification(
+                eq(10L), eq("Đặt chỗ thành công"), contains("Mã QR vào bãi đã sẵn sàng"), eq(NotificationTypeEnum.BOOKING), eq("IN_APP"), eq("BOOKING"), eq(50L), eq("pay-evt-dep-1")
+        );
+        verify(processedEventRepository, times(1)).save(any(ProcessedEvent.class));
+    }
+
+    @Test
+    @DisplayName("Does not create a duplicate deposit notification for the same payment")
+    void testPaymentCompletedDepositDeduplicatedByPaymentId() {
+        when(processedEventRepository.existsByEventId("pay-evt-replayed")).thenReturn(false);
+        when(notificationService.notificationExists(10L, "PAYMENT_COMPLETED:501")).thenReturn(true);
+
+        String payload = "{\"eventId\":\"pay-evt-replayed\",\"eventType\":\"PAYMENT_COMPLETED\",\"paymentType\":\"DEPOSIT\",\"paymentId\":501,\"userId\":10,\"bookingId\":50}";
+        listener.handlePaymentEvent(payload);
+
+        verify(notificationService, times(1)).notificationExists(10L, "PAYMENT_COMPLETED:501");
+        verify(notificationService, never()).createNotification(any(), any(), any(), any(), any(), any(), any(), any());
+        verify(processedEventRepository).save(any(ProcessedEvent.class));
     }
 
     @Test

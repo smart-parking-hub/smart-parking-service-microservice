@@ -37,19 +37,41 @@ public class PaymentEventListener {
 
             Long userId = root.has("userId") && !root.get("userId").isNull() ? root.get("userId").asLong() : null;
             Long bookingId = root.has("bookingId") && !root.get("bookingId").isNull() ? root.get("bookingId").asLong() : null;
+            Long paymentId = root.has("paymentId") && !root.get("paymentId").isNull() ? root.get("paymentId").asLong() : null;
             String amount = root.has("amount") ? root.get("amount").asText() : "0";
+            String paymentType = root.has("paymentType") && !root.get("paymentType").isNull() ? root.get("paymentType").asText() : "";
+            String notificationSource = paymentId == null ? eventId : "PAYMENT_COMPLETED:" + paymentId;
 
             if (userId != null && eventType != null) {
                 switch (eventType) {
-                    case "PAYMENT_COMPLETED" -> notificationService.createNotification(
-                            userId,
-                            "Thanh toán thành công",
-                            "Giao dịch thanh toán " + amount + " VND cho booking #" + bookingId + " đã thành công.",
-                            NotificationTypeEnum.PAYMENT,
-                            "IN_APP",
-                            "PAYMENT",
-                            bookingId
-                    );
+                    case "PAYMENT_COMPLETED" -> {
+                        if ("DEPOSIT".equalsIgnoreCase(paymentType)) {
+                            if (notificationService.notificationExists(userId, notificationSource)) {
+                                log.info("Duplicate payment notification ignored: source={}", notificationSource);
+                                break;
+                            }
+                            notificationService.createNotification(
+                                    userId,
+                                    "Đặt chỗ thành công",
+                                    "Đặt chỗ thành công! Mã QR vào bãi đã sẵn sàng.",
+                                    NotificationTypeEnum.BOOKING,
+                                    "IN_APP",
+                                    "BOOKING",
+                                    bookingId,
+                                    notificationSource
+                            );
+                        } else {
+                            notificationService.createNotification(
+                                    userId,
+                                    "Thanh toán thành công",
+                                    "Giao dịch thanh toán " + amount + " VND cho booking #" + bookingId + " đã thành công.",
+                                    NotificationTypeEnum.PAYMENT,
+                                    "IN_APP",
+                                    "PAYMENT",
+                                    bookingId
+                            );
+                        }
+                    }
                     case "PAYMENT_FAILED" -> {
                         String reason = root.has("reason") ? root.get("reason").asText() : "Lỗi hệ thống";
                         notificationService.createNotification(
