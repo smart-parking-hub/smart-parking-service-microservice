@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @org.springframework.test.context.ActiveProfiles("test")
 @org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-@SpringBootTest(properties = {"app.schedule.reconciliation.enabled=false", "spring.kafka.listener.auto-startup=false", "app.parking-layout.physical-booking-enabled=true", "app.parking-layout.storage-provider=mock", "app.schedule.early.enabled=true"})
+@SpringBootTest(properties = {"app.schedule.reconciliation.enabled=false", "spring.kafka.listener.auto-startup=false", "app.parking-layout.physical-booking-enabled=true", "app.parking-layout.storage-provider=mock"})
 class ScheduledReservationIntegrationTest {
     @Autowired ScheduledSlotService service;
     @Autowired ParkingLotRepository lots;

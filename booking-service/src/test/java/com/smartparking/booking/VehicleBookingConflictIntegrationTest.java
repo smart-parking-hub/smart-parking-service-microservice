@@ -5,12 +5,15 @@ import com.smartparking.booking.application.dto.CreateBookingRequest;
 import com.smartparking.booking.application.service.BookingService;
 import com.smartparking.booking.application.service.OutboxPublisherService;
 import com.smartparking.booking.application.service.QueueService;
+import com.smartparking.booking.application.service.ScheduledSlotLifecycle;
+import com.smartparking.booking.domain.BookingTimePolicy;
 import com.smartparking.booking.domain.model.Booking;
 import com.smartparking.booking.domain.repository.BookingRepository;
 import com.smartparking.booking.infrastructure.client.OwnedVehicleClient;
 import com.smartparking.booking.infrastructure.client.ParkingLotClient;
 import com.smartparking.booking.infrastructure.client.HoldPaymentAssessmentClient;
 import com.smartparking.booking.infrastructure.client.dto.SlotHoldResponse;
+import com.smartparking.booking.infrastructure.scheduler.BookingExpirationScheduler;
 import com.smartparking.common.dto.ApiResponse;
 import com.smartparking.common.enums.BookingStatusEnum;
 import com.smartparking.common.enums.VehicleTypeEnum;
@@ -26,6 +29,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -48,9 +55,24 @@ import static org.mockito.Mockito.*;
         "spring.kafka.listener.auto-startup=false", "app.booking.hold-policy.enabled=false"
 })
 class VehicleBookingConflictIntegrationTest {
+    @DynamicPropertySource static void database(DynamicPropertyRegistry registry) {
+        String url = System.getenv("SCHEDULE_VEHICLE_TEST_JDBC_URL");
+        if (url == null || url.isBlank()) return;
+        if (!url.matches("jdbc:mysql://(?:localhost|127\\.0\\.0\\.1):[0-9]+/sph_schedule_test_vehicle_[a-zA-Z0-9_]+(?:\\?.*)?"))
+            throw new IllegalArgumentException("Requires an isolated local sph_schedule_test_vehicle_* database");
+        registry.add("spring.datasource.url", () -> url);
+        registry.add("spring.datasource.driver-class-name", () -> "com.mysql.cj.jdbc.Driver");
+        registry.add("spring.datasource.username", () -> System.getenv("SCHEDULE_TEST_DB_USER"));
+        registry.add("spring.datasource.password", () -> System.getenv("SCHEDULE_TEST_DB_PASSWORD"));
+        registry.add("spring.datasource.hikari.connection-init-sql", () -> "SET time_zone = '+00:00'");
+        registry.add("spring.sql.init.mode", () -> "always");
+    }
+
     @Autowired BookingService service;
     @Autowired BookingRepository bookings;
     @Autowired JdbcTemplate jdbc;
+    @Autowired BookingExpirationScheduler expirationScheduler;
+    @Autowired PlatformTransactionManager transactions;
     @MockBean OwnedVehicleClient vehicles;
     @MockBean ParkingLotClient lots;
     @MockBean OutboxPublisherService events;
@@ -186,6 +208,63 @@ class VehicleBookingConflictIntegrationTest {
         assertEquals(java.util.List.of(ticket.getId()), bookings.findNoShowCandidates(
                 BookingStatusEnum.PENDING_CHECKIN, now.plusHours(4), 1).stream().map(Booking::getId).toList());
         assertEquals(now.plusHours(4), BookingDto.fromEntity(ticket).getExpiresAt());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1,60", "2,60", "1,30", "2,30"})
+    void gateDtoAndNoShowUseTheIssuedDeadlineAndReleaseOnlyAfterCommit(int version, int graceMinutes) {
+        var ticket = existing(BookingStatusEnum.PENDING_CHECKIN, 2, 4);
+        var start = ticket.getExpectedCheckInTime();
+        var deadline = start.plusMinutes(graceMinutes);
+        ticket.setSchedulePolicyVersion(version);
+        ticket.setExpiresAt(graceMinutes == 30 ? ScheduledSlotLifecycle.checkInDeadline(ticket) : deadline);
+        bookings.saveAndFlush(ticket);
+
+        assertEquals(deadline, BookingDto.fromEntity(ticket).getExpiresAt());
+        for (int minute : new int[] {29, 30, 31, 45, 60, 61}) {
+            var at = start.plusMinutes(minute);
+            boolean expired = minute > graceMinutes;
+            assertEquals(expired, BookingTimePolicy.isCheckInExpired(ticket, at));
+            assertEquals(expired, bookings.findNoShowCandidates(BookingStatusEnum.PENDING_CHECKIN, at, 1)
+                    .stream().anyMatch(candidate -> candidate.getId().equals(ticket.getId())));
+        }
+
+        var expiredAt = deadline.plusSeconds(1);
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(expiredAt);
+            new TransactionTemplate(transactions).executeWithoutResult(transaction -> {
+                expirationScheduler.expireNoShowBookings();
+                assertEquals(BookingStatusEnum.CANCELLED, bookings.findById(ticket.getId()).orElseThrow().getStatus());
+                verify(lots, never()).releaseSlot(anyLong(), any());
+                verifyNoInteractions(queue);
+            });
+        }
+
+        assertEquals(BookingStatusEnum.CANCELLED, bookings.findById(ticket.getId()).orElseThrow().getStatus());
+        verify(lots).releaseSlot(eq(ticket.getParkingLotId()), argThat(request -> ticket.getId().equals(request.getBookingId())));
+        verify(queue).promoteNextInQueue(ticket.getParkingLotId(), ticket.getVehicleType());
+        verify(events).publishBookingCancelled(argThat(cancelled -> ticket.getId().equals(cancelled.getId())), anyString());
+    }
+
+    @Test void noShowLeavesUnpaidAndCheckedInTicketsUntouched() {
+        var unpaid = existing(BookingStatusEnum.PENDING_PAYMENT, 2, 4);
+        var parked = existing(BookingStatusEnum.PARKING, 2, 4);
+        var deadline = unpaid.getExpectedCheckInTime().plusMinutes(30);
+        for (var ticket : java.util.List.of(unpaid, parked)) {
+            ticket.setSchedulePolicyVersion(2);
+            ticket.setExpiresAt(deadline);
+            bookings.saveAndFlush(ticket);
+        }
+        assertEquals(deadline, BookingDto.fromEntity(unpaid).getExpiresAt());
+        var expiredAt = deadline.plusSeconds(1);
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(expiredAt);
+            expirationScheduler.expireNoShowBookings();
+        }
+        assertEquals(BookingStatusEnum.PENDING_PAYMENT, bookings.findById(unpaid.getId()).orElseThrow().getStatus());
+        assertEquals(BookingStatusEnum.PARKING, bookings.findById(parked.getId()).orElseThrow().getStatus());
+        verify(lots, never()).releaseSlot(anyLong(), any());
+        verifyNoInteractions(events, queue);
     }
 
     @ParameterizedTest

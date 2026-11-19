@@ -136,6 +136,15 @@ public class BookingServiceTest {
     @Test
     @DisplayName("Check-in and early check-out collect the full reserved fee")
     void testCheckInOutLifecycle() {
+        var now = LocalDateTime.of(2026, 11, 20, 10, 45);
+        try (var clock = Mockito.mockStatic(LocalDateTime.class, Mockito.CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE))
+                    .thenReturn(now);
+            checkInOutLifecycle(now);
+        }
+    }
+
+    private void checkInOutLifecycle(LocalDateTime now) {
         CreateBookingRequest req = CreateBookingRequest.builder()
                 .parkingLotId(parkingLotId)
                 .vehicleId(vehicleId)
@@ -148,8 +157,9 @@ public class BookingServiceTest {
 
         // Simulate deposit payment success -> PENDING_CHECKIN
         Booking booking = bookingRepository.findById(created.getId()).orElseThrow();
-        booking.setExpectedCheckInTime(LocalDateTime.now(com.smartparking.booking.domain.BookingRefundPolicy.BUSINESS_ZONE).withMinute(0).withSecond(0).withNano(0));
+        booking.setExpectedCheckInTime(now.withMinute(30));
         booking.setExpectedCheckOutTime(booking.getExpectedCheckInTime().plusHours(2));
+        booking.setExpiresAt(com.smartparking.booking.application.service.ScheduledSlotLifecycle.checkInDeadline(booking));
         booking.setStatus(BookingStatusEnum.PENDING_CHECKIN);
         booking.setMerchantId(merchantUserId);
         bookingRepository.save(booking);

@@ -65,6 +65,7 @@ services:
       - "8082:8082"
     environment:
       JWT_SECRET: ${JWT_SECRET:-smartparkingsecretkeymustbeverylongandsecure2026version}
+      APP_SCHEDULE_EARLY_ENABLED: ${APP_SCHEDULE_EARLY_ENABLED:-true}
       APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:-internal-secret-token-smart-parking-2026}
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Ho_Chi_Minh
       BOOKING_SERVICE_URL: http://booking-service:8083

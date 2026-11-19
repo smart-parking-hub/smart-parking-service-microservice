@@ -15,8 +15,8 @@ class ScheduledSlotLifecycleTest {
     @BeforeEach void begin(){TransactionSynchronizationManager.initSynchronization();}
     @AfterEach void end(){TransactionSynchronizationManager.clearSynchronization();}
     @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.CsvSource({"2,30,30", "2,60,60", "2,120,60", "1,30,30", "0,30,60"})
-    void checkInDeadlineNeverExceedsTheScheduledEnd(int version, int duration, int deadline) {
+    @org.junit.jupiter.params.provider.CsvSource({"2,30,30", "2,60,30", "2,120,30", "1,30,30", "1,60,30", "1,120,30", "0,30,60", ",30,60"})
+    void checkInDeadlineNeverExceedsTheScheduledEnd(Integer version, int duration, int deadline) {
         var start = LocalDateTime.of(2026, 11, 20, 19, 0);
         var ticket = Booking.builder().schedulePolicyVersion(version).expectedCheckInTime(start)
                 .expectedCheckOutTime(start.plusMinutes(duration)).build();

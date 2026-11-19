@@ -89,6 +89,7 @@ jobs:
           PAYMENT_RECOVERY_MYSQL_MIGRATION_URL: jdbc:mysql://127.0.0.1:3306/payment_payos_migration_it?useSSL=false&allowPublicKeyRetrieval=true
           SCHEDULE_TEST_JDBC_URL: jdbc:mysql://127.0.0.1:3306/sph_schedule_test_parking_ci?useSSL=false&allowPublicKeyRetrieval=true
           SCHEDULE_BOOKING_UPGRADE_JDBC_URL: jdbc:mysql://127.0.0.1:3306/sph_schedule_test_booking_ci?useSSL=false&allowPublicKeyRetrieval=true
+          SCHEDULE_VEHICLE_TEST_JDBC_URL: jdbc:mysql://127.0.0.1:3306/sph_schedule_test_vehicle_ci?useSSL=false&allowPublicKeyRetrieval=true
           SCHEDULE_TEST_DB_USER: ${{ env.DB_USERNAME }}
           SCHEDULE_TEST_DB_PASSWORD: ${{ env.DB_PASSWORD }}
         run: |
@@ -98,5 +99,6 @@ jobs:
             CREATE DATABASE payment_payos_recovery_it;
             CREATE DATABASE payment_payos_migration_it;
             CREATE DATABASE sph_schedule_test_parking_ci CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            CREATE DATABASE sph_schedule_test_booking_ci CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-          ./gradlew :booking-service:test --tests '*UnpaidHoldPolicyIntegrationTest' --tests '*UnpaidHoldMigrationTest' --tests '*ScheduleMigrationMySqlTest' :parking-lot-service:test --tests '*ScheduledReservationIntegrationTest' :payment-service:test --tests '*PaymentRecoveryIntegrationTest' --tests '*PaymentAttemptMigrationTest' --no-daemon --max-workers=2
+            CREATE DATABASE sph_schedule_test_booking_ci CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE DATABASE sph_schedule_test_vehicle_ci CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+          ./gradlew :booking-service:test --tests '*UnpaidHoldPolicyIntegrationTest' --tests '*UnpaidHoldMigrationTest' --tests '*ScheduleMigrationMySqlTest' --tests '*VehicleBookingConflictIntegrationTest' :parking-lot-service:test --tests '*ScheduledReservationIntegrationTest' :payment-service:test --tests '*PaymentRecoveryIntegrationTest' --tests '*PaymentAttemptMigrationTest' --no-daemon --max-workers=2

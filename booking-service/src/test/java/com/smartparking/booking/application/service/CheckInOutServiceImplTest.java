@@ -53,6 +53,40 @@ class CheckInOutServiceImplTest {
     private final Long parkingLotId = 50L;
 
     @ParameterizedTest
+    @CsvSource({
+            "1, 60, 29, true", "1, 60, 30, true", "1, 60, 31, true", "1, 60, 45, true",
+            "1, 60, 60, true", "1, 60, 61, false",
+            "2, 60, 29, true", "2, 60, 30, true", "2, 60, 31, true", "2, 60, 45, true",
+            "2, 60, 60, true", "2, 60, 61, false",
+            "1, 30, 29, true", "1, 30, 30, true", "1, 30, 31, false",
+            "2, 30, 29, true", "2, 30, 30, true", "2, 30, 31, false"
+    })
+    void honorsTheIssuedDeadlineForOldAndNewScheduledTickets(int version, int graceMinutes,
+            int minutesAfterStart, boolean allowed) {
+        var start = LocalDateTime.of(2026, 11, 20, 10, 0);
+        var now = start.plusMinutes(minutesAfterStart);
+        var booking = Booking.builder().id(1L).merchantId(merchantUserId).parkingLotId(parkingLotId)
+                .status(BookingStatusEnum.PENDING_CHECKIN).schedulePolicyVersion(version)
+                .expectedCheckInTime(start).expectedCheckOutTime(start.plusHours(2))
+                .expiresAt(start.plusMinutes(graceMinutes)).build();
+        when(bookingRepository.findByBookingCodeForUpdate(bookingCode)).thenReturn(Optional.of(booking));
+
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(() -> LocalDateTime.now(BUSINESS_ZONE)).thenReturn(now);
+            if (allowed) {
+                checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId);
+                assertEquals(BookingStatusEnum.PARKING, booking.getStatus());
+                verify(parkingLotClient).occupyReservation(eq(parkingLotId), eq(1L), anyMap());
+            } else {
+                var rejection = assertThrows(AppException.class,
+                        () -> checkInOutService.checkIn(merchantUserId, bookingCode, parkingLotId));
+                assertEquals(ErrorCode.BOOKING_HOLD_EXPIRED, rejection.getErrorCode());
+                verifyNoInteractions(parkingLotClient, outboxPublisherService);
+            }
+        }
+    }
+
+    @ParameterizedTest
     @CsvSource({"2, 0, true", "2, -1, false", "1, 0, false", "2, 8100, false", "1, 8100, false"})
     void checksTheBookedVersionAtArrivalAndAtTheReservedEnd(int version, int secondsAfterEarlyStart,
             boolean allowed) {

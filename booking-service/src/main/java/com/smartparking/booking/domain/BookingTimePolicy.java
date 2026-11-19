@@ -12,6 +12,7 @@ public final class BookingTimePolicy {
     }
 
     public static LocalDateTime capCheckInDeadline(Booking booking, LocalDateTime deadline) {
+        // The paid ticket's saved deadline preserves the grace issued at confirmation.
         LocalDateTime scheduledEnd = booking.getExpectedCheckOutTime();
         if (BookingSchedulePolicy.hasScheduledWindow(booking.getSchedulePolicyVersion()) && scheduledEnd != null
                 && (deadline == null || scheduledEnd.isBefore(deadline))) {
