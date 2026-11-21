@@ -79,9 +79,6 @@ def fixture_environment():
     env.update({
         "COMPOSE_DISABLE_ENV_FILE": "1",
         "APP_INTERNAL_SERVICE_TOKEN": "audit-local-token-not-a-secret",
-        "BOOKING_IDENTITY_SERVICE_URL": "http://identity.invalid",
-        "BOOKING_PAYMENT_SERVICE_URL": "http://payment.invalid",
-        "PAYMENT_BOOKING_SERVICE_URL": "http://booking.invalid",
         "P0_INTERNAL_SERVICE_TOKEN": "audit-local-token-not-a-secret",
         "MAIL_HOST": "smtp.invalid", "MAIL_PORT": "2525",
         "MAIL_FROM": "audit@example.invalid", "MAIL_USERNAME": "audit",
