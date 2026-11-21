@@ -15,6 +15,13 @@ services:
       DB_USERNAME: ${PARKING_DB_USERNAME:-parking_svc}
       DB_PASSWORD: ${PARKING_DB_PASSWORD:-SP_SecUser_Park2026_vT8!}
       REDIS_HOST: smart-parking-redis-core
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-smartparking/lots}
+      PARKING_LOT_IMAGES_DIR: /app/uploads/parking-lot-images
+    volumes:
+      - ../../../data/parking-lot-images:/app/uploads/parking-lot-images
     depends_on:
       - smart-parking-redis-core
     logging:

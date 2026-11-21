@@ -1,6 +1,8 @@
 package com.smartparking.parkinglot.api;
 
 import com.smartparking.common.dto.ApiResponse;
+import com.smartparking.common.exception.AppException;
+import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.parkinglot.api.controller.ParkingLotImageController;
 import com.smartparking.parkinglot.application.dto.ParkingLotImageResponse;
 import com.smartparking.parkinglot.application.service.ParkingLotImageService;
@@ -15,13 +17,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class ParkingLotImageControllerTest {
@@ -75,6 +81,20 @@ class ParkingLotImageControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("missing image remains 404 when the browser accepts only image content")
+    void missingImageWithImageAcceptHeader() throws Exception {
+        when(imageService.getContent(10L, 1L))
+                .thenThrow(new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy file ảnh"));
+
+        MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler()).build()
+                .perform(get("/api/v1/parking-lots/10/images/1/content").accept("image/*"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("code").value("ERR_404"));
     }
 
     @Test
