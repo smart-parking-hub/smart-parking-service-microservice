@@ -15,6 +15,15 @@ services:
       DB_USERNAME: ${PARKING_DB_USERNAME:-parking_svc}
       DB_PASSWORD: ${PARKING_DB_PASSWORD:-SP_SecUser_Park2026_vT8!}
       REDIS_HOST: smart-parking-redis-core
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-smartparking/lots}
+      PARKING_LOT_IMAGES_DIR: /app/uploads/parking-lot-images
+      BOOKING_SERVICE_URL: http://smart-parking-booking:8083
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:?APP_INTERNAL_SERVICE_TOKEN is required}
+    volumes:
+      - ../../../data/parking-lot-images:/app/uploads/parking-lot-images
     depends_on:
       - smart-parking-redis-core
     logging:
@@ -41,7 +50,9 @@ services:
       REDIS_HOST: smart-parking-redis-core
       KAFKA_BOOTSTRAP_SERVERS: 116.118.6.107:9092
       PARKING_LOT_SERVICE_URL: http://smart-parking-parkinglot:8082
-      PAYMENT_SERVICE_URL: http://116.118.6.107:8084
+      IDENTITY_SERVICE_URL: ${BOOKING_IDENTITY_SERVICE_URL:?BOOKING_IDENTITY_SERVICE_URL is required}
+      PAYMENT_SERVICE_URL: ${BOOKING_PAYMENT_SERVICE_URL:?BOOKING_PAYMENT_SERVICE_URL is required}
+      APP_INTERNAL_SERVICE_TOKEN: ${APP_INTERNAL_SERVICE_TOKEN:?APP_INTERNAL_SERVICE_TOKEN is required}
     depends_on:
       - smart-parking-redis-core
       - smart-parking-parkinglot
