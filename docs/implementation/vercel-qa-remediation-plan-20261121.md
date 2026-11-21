@@ -1,6 +1,6 @@
 # Vercel QA Remediation Plan — 2026-11-21
 
-Status: approved by user reply "làm đi"; local configuration work only. Production deployment and server writes are outside this approval.
+Status: the user subsequently authorized publishing, merging green PRs and production deployment. The independent Parking release is merged as PR #83. This Booking wiring branch remains draft PR #82 until the required private/TLS service endpoints are provisioned and verified.
 
 ## 1. Mục tiêu thay đổi
 - Mục tiêu: Khắc phục cấu hình liên service gây HTTP 500 khi tạo booking và chuẩn bị cấu hình bền vững cho ảnh bãi bị thiếu.
@@ -37,4 +37,4 @@ Status: approved by user reply "làm đi"; local configuration work only. Produc
 ## 5. Kế hoạch rollback
 - Local: revert only the Compose additions in this task worktree; preserve the original backend checkout's separate uncommitted photo configuration.
 - Future deployment: use the previous verified Compose and image digest recorded by the release verifier; do not delete or recreate the parking-image data directory. If an asset restore is later approved, retain its verified pre-copy hash/backup and remove only the exact copied file if rollback is needed.
-- No database migration, production container restart, network provisioning, file copy, or deployment is authorized by this plan.
+- The latest user instruction authorizes release work. Do not deploy this wiring while endpoint provisioning/reachability is unresolved. The independent Parking V12 cleanup and response fix are documented in `parking-image-qa-release-20261121.md`.
