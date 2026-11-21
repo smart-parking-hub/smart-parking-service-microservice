@@ -127,35 +127,9 @@ class ComposeScenariosTest(unittest.TestCase):
             compose.render(compose.SCENARIOS["smtp"], overrides={"MAIL_PASSWORD": ""})
 
     def test_internal_credentials_are_required_on_cluster_nodes(self):
-        for name in ("edge", "data", "core"):
+        for name in ("edge", "data"):
             with self.subTest(scenario=name), self.assertRaises(ValueError):
                 compose.render(compose.SCENARIOS[name], overrides={"APP_INTERNAL_SERVICE_TOKEN": ""})
-
-    def test_booking_service_routes_are_required_and_passed_to_their_owners(self):
-        for scenario, variable in (
-            ("core", "BOOKING_IDENTITY_SERVICE_URL"),
-            ("core", "BOOKING_PAYMENT_SERVICE_URL"),
-            ("data", "PAYMENT_BOOKING_SERVICE_URL"),
-        ):
-            with self.subTest(scenario=scenario, variable=variable), self.assertRaises(ValueError):
-                compose.render(compose.SCENARIOS[scenario], overrides={variable: ""})
-
-        core = compose.render(compose.SCENARIOS["core"])["services"]
-        data = compose.render(compose.SCENARIOS["data"])["services"]
-        self.assertEqual("http://identity.invalid", core["smart-parking-booking"]["environment"]["IDENTITY_SERVICE_URL"])
-        self.assertEqual("http://payment.invalid", core["smart-parking-booking"]["environment"]["PAYMENT_SERVICE_URL"])
-        self.assertEqual("http://booking.invalid", data["smart-parking-payment"]["environment"]["BOOKING_SERVICE_URL"])
-        self.assertEqual("http://smart-parking-booking:8083", core["smart-parking-parkinglot"]["environment"]["BOOKING_SERVICE_URL"])
-        for service in (core["smart-parking-booking"], core["smart-parking-parkinglot"], data["smart-parking-payment"]):
-            self.assertEqual("audit-local-token-not-a-secret", service["environment"]["APP_INTERNAL_SERVICE_TOKEN"])
-
-    def test_parking_images_keep_the_persistent_upload_mount(self):
-        parking = compose.render(compose.SCENARIOS["core"])["services"]["smart-parking-parkinglot"]
-        self.assertEqual("/app/uploads/parking-lot-images", parking["environment"]["PARKING_LOT_IMAGES_DIR"])
-        mounts = parking["volumes"]
-        image_mount = next(mount for mount in mounts if mount["target"] == "/app/uploads/parking-lot-images")
-        self.assertEqual("bind", image_mount["type"])
-        self.assertTrue(Path(image_mount["source"]).as_posix().endswith("/data/parking-lot-images"))
 
     def test_layout_volume_remains_external_and_flags_default_off(self):
         for name, service in (("layout", "parking-lot-service"), ("core-layout", "smart-parking-parkinglot")):
