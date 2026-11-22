@@ -9,7 +9,10 @@ import java.util.Collection;
 import java.util.Collections;
 
 @Getter
+@SuppressWarnings("serial")
 public class AuthenticatedUser implements UserDetails {
+
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String username;

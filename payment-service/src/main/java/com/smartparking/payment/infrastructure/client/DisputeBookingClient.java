@@ -71,6 +71,8 @@ public class DisputeBookingClient {
     }
 
     private static final class InvalidBookingPayloadException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
         InvalidBookingPayloadException() {
             super("Invalid booking verification payload");
         }

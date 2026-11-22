@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public final class VerificationUploadException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     private final HttpStatus status;
 
     private VerificationUploadException(HttpStatus status, String message) {

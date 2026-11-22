@@ -155,7 +155,6 @@ public class PaymentServiceTest {
     void testDisputeLifecycle() {
         CreateDisputeRequest req = CreateDisputeRequest.builder()
                 .bookingId(bookingId)
-                .merchantId(999L)
                 .reason("Bãi xe thu thêm phí ngoài quy định")
                 .description("Bảo vệ đòi thêm 50k khi lấy xe")
                 .evidenceUrls(List.of("https://cdn.example.com/receipt.jpg"))

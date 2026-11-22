@@ -13,7 +13,10 @@ import java.util.Collections;
 
 @Getter
 @AllArgsConstructor
+@SuppressWarnings("serial")
 public class CustomUserDetails implements UserDetails {
+
+    private static final long serialVersionUID = 1L;
 
     private final Long id;
     private final String phone;
