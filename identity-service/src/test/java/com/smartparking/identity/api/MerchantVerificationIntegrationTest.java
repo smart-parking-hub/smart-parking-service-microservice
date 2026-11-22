@@ -13,7 +13,6 @@ import com.smartparking.identity.application.service.verification.VerificationCl
 import com.smartparking.identity.domain.model.Merchant;
 import com.smartparking.identity.domain.model.User;
 import com.smartparking.identity.domain.model.verification.OcrMethod;
-import com.smartparking.identity.domain.model.verification.VerificationStatus;
 import com.smartparking.identity.domain.repository.MerchantRepository;
 import com.smartparking.identity.domain.repository.MerchantVerificationDossierRepository;
 import com.smartparking.identity.domain.repository.UserRepository;

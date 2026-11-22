@@ -87,7 +87,7 @@ class IdentitySchemaMigrationTest {
         try (Connection conn = DriverManager.getConnection(
                 "jdbc:mysql://" + host + ":" + port + "/?useSSL=false&allowPublicKeyRetrieval=true",
                 user, password != null ? password : "")) {
-            return true;
+            return !conn.isClosed();
         } catch (Exception e) {
             return false;
         }

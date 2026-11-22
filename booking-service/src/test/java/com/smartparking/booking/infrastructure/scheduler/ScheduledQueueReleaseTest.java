@@ -61,7 +61,8 @@ class ScheduledQueueReleaseTest {
         var booking=Booking.builder().id(1L).parkingLotId(7L).vehicleType(VehicleTypeEnum.CONTAINER)
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
         var entry=Queue.builder().id(9L).status(QueueStatusEnum.WAITING).build();
-        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any())).thenReturn(List.of(1L),List.of(),List.of(1L));
+        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any()))
+                .thenReturn(List.of(1L)).thenReturn(List.of()).thenReturn(List.of(1L));
         when(bookings.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
         when(waiting.findByParkingLotIdAndVehicleTypeAndStatusOrderByJoinedAtAsc(anyLong(),any(),any())).thenReturn(List.of(entry));
         when(lots.available(anyLong(),any(),anyString(),anyString())).thenThrow(new IllegalStateException("offline"))
@@ -83,7 +84,8 @@ class ScheduledQueueReleaseTest {
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
         var ready=Booking.builder().id(2L).parkingLotId(8L).vehicleType(VehicleTypeEnum.CONTAINER)
                 .expectedCheckOutTime(now.minusHours(2)).checkOutTime(now.minusHours(1)).build();
-        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any())).thenReturn(List.of(1L),List.of(2L));
+        when(bookings.findSchedulesReadyForQueue(anyInt(),any(),any(),anyLong(),any()))
+                .thenReturn(List.of(1L)).thenReturn(List.of(2L));
         when(bookings.findByIdForUpdate(1L)).thenReturn(Optional.of(blocked));
         when(bookings.findByIdForUpdate(2L)).thenReturn(Optional.of(ready));
         when(queues.tryPromoteNextInQueue(8L,VehicleTypeEnum.CONTAINER)).thenReturn(true);

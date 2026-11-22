@@ -2,7 +2,6 @@ package com.smartparking.payment.application.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartparking.common.enums.PaymentStatusEnum;
-import com.smartparking.common.event.BookingEvent;
 import com.smartparking.common.exception.AppException;
 import com.smartparking.common.exception.ErrorCode;
 import com.smartparking.payment.application.dto.RefundRequestDto;

@@ -38,7 +38,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -102,7 +101,6 @@ class DisputeServiceImplTest {
 
         CreateDisputeRequest req = CreateDisputeRequest.builder()
                 .bookingId(10L)
-                .merchantId(99999L)
                 .parkingLotId(parkingLotId)
                 .reason(" Double charged ")
                 .description("Card charged twice")
